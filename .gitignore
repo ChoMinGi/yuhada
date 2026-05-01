@@ -1,41 +1,40 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Go
+/dist/
+*.test
+*.out
+vendor/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# SQLite runtime (로컬 DB + WAL/SHM 파일)
+/var/*.db
+/var/*.db-wal
+/var/*.db-shm
+/var/backup/
 
-# testing
-/coverage
+# templ generated (opt-in: 저장소에 커밋하지 않음)
+internal/view/**/*_templ.go
 
-# next.js
-/.next/
-/out/
+# Tailwind CSS (generated output)
+static/css/app.css
+tailwind/bin/
 
-# production
-/build
+# sqlc generated은 커밋 (Go 파일은 추적)
+# internal/db/sqlc/ → 커밋됨
 
-# misc
+# .env (dev 개인별 설정)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE / OS
 .DS_Store
-*.pem
+.idea/
+.vscode/
+*.swp
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Excluded from repo
+/.archive/
+/.claude/
+/_handoff/
+/design_handoff_yuhada/
+/supabase/

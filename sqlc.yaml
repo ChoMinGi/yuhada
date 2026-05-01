@@ -1,0 +1,22 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    queries: "internal/db/queries"
+    schema: "migrations"
+    gen:
+      go:
+        package: "dbgen"
+        out: "internal/db/dbgen"
+        sql_package: "database/sql"
+        emit_interface: false
+        emit_json_tags: true
+        json_tags_case_style: "camel"
+        emit_db_tags: false
+        emit_empty_slices: true
+        emit_prepared_queries: false
+        # SQLite에서 INTEGER 0/1로 저장되는 boolean을 bool로 매핑
+        overrides:
+          - column: "members.is_active"
+            go_type: "bool"
+          - column: "admin_users.is_active"
+            go_type: "bool"
