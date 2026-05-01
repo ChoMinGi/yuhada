@@ -1,0 +1,23 @@
+[Unit]
+Description=Yuhada Hair Subscription Service
+After=network.target
+
+[Service]
+Type=simple
+User=yuhada
+Group=yuhada
+WorkingDirectory=/opt/yuhada
+EnvironmentFile=/opt/yuhada/.env
+ExecStart=/opt/yuhada/yuhada
+Restart=always
+RestartSec=3
+
+# Security hardening
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/yuhada/var
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

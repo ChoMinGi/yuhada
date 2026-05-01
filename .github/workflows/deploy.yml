@@ -1,0 +1,68 @@
+name: Deploy to Cafe24 VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Install templ
+        run: go install github.com/a-h/templ/cmd/templ@latest
+
+      - name: Generate templ
+        run: templ generate
+
+      - name: Install Tailwind CSS
+        run: |
+          curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 -o /usr/local/bin/tailwindcss
+          chmod +x /usr/local/bin/tailwindcss
+
+      - name: Build CSS
+        run: tailwindcss -i ./tailwind/input.css -o ./static/css/app.css --minify
+
+      - name: Build binary
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -trimpath -ldflags="-s -w" -o dist/yuhada ./cmd/server
+
+      - name: Deploy to VPS
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          # Upload binary
+          scp dist/yuhada root@${HOST}:/opt/yuhada/yuhada.new
+
+          # Upload static + migrations
+          rsync -az --delete static/ root@${HOST}:/opt/yuhada/static/
+          rsync -az --delete migrations/ root@${HOST}:/opt/yuhada/migrations/
+
+          # Swap binary + restart
+          ssh root@${HOST} << 'EOF'
+            set -e
+            cd /opt/yuhada
+            # Run migrations
+            if command -v goose &>/dev/null; then
+              goose -dir migrations sqlite3 var/yuhada.db up
+            fi
+            # Atomic swap
+            mv yuhada.new yuhada
+            chmod +x yuhada
+            chown yuhada:yuhada yuhada
+            systemctl restart yuhada
+            echo "Deploy complete: $(date)"
+          EOF
