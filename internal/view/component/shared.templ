@@ -1,0 +1,59 @@
+package component
+
+// Wordmark — "yhd / YUHADA HAIR" 워드마크.
+// size: 24 / 28 / 40
+templ Wordmark(size int) {
+	<div class="flex flex-col items-center leading-none">
+		<span
+			class={ "font-display italic tracking-wide-serif text-ink-900",
+				templ.KV("text-[24px]", size == 24),
+				templ.KV("text-[28px]", size == 28),
+				templ.KV("text-[40px]", size == 40) }
+		>yhd</span>
+		<span class="mt-1.5 font-display text-[9px] tracking-[0.22em] uppercase text-ink-900">YUHADA HAIR</span>
+	</div>
+}
+
+// PageHeader — eyebrow + title + 우측 액션 슬롯.
+// 모바일에선 액션이 아래로 떨어짐 (작은 화면에서 한 줄 강제 안 함).
+templ PageHeader(eyebrow, title, description string) {
+	<header class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-6 mb-8 sm:mb-10">
+		<div class="min-w-0 flex-1">
+			if eyebrow != "" {
+				<p class="yh-eyebrow mb-2 sm:mb-3">{ eyebrow }</p>
+			}
+			<h1 class="yh-headline-l" style="font-size:28px">{ title }</h1>
+			if description != "" {
+				<p class="yh-body-sm mt-2 text-ink-500">{ description }</p>
+			}
+		</div>
+		<div class="shrink-0">
+			{ children... }
+		</div>
+	</header>
+}
+
+// Stat — KPI 카드.
+// 모바일: 가로 정렬 (label left / value right) → 컴팩트 높이.
+// sm+ : 세로 정렬 (eyebrow top / 큰 숫자 below) → 기존 디자인.
+templ Stat(label, value, unit string) {
+	<div class="yh-card px-5 py-4 sm:p-6 flex flex-row items-center justify-between gap-4 sm:block">
+		<p class="yh-eyebrow shrink-0 sm:mb-3">{ label }</p>
+		<p class="yh-num text-[22px] sm:text-[36px] text-right sm:text-left">
+			{ value }
+			if unit != "" {
+				<span class="ml-1 font-sans text-[11px] font-normal tracking-brand uppercase text-ink-500">{ unit }</span>
+			}
+		</p>
+	</div>
+}
+
+// KakaoButton — 공식 카카오 노란색 + 말풍선 SVG (Lucide 아님).
+templ KakaoButton(label string) {
+	<button type="submit" class="yh-kakao-btn">
+		<svg width="18" height="17" viewBox="0 0 18 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+			<path d="M9 0C4.03 0 0 3.16 0 7.05c0 2.51 1.68 4.72 4.21 5.96-.18.63-.66 2.38-.76 2.75-.12.46.17.46.36.33.15-.1 2.35-1.6 3.31-2.25.62.09 1.24.14 1.88.14 4.97 0 9-3.16 9-7.05S13.97 0 9 0z" fill="#000"></path>
+		</svg>
+		{ label }
+	</button>
+}

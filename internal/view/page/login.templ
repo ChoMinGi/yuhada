@@ -1,0 +1,111 @@
+package page
+
+import (
+	"fmt"
+
+	"github.com/mingicho/yuhada/internal/view/layout"
+)
+
+// LoginProps — 로그인 폼 상태.
+type LoginProps struct {
+	ErrorMsg string // 비어있지 않으면 인라인 에러
+}
+
+// Login — /login. 6자리 PIN 입력.
+templ Login(p LoginProps) {
+	@layout.Bare("Sign in") {
+		<main class="min-h-screen flex flex-col items-center justify-center">
+			<div class="w-full max-w-admin-login-card px-8">
+				<div class="flex flex-col items-start mb-12 leading-none">
+					<span class="font-display italic text-[40px] tracking-wide-serif">yhd</span>
+					<span class="mt-2 font-display text-[10px] tracking-[0.22em] uppercase">YUHADA HAIR</span>
+				</div>
+				<h1 class="yh-display-l mb-2" style="font-size:32px">Sign in</h1>
+				<p class="yh-body-sm text-ink-500 mb-10">PIN 6자리를 입력하세요.</p>
+
+				@LoginForm(p)
+			</div>
+		</main>
+	}
+}
+
+// LoginForm — 6칸 시각화 PIN 입력.
+//
+//   - 보이지 않는 실 input(opacity 0)이 6칸 영역을 덮고 모든 입력을 받음.
+//   - 6개의 박스가 pin.length 에 따라 채워짐:
+//       채워진 칸 → 진한 보더 + 도트
+//       다음 입력 칸(active) → 보더만 진하게 (커서 위치 표시)
+//       빈 칸 → 옅은 보더
+//   - 6자리 채워지면 자동 submit.
+templ LoginForm(p LoginProps) {
+	<form
+		method="POST"
+		action="/login"
+		class="flex flex-col gap-6"
+		hx-boost="false"
+		x-data="{ pin: '' }"
+	>
+		<div>
+			<label class="yh-label" for="pin">PIN</label>
+			<div class="relative" x-on:click="$refs.pinInput.focus()">
+				<input
+					id="pin"
+					name="pin"
+					type="password"
+					inputmode="numeric"
+					pattern="[0-9]{6}"
+					maxlength="6"
+					autocomplete="off"
+					autofocus
+					required
+					x-ref="pinInput"
+					x-model="pin"
+					x-on:input="pin = pin.replace(/\D/g,'').slice(0,6); if (pin.length === 6) $el.form.submit()"
+					class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+				/>
+				<div class="grid grid-cols-6 gap-3 pointer-events-none select-none">
+					for i := 0; i < 6; i++ {
+						@pinBox(i)
+					}
+				</div>
+			</div>
+		</div>
+
+		<div class="min-h-[20px] text-[12px] text-danger">
+			if p.ErrorMsg != "" {
+				{ p.ErrorMsg }
+			}
+		</div>
+
+		<button type="submit" class="yh-btn yh-btn-primary yh-btn-lg w-full" x-bind:disabled="pin.length < 6">
+			SIGN IN
+		</button>
+	</form>
+}
+
+// pinBox — 한 칸. idx 위치에 따라 채워짐/활성/빈 상태 결정.
+templ pinBox(idx int) {
+	<div
+		class="h-14 border-b-2 flex items-center justify-center transition-colors duration-150"
+		x-bind:class={ pinBoxBorder(idx) }
+	>
+		<span
+			x-show={ fmt.Sprintf("pin.length > %d", idx) }
+			x-transition:enter="transition ease-out duration-150"
+			x-transition:enter-start="opacity-0 scale-50"
+			x-transition:enter-end="opacity-100 scale-100"
+			class="w-2.5 h-2.5 rounded-full bg-ink-900"
+		></span>
+	</div>
+}
+
+// pinBoxBorder — Alpine 표현식으로 칸 보더 색상 결정.
+//   pin.length > i → 채워짐 (진한 보더)
+//   pin.length === i → 활성 (다음 입력 위치, 진한 보더)
+//   else → 빈 (옅은 보더)
+func pinBoxBorder(i int) string {
+	return fmt.Sprintf(
+		"pin.length > %d ? 'border-ink-900' : (pin.length === %d ? 'border-ink-900' : 'border-sand-300')",
+		i, i,
+	)
+}

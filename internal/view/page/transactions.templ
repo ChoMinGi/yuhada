@@ -1,0 +1,187 @@
+package page
+
+import (
+	"net/url"
+
+	"github.com/mingicho/yuhada/internal/view/component"
+	"github.com/mingicho/yuhada/internal/view/layout"
+)
+
+// TransactionsData — /admin/transactions 데이터.
+//
+// Period/Type/Q 는 활성 필터 상태. 모든 토글 a href 가 이 셋을 query
+// string 으로 보존해서 다른 칩 클릭 시 다른 필터들이 유지된다.
+type TransactionsData struct {
+	Period      string // "today" | "week" | "month" | "all"
+	Type        string // "" (전체) | "charge" | "deduct"
+	Q           string // 회원명/전화 검색어
+	DeductLabel string // "오늘 차감" / "이번 주 차감" 등 (period 따라)
+	ChargeLabel string // 동일
+	DeductTotal string // "₩215,000" pre-formatted
+	ChargeTotal string // "₩100,000"
+	Rows        []TxRow
+}
+
+// TxRow — 거래 한 줄.
+type TxRow struct {
+	Type       string // "charge" | "deduct"
+	MemberID   string
+	MemberName string
+	Memo       string
+	Amount     string // "+₩100,000" / "-₩35,000"
+	At         string // "오후 2:14" / "4월 25일 오후 2:14"
+}
+
+// txFilterURL — 한 필터 키만 override 한 URL 생성.
+//
+//	overrideKey:   "period" | "type" | "q"
+//	overrideValue: 새 값
+//
+// 나머지 필터는 그대로 유지. "today" / "" 는 default 라 URL 에서 생략.
+func txFilterURL(period, txType, q, overrideKey, overrideValue string) string {
+	p, t, qq := period, txType, q
+	switch overrideKey {
+	case "period":
+		p = overrideValue
+	case "type":
+		t = overrideValue
+	case "q":
+		qq = overrideValue
+	}
+
+	v := url.Values{}
+	if p != "" && p != "today" {
+		v.Set("period", p)
+	}
+	if t != "" {
+		v.Set("type", t)
+	}
+	if qq != "" {
+		v.Set("q", qq)
+	}
+	if len(v) == 0 {
+		return "/admin/transactions"
+	}
+	return "/admin/transactions?" + v.Encode()
+}
+
+// Transactions — /admin/transactions 풀 페이지.
+templ Transactions(d TransactionsData) {
+	@layout.Admin("거래 내역", "transactions") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
+			@component.PageHeader("TRANSACTIONS", "거래 내역", "")
+			<section class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-10">
+				@component.Stat(d.DeductLabel, d.DeductTotal, "")
+				@component.Stat(d.ChargeLabel, d.ChargeTotal, "")
+			</section>
+			<!-- ── 필터 영역 ── -->
+			<div class="mb-6 space-y-4">
+				<!-- 검색: 입력마다 디바운스 후 #tx-list 만 swap -->
+				<div class="relative max-w-[420px]">
+					<span class="absolute left-0 top-1/2 -translate-y-1/2 text-ink-500">
+						@component.Icon("search", 14)
+					</span>
+					<input
+						class="yh-input pl-6"
+						name="q"
+						value={ d.Q }
+						placeholder="회원 이름 또는 전화번호"
+						hx-get={ txFilterURL(d.Period, d.Type, "", "q", "") }
+						hx-trigger="keyup changed delay:250ms, search"
+						hx-target="#tx-list"
+						hx-swap="innerHTML"
+						hx-include="this"
+						hx-push-url="true"
+					/>
+				</div>
+				<!-- 타입 + 기간 토글 — 한 줄, 좁으면 wrap -->
+				<div class="flex flex-wrap gap-3 items-center">
+					<div class="-mx-1 overflow-x-auto">
+						<div class="px-1 inline-flex">
+							@txTypeTabs(d.Period, d.Type, d.Q)
+						</div>
+					</div>
+					<div class="-mx-1 overflow-x-auto">
+						<div class="px-1 inline-flex">
+							@txPeriodTabs(d.Period, d.Type, d.Q)
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="tx-list" class="yh-card overflow-hidden">
+				@TransactionsList(d.Rows)
+			</div>
+		</div>
+	}
+}
+
+// txTypeTabs — 거래 타입 토글 (전체/충전/차감).
+templ txTypeTabs(period, activeType, q string) {
+	<div class="flex gap-1 p-1 bg-sand-100 rounded">
+		@txTab(txFilterURL(period, "", q, "type", ""), "전체", activeType == "")
+		@txTab(txFilterURL(period, "charge", q, "type", "charge"), "충전", activeType == "charge")
+		@txTab(txFilterURL(period, "deduct", q, "type", "deduct"), "차감", activeType == "deduct")
+	</div>
+}
+
+// txPeriodTabs — 기간 토글 (오늘/이번 주/이번 달/전체).
+templ txPeriodTabs(activePeriod, txType, q string) {
+	<div class="flex gap-1 p-1 bg-sand-100 rounded">
+		@txTab(txFilterURL("today", txType, q, "period", "today"), "오늘", activePeriod == "today")
+		@txTab(txFilterURL("week", txType, q, "period", "week"), "이번 주", activePeriod == "week")
+		@txTab(txFilterURL("month", txType, q, "period", "month"), "이번 달", activePeriod == "month")
+		@txTab(txFilterURL("all", txType, q, "period", "all"), "전체", activePeriod == "all")
+	</div>
+}
+
+// txTab — 토글 하나. transactions/dashboard 의 periodTab 과 같은 시각 스타일.
+templ txTab(href, label string, active bool) {
+	<a
+		href={ templ.SafeURL(href) }
+		class={ "px-3 py-1.5 rounded-sm text-[12px] tracking-brand uppercase transition whitespace-nowrap",
+			templ.KV("bg-ink-900 text-sand-50", active),
+			templ.KV("text-ink-700 hover:text-ink-900", !active) }
+	>
+		{ label }
+	</a>
+}
+
+// TransactionsList — 거래 행 ul. HTMX 검색 시 #tx-list 의 innerHTML 로 swap.
+templ TransactionsList(rows []TxRow) {
+	<ul class="list-none m-0 p-0 yh-stagger">
+		if len(rows) == 0 {
+			<li class="text-center py-16 px-6">
+				<p class="yh-headline-xs">거래 내역이 없습니다</p>
+				<p class="text-[13px] text-ink-500 mt-2">선택한 필터에 해당하는 기록이 없습니다.</p>
+			</li>
+		}
+		for _, t := range rows {
+			<li class="flex items-center gap-4 sm:gap-5 px-5 py-4 sm:px-8 sm:py-7 border-b border-sand-200 last:border-0 hover:bg-sand-50">
+				<div
+					class={ "w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0",
+						templ.KV("bg-sand-100 text-ink-900", t.Type == "deduct"),
+						templ.KV("bg-sand-50 text-success", t.Type == "charge") }
+				>
+					if t.Type == "deduct" {
+						@component.Icon("trending-down", 16)
+					} else {
+						@component.Icon("trending-up", 16)
+					}
+				</div>
+				<div class="flex-1 min-w-0">
+					<p class="text-[14px] sm:text-[18px] truncate font-medium">
+						<a href={ templ.SafeURL("/admin/members/" + t.MemberID) } class="hover:underline">{ t.MemberName }</a>
+					</p>
+					<p class="text-[13px] sm:text-[14px] text-ink-500 truncate mt-0.5 sm:mt-1">
+						if t.Memo != "" {
+							{ t.Memo } · { t.At }
+						} else {
+							{ t.At }
+						}
+					</p>
+				</div>
+				<p class="yh-num text-[16px] sm:text-[20px] shrink-0">{ t.Amount }</p>
+			</li>
+		}
+	</ul>
+}

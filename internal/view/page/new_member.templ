@@ -1,0 +1,158 @@
+package page
+
+import (
+	"fmt"
+
+	"github.com/mingicho/yuhada/internal/util"
+	"github.com/mingicho/yuhada/internal/view/component"
+	"github.com/mingicho/yuhada/internal/view/layout"
+)
+
+// NewMemberProps — 폼 상태 (검증 실패 시 입력값 + 에러 유지).
+type NewMemberProps struct {
+	Name     string
+	Phone    string
+	Card     string
+	AmountStr string // 사용자 입력 그대로
+	Memo     string
+	ErrorMsg string
+}
+
+// NewMember — /admin/members/new
+templ NewMember(p NewMemberProps) {
+	@layout.Admin("신규 회원 등록", "members") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-form mx-auto">
+			<a href="/admin/members" class="yh-eyebrow-xs inline-flex items-center gap-1.5 mb-6">
+				@component.Icon("chevron-left", 12)
+				회원 목록
+			</a>
+			<header class="mb-10">
+				<p class="yh-eyebrow mb-3">NEW MEMBER</p>
+				<h1 class="yh-headline-l">신규 회원 등록</h1>
+			</header>
+
+			<form
+				method="POST"
+				action="/admin/members"
+				class="flex flex-col gap-6"
+				hx-boost="false"
+				x-data="{
+					phone: '',
+					card: '',
+					amount: 0,
+					amountStr: '',
+					setAmount(n){ this.amount = n; this.amountStr = n > 0 ? n.toLocaleString('ko-KR') : ''; },
+					onAmountInput(){
+						this.amount = parseInt((this.amountStr || '').replace(/[^0-9]/g,'')) || 0;
+						this.amountStr = this.amount > 0 ? this.amount.toLocaleString('ko-KR') : '';
+					},
+					formatPhone() {
+						const s = this.phone.replace(/\D/g,'').slice(0,11);
+						this.phone = s.length >= 8 ? s.slice(0,3)+'-'+s.slice(3,7)+'-'+s.slice(7)
+						           : s.length >= 4 ? s.slice(0,3)+'-'+s.slice(3)
+						           : s;
+					},
+					genUuid() { this.card = crypto.randomUUID().slice(0,8).toUpperCase(); }
+				}"
+			>
+				<div>
+					<label for="new-name" class="yh-label">
+						이름<span class="text-danger ml-1">*</span>
+					</label>
+					<input id="new-name" name="name" class="yh-input" autofocus required value={ p.Name } placeholder="김지영"/>
+				</div>
+				<div>
+					<label for="new-phone" class="yh-label">
+						전화번호<span class="text-danger ml-1">*</span>
+					</label>
+					<input
+						id="new-phone"
+						name="phone"
+						inputmode="numeric"
+						class="yh-input tabular-nums"
+						placeholder="010-0000-0000"
+						required
+						value={ p.Phone }
+						x-init={ fmt.Sprintf("phone = '%s'", p.Phone) }
+						x-model="phone"
+						x-on:input="formatPhone()"
+					/>
+				</div>
+
+				<div>
+					<label for="new-card" class="yh-label">
+						카드 UUID
+						<span class="text-[10px] text-ink-500 normal-case tracking-normal ml-1.5">선택</span>
+					</label>
+					<div class="flex items-center border-b border-sand-300 focus-within:border-ink-900">
+						<input
+							id="new-card"
+							name="card"
+							class="flex-1 bg-transparent border-0 outline-none py-3 text-[15px] placeholder:text-ink-500"
+							placeholder="비워두면 카드 없이 등록됩니다"
+							value={ p.Card }
+							x-init={ fmt.Sprintf("card = '%s'", p.Card) }
+							x-model="card"
+						/>
+						<button
+							type="button"
+							x-on:click="genUuid()"
+							class="inline-flex items-center gap-1.5 text-[11px] tracking-brand uppercase py-3"
+						>
+							@component.Icon("rotate-ccw", 12)
+							자동 생성
+						</button>
+					</div>
+				</div>
+
+				<div>
+					<label class="yh-label">
+						초기 충전 금액
+						<span class="text-[10px] text-ink-500 normal-case tracking-normal ml-1.5">선택</span>
+					</label>
+					<div class="flex items-baseline gap-2 border-b border-sand-300 pb-2 focus-within:border-ink-900">
+						<span class="yh-num text-[32px] text-ink-500">₩</span>
+						<input
+							name="amount"
+							type="text"
+							inputmode="numeric"
+							autocomplete="off"
+							class="yh-num flex-1 bg-transparent border-0 outline-none text-[32px] p-0"
+							x-model="amountStr"
+							x-on:input="onAmountInput()"
+						/>
+					</div>
+					<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+						for _, n := range []int{100000, 300000, 500000, 1000000} {
+							<button
+								type="button"
+								x-on:click={ fmt.Sprintf("setAmount(%d)", n) }
+								x-bind:class={ fmt.Sprintf("amount === %d ? 'bg-ink-900 text-sand-50 border-ink-900' : 'bg-transparent text-ink-900 border-sand-300 hover:border-ink-900'", n) }
+								class="h-10 border rounded text-[11px] tracking-brand uppercase tabular-nums"
+							>
+								{ util.FormatKRW(int64(n)) }
+							</button>
+						}
+					</div>
+				</div>
+
+				<div>
+					<label for="new-memo" class="yh-label">
+						메모
+						<span class="text-[10px] text-ink-500 normal-case tracking-normal ml-1.5">선택</span>
+					</label>
+					<textarea id="new-memo" name="memo" rows="3" class="yh-input" placeholder="특이사항, 선호 디자이너 등">{ p.Memo }</textarea>
+				</div>
+
+				if p.ErrorMsg != "" {
+					<div class="text-[12px] text-danger">{ p.ErrorMsg }</div>
+				}
+
+				<footer class="flex gap-3 pt-4">
+					<a href="/admin/members" class="yh-btn yh-btn-ghost flex-1 text-center">취소</a>
+					<button type="submit" class="yh-btn yh-btn-primary flex-1">등록하기</button>
+				</footer>
+			</form>
+		</div>
+	}
+}

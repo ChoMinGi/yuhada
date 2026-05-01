@@ -1,0 +1,148 @@
+package page
+
+import "github.com/mingicho/yuhada/internal/view/component"
+
+// CustomerView — 고객 모바일 화면 데이터.
+type CustomerView struct {
+	Name       string
+	Balance    string // "₩1,250,000"
+	BalanceInt int64
+	LastCharge string // "4월 22일 · ₩100,000"
+	LastVisit  string // "4월 25일 · 디자이너 컷"
+	CardUUID   string // path 재사용
+}
+
+// PhoneShell — 모든 고객 화면의 외곽.
+templ phoneShell() {
+	<!DOCTYPE html>
+	<html lang="ko">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>YUHADA HAIR</title>
+			<link rel="stylesheet" href="/static/css/app.css"/>
+		</head>
+		<body class="bg-sand-50 text-ink-900 font-sans min-h-screen flex flex-col">
+			<header class="flex justify-center pt-4 px-8">
+				@component.Wordmark(24)
+			</header>
+			<main class="flex-1 flex flex-col px-8">
+				{ children... }
+			</main>
+			<footer class="py-6 text-center">
+				<p class="yh-eyebrow-xs">YUHADA HAIR · MEMBERSHIP</p>
+			</footer>
+		</body>
+	</html>
+}
+
+// Tagged — 기본 잔액 조회.
+templ Tagged(v CustomerView) {
+	@phoneShell() {
+		<section class="mt-20 text-center">
+			<h1 class="font-display text-[48px] leading-[1.1] text-ink-900 font-light">
+				{ v.Name }<span class="italic">님,</span>
+			</h1>
+		</section>
+		<section class="mt-14 text-center">
+			<p class="yh-eyebrow-xs">BALANCE · 잔액</p>
+			<p class="mt-4 font-display text-[64px] leading-none tabular-nums font-light">{ v.Balance }</p>
+		</section>
+		<section class="mt-10 py-5 border-t border-b border-sand-200">
+			<div class="flex justify-between mb-3">
+				<span class="yh-eyebrow-xs">최근 충전</span>
+				<span class="text-[13px] tabular-nums">{ v.LastCharge }</span>
+			</div>
+			<div class="flex justify-between">
+				<span class="yh-eyebrow-xs">최근 방문</span>
+				<span class="text-[13px]">{ v.LastVisit }</span>
+			</div>
+		</section>
+		<div class="flex-1"></div>
+	}
+}
+
+// Onboarding — 첫 방문 (잔액 0).
+templ Onboarding(v CustomerView) {
+	@phoneShell() {
+		<section class="mt-20 text-center">
+			<p class="yh-eyebrow-xs">WELCOME</p>
+			<h1 class="mt-5 font-display text-[48px] leading-[1.1] font-light">
+				{ v.Name }<span class="italic">님,</span>
+			</h1>
+			<p class="mt-4 text-[14px] text-ink-700">첫 방문을 환영합니다</p>
+		</section>
+		<section class="mt-14 text-center">
+			<p class="yh-eyebrow-xs">BALANCE · 잔액</p>
+			<p class="mt-4 font-display text-[56px] leading-none tabular-nums text-ink-500 font-light">₩0</p>
+			<p class="mt-2.5 text-[11px] italic text-ink-500 font-display">충전 전</p>
+		</section>
+		<div class="flex-1"></div>
+		<section class="mb-4 px-6 py-5 border border-sand-200 rounded bg-white">
+			<p class="yh-eyebrow-xs">NEXT</p>
+			<p class="mt-2 text-[14px] leading-[1.6]">매장에서 충전해 주세요</p>
+			<p class="mt-1.5 text-[11px] text-ink-500 leading-[1.6]">10만원부터 시작 · 현금/카드 결제</p>
+		</section>
+	}
+}
+
+// LowBalance — 잔액 부족 경고.
+templ LowBalance(v CustomerView) {
+	@phoneShell() {
+		<section class="mt-18 text-center">
+			<p class="yh-eyebrow-xs">BALANCE · 잔액</p>
+			<p class="mt-5 font-display text-[64px] leading-none tabular-nums font-light">{ v.Balance }</p>
+			<p class="mt-6 text-[13px] text-ink-700">{ v.Name } <span class="text-ink-500">님</span></p>
+		</section>
+		<section class="mt-10 p-4 border border-warning rounded flex gap-3" style="background: rgba(212,162,76,0.06)">
+			<span class="text-warning shrink-0 mt-0.5">
+				@component.Icon("alert-triangle", 16)
+			</span>
+			<div>
+				<p class="text-[13px] leading-[1.55]">잔액이 부족해요</p>
+				<p class="text-[12px] text-ink-700 mt-1 leading-[1.55]">매장에서 추가 충전해 주세요</p>
+			</div>
+		</section>
+		<div class="flex-1"></div>
+	}
+}
+
+// Blocked — 분실 신고된 카드. 자체 로그인 안 함, 매장 방문 안내만.
+templ Blocked(v CustomerView) {
+	@phoneShell() {
+		<section class="mt-18 text-center">
+			<p class="text-[10px] tracking-[0.22em] uppercase text-danger">● BLOCKED</p>
+			<h1 class="mt-5 font-display text-[36px] leading-[1.15] font-light">
+				분실 신고된<br/>카드입니다
+			</h1>
+			<p class="mt-6 text-[13px] leading-[1.7] text-ink-700 max-w-[280px] mx-auto">
+				이 카드는 사용이 중지되었습니다.<br/>
+				본인 카드가 맞다면 매장으로 방문해 주세요.
+			</p>
+		</section>
+		<div class="flex-1"></div>
+		<section class="mb-4 px-6 py-5 border border-sand-200 rounded bg-white text-center">
+			<p class="yh-eyebrow-xs">CONTACT</p>
+			<a href="tel:02-000-0000" class="mt-3 block font-display text-[24px] tabular-nums tracking-wide-serif text-ink-900">
+				02-XXX-XXXX
+			</a>
+			<p class="mt-2 text-[11px] text-ink-500">YUHADA HAIR · 매장 직통</p>
+		</section>
+	}
+}
+
+// NotFound — 알 수 없는 카드 UUID 진입 시.
+templ CustomerNotFound() {
+	@phoneShell() {
+		<section class="mt-24 text-center">
+			<h1 class="font-display text-[28px] leading-[1.2] font-light text-ink-700">
+				카드를 찾을 수 없습니다
+			</h1>
+			<p class="mt-6 text-[13px] text-ink-500 leading-[1.7] max-w-[280px] mx-auto">
+				등록되지 않은 카드이거나 폐기된 카드입니다.<br/>
+				매장으로 문의해 주세요.
+			</p>
+		</section>
+		<div class="flex-1"></div>
+	}
+}

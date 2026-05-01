@@ -1,0 +1,201 @@
+// Package layout — 페이지 공통 HTML shell.
+package layout
+
+import "github.com/mingicho/yuhada/internal/view/component"
+
+// NavItem — 사이드바 항목.
+type NavItem struct {
+	Key, Label, Icon, Href string
+}
+
+// AdminNav — 관리자 사이드바 메뉴.
+var AdminNav = []NavItem{
+	{"dashboard", "Dashboard", "layout-dashboard", "/admin"},
+	{"members", "Members", "users", "/admin/members"},
+	{"cards", "Cards", "credit-card", "/admin/cards"},
+	{"transactions", "Transactions", "receipt", "/admin/transactions"},
+}
+
+// Admin — 사이드바 + 메인 컨텐츠 + 모달/토스트 mount points 포함된 풀 shell.
+templ Admin(title string, activeKey string) {
+	<!DOCTYPE html>
+	<html lang="ko" class="h-full">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } · YUHADA HAIR</title>
+			<link rel="stylesheet" href="/static/css/app.css"/>
+			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
+			<!--
+			  HTMX swap 후 Alpine 재초기화.
+			  hx-target="body" 같은 큰 swap 시 Alpine v3 mutation observer 가
+			  새 sub-tree 의 일부 directive (x-show 등) 를 처리 안 하는 케이스
+			  방지. swap target 자기 자신은 이미 init 된 컨테이너라 children 에만
+			  initTree 호출.
+			-->
+			<script>
+				document.addEventListener('htmx:afterSwap', function (e) {
+					if (window.Alpine && e.detail && e.detail.elt) {
+						Array.prototype.forEach.call(e.detail.elt.children, function (c) {
+							window.Alpine.initTree(c);
+						});
+					}
+				});
+			</script>
+		</head>
+		<body
+			class="h-full overflow-hidden bg-sand-50 text-ink-900 font-sans"
+			x-data="{ nav: false }"
+			x-on:htmx:after-swap.window="nav = false"
+		>
+			<!-- Mobile top bar — md 미만에서만 표시 -->
+			<div class="md:hidden fixed top-0 left-0 right-0 h-12 z-30 flex items-center px-4 bg-sand-50/90 backdrop-blur border-b border-sand-200">
+				<button
+					type="button"
+					x-on:click="nav = true"
+					class="p-2 -ml-2 text-ink-900"
+					aria-label="메뉴 열기"
+				>
+					@component.Icon("menu", 20)
+				</button>
+				<a href="/admin" class="ml-2 font-display italic text-[18px] tracking-wide-serif text-ink-900 leading-none">yhd</a>
+			</div>
+
+			<!-- 모바일 드로어 backdrop — open 상태에서만 -->
+			<div
+				x-show="nav"
+				x-cloak
+				x-on:click="nav = false"
+				x-transition.opacity.duration.150ms
+				class="md:hidden fixed inset-0 z-30 bg-ink-900/40"
+			></div>
+
+			<div class="flex h-full">
+				@adminSidebar(activeKey)
+				<main class="flex-1 overflow-y-auto pt-12 md:pt-0 yh-page-enter">
+					{ children... }
+				</main>
+			</div>
+			@modalRoot()
+			@toastRoot()
+		</body>
+	</html>
+}
+
+// Bare — 사이드바 없이 풀스크린 (로그인, 고객 모바일 등).
+templ Bare(title string) {
+	<!DOCTYPE html>
+	<html lang="ko">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } · YUHADA HAIR</title>
+			<link rel="stylesheet" href="/static/css/app.css"/>
+			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
+			<!--
+			  HTMX swap 후 Alpine 재초기화.
+			  hx-target="body" 같은 큰 swap 시 Alpine v3 mutation observer 가
+			  새 sub-tree 의 일부 directive (x-show 등) 를 처리 안 하는 케이스
+			  방지. swap target 자기 자신은 이미 init 된 컨테이너라 children 에만
+			  initTree 호출.
+			-->
+			<script>
+				document.addEventListener('htmx:afterSwap', function (e) {
+					if (window.Alpine && e.detail && e.detail.elt) {
+						Array.prototype.forEach.call(e.detail.elt.children, function (c) {
+							window.Alpine.initTree(c);
+						});
+					}
+				});
+			</script>
+		</head>
+		<body class="bg-sand-50 text-ink-900 font-sans min-h-screen">
+			{ children... }
+			@modalRoot()
+			@toastRoot()
+		</body>
+	</html>
+}
+
+templ adminSidebar(activeKey string) {
+	<aside
+		class="w-[220px] shrink-0 bg-sand-100 border-r border-sand-200 flex flex-col h-full
+		       fixed inset-y-0 left-0 z-40 transform transition-transform duration-200 ease-out
+		       md:relative md:translate-x-0 md:transition-none"
+		x-bind:class="nav ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+		x-on:click="$event.target.closest('a, button[type=submit]') && (nav = false)"
+	>
+		<div class="p-8 border-b border-sand-200">
+			<a href="/admin" class="flex flex-col items-start leading-none">
+				<span class="font-display italic text-[28px] tracking-wide-serif text-ink-900">yhd</span>
+				<span class="mt-1.5 font-display text-[9px] tracking-[0.22em] uppercase text-ink-900">YUHADA HAIR</span>
+			</a>
+		</div>
+		<nav class="flex-1 p-3">
+			for _, it := range AdminNav {
+				<a
+					href={ templ.SafeURL(it.Href) }
+					class={ "flex items-center gap-3 px-4 py-3 rounded text-[13px] transition",
+						templ.KV("bg-ink-900 text-sand-50", activeKey == it.Key),
+						templ.KV("text-ink-700 hover:bg-sand-200/60", activeKey != it.Key) }
+				>
+					@component.Icon(it.Icon, 16)
+					<span class="flex-1">{ it.Label }</span>
+				</a>
+			}
+		</nav>
+		<form
+			method="POST"
+			action="/logout"
+			class="p-3 border-t border-sand-200"
+			hx-boost="false"
+		>
+			<button
+				class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-ink-700 hover:bg-sand-200/60 rounded transition"
+				type="submit"
+			>
+				@component.Icon("log-out", 16)
+				<span class="flex-1 text-left">로그아웃</span>
+			</button>
+		</form>
+	</aside>
+}
+
+// modalRoot — HTMX 모달 마운트 포인트.
+//
+// 흐름:
+//  1. 트리거 버튼이 hx-target="#modal-root"로 modal partial 가져옴
+//  2. 스왑 완료 후 modal-root 에 컨텐츠가 들어왔으면 'openmodal' dispatch
+//  3. x-on:openmodal.window 가 show() 호출 → open=true → x-show 가 display flex
+//
+// children.length 체크 이유: 회원 행 클릭처럼 hx-target="body" 로 페이지
+// 전체가 swap 될 때, body 안의 modal-root 도 같이 swap 되면서 이 핸들러가
+// fire 되어 빈 backdrop 이 떠버리는 freeze 현상 발생. modal partial 이 실제로
+// 들어온 swap 만 통과시킨다.
+templ modalRoot() {
+	<div
+		id="modal-root"
+		x-data="{ open:false, show(){this.open=true}, hide(){this.open=false} }"
+		x-on:openmodal.window="show()"
+		x-on:closemodal.window="hide()"
+		x-on:keydown.escape.window="hide()"
+		x-show="open"
+		x-cloak
+		x-transition:enter="transition ease-out duration-200"
+		x-transition:enter-start="opacity-0"
+		x-transition:enter-end="opacity-100"
+		x-transition:leave="transition ease-in duration-150"
+		x-transition:leave-start="opacity-100"
+		x-transition:leave-end="opacity-0"
+		class="fixed inset-0 z-50 flex items-center justify-center p-6"
+		style="background: rgba(26,22,20,0.55)"
+		x-on:click.self="hide()"
+		hx-on::after-swap="if (this.children.length > 0) window.dispatchEvent(new CustomEvent('openmodal'))"
+	></div>
+}
+
+templ toastRoot() {
+	<div id="toast-root" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40"></div>
+}

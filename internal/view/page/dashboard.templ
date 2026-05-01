@@ -1,0 +1,133 @@
+package page
+
+import (
+	"github.com/mingicho/yuhada/internal/view/component"
+	"github.com/mingicho/yuhada/internal/view/layout"
+)
+
+// DashboardData — 대시보드 핸들러가 채워서 전달.
+//
+// Period 에 따라 KPI 합계와 라벨이 함께 바뀐다.
+//   - today  : "TODAY" / "2026년 4월 28일 화요일" / "오늘 차감"
+//   - week   : "THIS WEEK" / "이번 주" / "이번 주 차감"
+//   - month  : "THIS MONTH" / "2026년 4월" / "이번 달 차감"
+//   - all    : "ALL TIME" / "전체 기간" / "전체 차감"
+type DashboardData struct {
+	Period            string // "today" | "week" | "month" | "all"
+	Eyebrow           string // 영문 eyebrow ("TODAY" 등)
+	Headline          string // 한글 헤드라인 ("2026년 4월 28일 화요일" 등)
+	DeductLabel       string // KPI 라벨 ("오늘 차감" / "이번 주 차감" ...)
+	ChargeLabel       string // KPI 라벨 ("오늘 충전" / "이번 주 충전" ...)
+	ChargeTotal       string // "₩100,000" pre-formatted
+	DeductTotal       string // "₩215,000"
+	ActiveMemberCount int64
+	Activity          []Activity
+}
+
+// Activity — Recent Activity row.
+type Activity struct {
+	Type       string // "charge" | "deduct"
+	MemberName string
+	Memo       string
+	Amount     string // "+₩100,000" or "-₩35,000"
+	When       string // "오후 2:14" 등 표시 문자열
+}
+
+// Dashboard — /admin?period=today|week|month|all
+templ Dashboard(d DashboardData) {
+	@layout.Admin("Dashboard", "dashboard") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
+			<div class="mb-8 sm:mb-10 -mx-1 overflow-x-auto">
+				<div class="px-1 inline-flex">
+					@dashPeriodTabs(d.Period)
+				</div>
+			</div>
+
+			<header class="mb-8 sm:mb-12">
+				<p class="yh-eyebrow mb-2 sm:mb-3">{ d.Eyebrow }</p>
+				<h1 class="yh-headline-l text-[24px] sm:text-[32px]">{ d.Headline }</h1>
+			</header>
+
+			<!--
+			  KPI: 차감/충전 두 카드만.
+			  활성 회원 수는 매일 모니터링할 정보가 아니라 Members 페이지에서 자연스럽게 확인.
+			-->
+			<section class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-12">
+				@component.Stat(d.DeductLabel, d.DeductTotal, "")
+				@component.Stat(d.ChargeLabel, d.ChargeTotal, "")
+			</section>
+
+			<section>
+				<div class="flex items-end justify-between mb-4">
+					<h2 class="yh-display-s">Recent Activity</h2>
+					<a href="/admin/transactions" class="yh-eyebrow-xs inline-flex items-center gap-1.5 -m-2 p-2">
+						전체 보기
+						@component.Icon("chevron-right", 12)
+					</a>
+				</div>
+				<div class="yh-card overflow-hidden">
+					<ul id="recent-activity" class="list-none m-0 p-0 yh-stagger">
+						@ActivityList(d.Activity)
+					</ul>
+				</div>
+			</section>
+		</div>
+	}
+}
+
+// dashPeriodTabs — 대시보드 상단 기간 토글.
+// transactions 페이지의 periodTabs 와 같은 디자인을 쓰지만 href 가 /admin 으로 다름.
+templ dashPeriodTabs(active string) {
+	<div class="flex gap-1 p-1 bg-sand-100 rounded">
+		@dashPeriodTab("today", "오늘", active)
+		@dashPeriodTab("week", "이번 주", active)
+		@dashPeriodTab("month", "이번 달", active)
+		@dashPeriodTab("all", "전체", active)
+	</div>
+}
+
+templ dashPeriodTab(key, label, active string) {
+	<a
+		href={ templ.SafeURL("/admin?period=" + key) }
+		class={ "px-3 py-1.5 rounded-sm text-[12px] tracking-brand uppercase transition whitespace-nowrap",
+			templ.KV("bg-ink-900 text-sand-50", key == active),
+			templ.KV("text-ink-700 hover:text-ink-900", key != active) }
+	>
+		{ label }
+	</a>
+}
+
+templ ActivityList(rows []Activity) {
+	if len(rows) == 0 {
+		<li class="text-center py-16 px-6">
+			<p class="yh-headline-xs">아직 거래 내역이 없습니다</p>
+			<p class="text-[13px] text-ink-500 mt-2">회원에게 충전하거나 차감하면 여기에 표시됩니다.</p>
+		</li>
+	}
+	for _, a := range rows {
+		<li class="flex items-center gap-4 sm:gap-5 px-5 py-4 sm:px-8 sm:py-7 border-b border-sand-200 last:border-0">
+			<div
+				class={ "w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0",
+					templ.KV("bg-sand-100 text-ink-900", a.Type == "deduct"),
+					templ.KV("bg-sand-50 text-success", a.Type == "charge") }
+			>
+				if a.Type == "deduct" {
+					@component.Icon("trending-down", 16)
+				} else {
+					@component.Icon("trending-up", 16)
+				}
+			</div>
+			<div class="flex-1 min-w-0">
+				<p class="text-[14px] sm:text-[18px] truncate font-medium">{ a.MemberName }</p>
+				<p class="text-[13px] sm:text-[14px] text-ink-500 truncate mt-0.5 sm:mt-1">
+					if a.Memo != "" {
+						{ a.Memo } · { a.When }
+					} else {
+						{ a.When }
+					}
+				</p>
+			</div>
+			<p class="yh-num text-[16px] sm:text-[20px] shrink-0">{ a.Amount }</p>
+		</li>
+	}
+}

@@ -1,0 +1,185 @@
+package page
+
+import (
+	"github.com/mingicho/yuhada/internal/view/component"
+	"github.com/mingicho/yuhada/internal/view/layout"
+)
+
+// CardsData — /admin/cards 화면 데이터.
+type CardsData struct {
+	Issued   int64
+	Active   int64
+	Lost     int64
+	Cards    []CardRow // 발급된 카드만
+	Unissued []MemberRow
+}
+
+// CardRow — 발급된 카드 한 줄 (회원 join).
+type CardRow struct {
+	MemberID string
+	Name     string
+	Card     string // UUID
+	IssuedAt string // 발급일 (=가입일 대용 또는 별도 컬럼)
+	Active   bool
+}
+
+// Cards — /admin/cards
+templ Cards(d CardsData) {
+	@layout.Admin("카드 관리", "cards") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
+			@component.PageHeader("CARDS", "카드 관리", "")
+
+			<section class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-12">
+				@component.Stat("발급됨", fmtCount(d.Issued), "장")
+				@component.Stat("활성", fmtCount(d.Active), "장")
+				@component.Stat("분실/정지", fmtCount(d.Lost), "장")
+			</section>
+
+			<h2 class="yh-headline-s mb-4">발급된 카드</h2>
+			<div class="yh-card overflow-hidden mb-12">
+				<!-- ── Desktop: table ── -->
+				<table class="hidden md:table w-full border-collapse">
+					<thead class="bg-sand-100">
+						<tr>
+							<th class="yh-eyebrow-xs text-left px-6 py-5">이름</th>
+							<th class="yh-eyebrow-xs text-left px-6 py-5">카드 UUID</th>
+							<th class="yh-eyebrow-xs text-left px-6 py-5">발급일</th>
+							<th class="yh-eyebrow-xs text-right px-6 py-5">상태</th>
+						</tr>
+					</thead>
+					<tbody>
+						if len(d.Cards) == 0 {
+							<tr>
+								<td colspan="4" class="text-center py-12 px-6">
+									<p class="yh-headline-xs">아직 발급된 카드가 없습니다</p>
+								</td>
+							</tr>
+						}
+						for _, c := range d.Cards {
+							<tr
+								class="border-t border-sand-200 hover:bg-sand-50 cursor-pointer"
+								onclick={ templ.JSFuncCall("location.assign", "/admin/members/"+c.MemberID) }
+							>
+								<td class="px-6 py-5 text-[14px]">{ c.Name }</td>
+								<td class="px-6 py-5">
+									<span class="font-mono text-[12px] text-ink-700">{ c.Card }</span>
+								</td>
+								<td class="px-6 py-5 text-[13px] text-ink-700 tabular-nums">{ c.IssuedAt }</td>
+								<td class="px-6 py-5 text-right">
+									if c.Active {
+										<span class="inline-flex items-center px-2 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-success">활성</span>
+									} else {
+										<span class="inline-flex items-center px-2 py-0.5 rounded-sm border border-danger text-[10px] tracking-brand uppercase text-danger">분실</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				<!-- ── Mobile: card list ── -->
+				<ul class="md:hidden list-none m-0 p-0">
+					if len(d.Cards) == 0 {
+						<li class="text-center py-12 px-6">
+							<p class="yh-headline-xs">아직 발급된 카드가 없습니다</p>
+						</li>
+					}
+					for _, c := range d.Cards {
+						<li
+							class="px-5 py-4 border-b border-sand-200 last:border-0 active:bg-sand-50 cursor-pointer"
+							onclick={ templ.JSFuncCall("location.assign", "/admin/members/"+c.MemberID) }
+						>
+							<div class="flex items-center gap-3 mb-1">
+								<p class="text-[15px] font-medium flex-1 min-w-0 truncate">{ c.Name }</p>
+								if c.Active {
+									<span class="inline-flex items-center px-2 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-success shrink-0">활성</span>
+								} else {
+									<span class="inline-flex items-center px-2 py-0.5 rounded-sm border border-danger text-[10px] tracking-brand uppercase text-danger shrink-0">분실</span>
+								}
+							</div>
+							<p class="font-mono text-[11px] text-ink-700 break-all">{ c.Card }</p>
+							<p class="text-[12px] text-ink-500 mt-0.5">{ c.IssuedAt }</p>
+						</li>
+					}
+				</ul>
+			</div>
+
+			if len(d.Unissued) > 0 {
+				<h2 class="yh-headline-s mb-4">카드 미발급 회원</h2>
+				<div class="yh-card overflow-hidden">
+					<!-- ── Desktop: table ── -->
+					<table class="hidden md:table w-full border-collapse">
+						<thead class="bg-sand-100">
+							<tr>
+								<th class="yh-eyebrow-xs text-left px-6 py-5">이름</th>
+								<th class="yh-eyebrow-xs text-left px-6 py-5">전화번호</th>
+								<th class="yh-eyebrow-xs text-right px-6 py-5">잔액</th>
+								<th class="w-24"></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, m := range d.Unissued {
+								<tr class="border-t border-sand-200 hover:bg-sand-50">
+									<td class="px-6 py-5 text-[14px]">{ m.Name }</td>
+									<td class="px-6 py-5 text-[13px] text-ink-700 tabular-nums">{ m.Phone }</td>
+									<td class="px-6 py-5 text-right">
+										<span class={ "yh-num text-[18px]",
+											templ.KV("text-ink-500", m.ZeroBal),
+											templ.KV("text-ink-900", !m.ZeroBal) }>
+											{ m.Balance }
+										</span>
+									</td>
+									<td class="px-6 py-5 text-right">
+										<a href={ templ.SafeURL("/admin/members/" + m.ID) } class="yh-eyebrow-xs inline-flex items-center gap-1.5">
+											@component.Icon("plus", 12)
+											발급
+										</a>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					<!-- ── Mobile: card list ── -->
+					<ul class="md:hidden list-none m-0 p-0">
+						for _, m := range d.Unissued {
+							<li class="flex items-center gap-3 px-5 py-4 border-b border-sand-200 last:border-0">
+								<a href={ templ.SafeURL("/admin/members/" + m.ID) } class="flex-1 min-w-0 active:bg-sand-50 -mx-5 -my-4 px-5 py-4">
+									<p class="text-[15px] font-medium">{ m.Name }</p>
+									<p class="text-[12px] text-ink-500 tabular-nums mt-0.5">{ m.Phone }</p>
+								</a>
+								<p class={ "yh-num text-[16px] shrink-0",
+									templ.KV("text-ink-500", m.ZeroBal),
+									templ.KV("text-ink-900", !m.ZeroBal) }>
+									{ m.Balance }
+								</p>
+								<a href={ templ.SafeURL("/admin/members/" + m.ID) } class="yh-eyebrow-xs inline-flex items-center gap-1 shrink-0 px-2 py-1 border border-ink-900 rounded-sm">
+									@component.Icon("plus", 10)
+									발급
+								</a>
+							</li>
+						}
+					</ul>
+				</div>
+			}
+		</div>
+	}
+}
+
+// fmtCount — int64 → 표시용 문자열 (천단위 콤마 없는 단순 변환).
+func fmtCount(n int64) string {
+	if n == 0 {
+		return "0"
+	}
+	// 미용실 규모면 100장도 안 넘으니 단순.
+	const digits = "0123456789"
+	if n < 0 {
+		n = -n
+	}
+	var buf [20]byte
+	pos := len(buf)
+	for n > 0 {
+		pos--
+		buf[pos] = digits[n%10]
+		n /= 10
+	}
+	return string(buf[pos:])
+}

@@ -1,0 +1,148 @@
+package page
+
+import (
+	"github.com/mingicho/yuhada/internal/view/component"
+	"github.com/mingicho/yuhada/internal/view/layout"
+)
+
+// MemberRow — 회원 목록 한 줄.
+type MemberRow struct {
+	ID      string // UUID
+	Name    string
+	Phone   string // formatted "010-1234-5678"
+	Card    string // UUID or "" if unissued
+	Balance string // "₩1,250,000"
+	ZeroBal bool
+	Lost    bool // is_active == false
+}
+
+// Members — /admin/members
+templ Members(rows []MemberRow, q string) {
+	@layout.Admin("회원 관리", "members") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
+			@component.PageHeader("MEMBERS", "회원 관리", "") {
+				<a href="/admin/members/new" class="yh-btn yh-btn-primary">
+					@component.Icon("user-plus", 14)
+					신규 회원
+				</a>
+			}
+
+			<div class="relative max-w-[360px] mb-6">
+				<span class="absolute left-0 top-1/2 -translate-y-1/2 text-ink-500">
+					@component.Icon("search", 14)
+				</span>
+				<input
+					class="yh-input pl-6"
+					name="q"
+					value={ q }
+					placeholder="이름 또는 전화번호 검색"
+					hx-get="/admin/members"
+					hx-trigger="keyup changed delay:250ms, search"
+					hx-target="#members-list"
+					hx-select="#members-list"
+					hx-swap="outerHTML"
+				/>
+			</div>
+
+			<div class="yh-card overflow-hidden">
+				@MembersTable(rows)
+			</div>
+		</div>
+	}
+}
+
+// MembersTable — 검색 디바운스 결과로 swap되는 부분.
+//
+// 모바일/데스크탑 모두 카드 리스트 형태로 통일:
+// - UUID 는 사장님이 매일 식별에 쓰는 정보가 아니라 생략
+// - 미발급/분실 상태만 이름 옆 칩으로 표시
+// - 데스크탑에선 4컬럼 테이블 (이름·상태 / 전화번호 / 잔액 / chevron)
+templ MembersTable(rows []MemberRow) {
+	<div id="members-list">
+		<!-- ── Desktop: table ── -->
+		<table class="hidden md:table w-full border-collapse">
+			<thead class="bg-sand-100">
+				<tr>
+					<th class="yh-eyebrow-xs text-left px-6 py-5">이름</th>
+					<th class="yh-eyebrow-xs text-left px-6 py-5">전화번호</th>
+					<th class="yh-eyebrow-xs text-right px-6 py-5">잔액</th>
+					<th class="w-10"></th>
+				</tr>
+			</thead>
+			<tbody class="yh-stagger">
+				if len(rows) == 0 {
+					<tr>
+						<td colspan="4" class="text-center py-16 px-6">
+							<p class="yh-headline-xs">검색 결과가 없습니다</p>
+							<p class="text-[13px] text-ink-500 mt-2">다른 검색어를 시도하거나 신규 회원을 등록하세요.</p>
+						</td>
+					</tr>
+				}
+				for _, m := range rows {
+					<tr
+						class="border-t border-sand-200 hover:bg-sand-50 cursor-pointer"
+						onclick={ templ.JSFuncCall("location.assign", "/admin/members/"+m.ID) }
+					>
+						<td class="px-6 py-5 text-[15px]">
+							<span class="font-medium">{ m.Name }</span>
+							if m.Lost {
+								<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] tracking-brand uppercase text-danger border border-danger">분실</span>
+							}
+							if m.Card == "" {
+								<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-sm border border-sand-300 text-[10px] tracking-brand uppercase text-ink-500">미발급</span>
+							}
+						</td>
+						<td class="px-6 py-5 text-[14px] text-ink-700 tabular-nums">{ m.Phone }</td>
+						<td class="px-6 py-5 text-right">
+							<span
+								class={ "yh-num text-[18px]",
+									templ.KV("text-ink-500", m.ZeroBal),
+									templ.KV("text-ink-900", !m.ZeroBal) }
+							>
+								{ m.Balance }
+							</span>
+						</td>
+						<td class="px-6 py-5 text-right text-ink-500">
+							@component.Icon("chevron-right", 14)
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		<!-- ── Mobile: card list ── -->
+		<ul class="md:hidden list-none m-0 p-0 yh-stagger">
+			if len(rows) == 0 {
+				<li class="text-center py-16 px-6">
+					<p class="yh-headline-xs">검색 결과가 없습니다</p>
+					<p class="text-[13px] text-ink-500 mt-2">다른 검색어를 시도하거나 신규 회원을 등록하세요.</p>
+				</li>
+			}
+			for _, m := range rows {
+				<li
+					class="flex items-center gap-3 px-5 py-4 border-b border-sand-200 last:border-0 active:bg-sand-50 cursor-pointer"
+					onclick={ templ.JSFuncCall("location.assign", "/admin/members/"+m.ID) }
+				>
+					<div class="flex-1 min-w-0">
+						<p class="text-[15px] flex items-center gap-2 flex-wrap">
+							<span class="font-medium">{ m.Name }</span>
+							if m.Lost {
+								<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] tracking-brand uppercase text-danger border border-danger">분실</span>
+							}
+							if m.Card == "" {
+								<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-sand-300 text-[10px] tracking-brand uppercase text-ink-500">미발급</span>
+							}
+						</p>
+						<p class="text-[12px] text-ink-500 tabular-nums mt-0.5">{ m.Phone }</p>
+					</div>
+					<p
+						class={ "yh-num text-[16px] shrink-0",
+							templ.KV("text-ink-500", m.ZeroBal),
+							templ.KV("text-ink-900", !m.ZeroBal) }
+					>
+						{ m.Balance }
+					</p>
+				</li>
+			}
+		</ul>
+	</div>
+}

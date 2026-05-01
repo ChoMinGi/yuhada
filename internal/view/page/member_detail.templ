@@ -1,0 +1,257 @@
+package page
+
+import (
+	"github.com/mingicho/yuhada/internal/view/component"
+	"github.com/mingicho/yuhada/internal/view/layout"
+)
+
+// Member — 상세 페이지에 필요한 데이터.
+type Member struct {
+	ID         string // UUID
+	IDFmt      string // 짧은 표시용 (앞 8자) "01929000"
+	Name       string
+	Phone      string // formatted
+	JoinedAt   string // "2024년 3월 15일"
+	Memo       string
+	Active     bool   // false → lost / blocked
+	Card       string // "" if unissued
+	Balance    string // formatted "₩1,250,000"
+	BalanceInt int64  // raw, deduct modal에서 잔액 검증용
+	ZeroBal    bool
+	TotalIn    string // 누적 충전
+	TotalOut   string // 누적 차감
+	Txs        []Tx
+}
+
+// Tx — 거래 내역 한 줄.
+type Tx struct {
+	Type   string // "charge" | "deduct"
+	Memo   string
+	Amount string // "+₩100,000" / "-₩35,000"
+	At     string // "오후 2:14" 또는 "4월 25일 오후 2:14"
+}
+
+// MemberDetail — /admin/members/{id}
+templ MemberDetail(m Member) {
+	@layout.Admin(m.Name, "members") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-[820px] mx-auto">
+			<a href="/admin/members" class="yh-eyebrow-xs inline-flex items-center gap-1.5 mb-6">
+				@component.Icon("chevron-left", 12)
+				회원 관리
+			</a>
+
+			<!--
+			  헤더: 회원 정보 + 액션.
+			  - 모바일: 세로 스택 (이름·전화 위, 액션 버튼 아래 가로 정렬)
+			  - 데스크탑(sm+): 좌측 정보 / 우측 세로 버튼
+			-->
+			<header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 sm:gap-8 mb-8 sm:mb-10">
+				<div class="min-w-0 flex-1">
+					<p class="yh-eyebrow mb-4 flex items-center gap-2">
+						<span>MEMBER</span>
+						if !m.Active {
+							<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] tracking-brand uppercase text-danger border border-danger">분실</span>
+						}
+					</p>
+					<h1 class="yh-headline-l text-[36px] sm:text-[44px] leading-tight">{ m.Name }</h1>
+					<p class="text-[16px] sm:text-[17px] text-ink-700 tabular-nums mt-3">{ m.Phone }</p>
+					<p class="text-[13px] text-ink-500 mt-1">가입 { m.JoinedAt }</p>
+				</div>
+				<!-- 액션: 모바일에선 충전/차감 한 줄 + 분실 텍스트, 데스크탑에선 세로 스택 -->
+				<div class="shrink-0 sm:w-[180px]">
+					if m.Active {
+						<div class="flex sm:flex-col gap-2">
+							<button
+								class="yh-btn yh-btn-primary flex-1 sm:flex-none"
+								hx-get={ "/admin/members/" + m.ID + "/charge/modal" }
+								hx-target="#modal-root"
+							>충전</button>
+							<button
+								class="yh-btn yh-btn-secondary flex-1 sm:flex-none"
+								hx-get={ "/admin/members/" + m.ID + "/deduct/modal" }
+								hx-target="#modal-root"
+							>차감</button>
+						</div>
+						<button
+							class="yh-btn yh-btn-ghost text-danger w-full mt-2"
+							hx-get={ "/admin/members/" + m.ID + "/lost/modal" }
+							hx-target="#modal-root"
+						>분실 신고</button>
+					} else {
+						<button
+							class="yh-btn yh-btn-ghost w-full"
+							hx-get={ "/admin/members/" + m.ID + "/reactivate/modal" }
+							hx-target="#modal-root"
+						>재활성화</button>
+					}
+				</div>
+			</header>
+
+			@MemberBalanceCard(m)
+
+			<div class="mt-10 grid gap-8">
+				@MemberCardRow(m)
+				@MemberMemoRow(m)
+			</div>
+
+			<h2 class="yh-headline-s mt-10 mb-4">최근 거래</h2>
+			<div id="member-transactions-wrap" class="yh-card overflow-hidden">
+				@MemberTransactions(m.Txs)
+			</div>
+		</div>
+	}
+}
+
+templ MemberBalanceCard(m Member) {
+	<div id="member-balance-card" class="yh-card p-8">
+		<p class="yh-eyebrow mb-4">BALANCE</p>
+		<p class="yh-num text-[56px]">{ m.Balance }</p>
+		<div class="mt-8 pt-6 border-t border-sand-200 grid grid-cols-2 gap-8">
+			<div>
+				<p class="yh-eyebrow-xs mb-2">총 충전</p>
+				<p class="yh-num text-[20px]">{ m.TotalIn }</p>
+			</div>
+			<div>
+				<p class="yh-eyebrow-xs mb-2">총 차감</p>
+				<p class="yh-num text-[20px]">{ m.TotalOut }</p>
+			</div>
+		</div>
+	</div>
+}
+
+templ MemberCardRow(m Member) {
+	<div id="member-card-row" class="flex items-center justify-between gap-4 py-5 border-b border-sand-200">
+		<div>
+			<p class="yh-eyebrow-xs mb-2">CARD</p>
+			if m.Card != "" {
+				<p class="font-mono text-[13px] text-ink-700">{ m.Card }</p>
+			} else {
+				<span class="inline-flex items-center px-2 py-0.5 rounded-sm border border-sand-300 text-[10px] tracking-brand uppercase text-ink-500">미발급</span>
+			}
+		</div>
+		if m.Card != "" {
+			<button
+				x-data="{ copied:false }"
+				x-on:click={ "navigator.clipboard.writeText('" + m.Card + "'); copied=true; setTimeout(()=>copied=false, 1500)" }
+				class="yh-eyebrow-xs inline-flex items-center gap-1.5"
+			>
+				<span x-show="!copied">복사</span>
+				<span x-show="copied" x-cloak class="text-success">복사됨</span>
+			</button>
+		} else if m.Active {
+			<button
+				class="yh-btn yh-btn-secondary yh-btn-sm"
+				hx-post={ "/admin/members/" + m.ID + "/card" }
+				hx-target="#member-card-row"
+				hx-swap="outerHTML"
+			>
+				@component.Icon("plus", 12)
+				카드 발급
+			</button>
+		}
+	</div>
+}
+
+// MemberMemoRow — view mode.
+templ MemberMemoRow(m Member) {
+	<div id="member-memo" class="flex items-start justify-between gap-4 py-5">
+		<div class="flex-1">
+			<p class="yh-eyebrow-xs mb-2">MEMO</p>
+			<p class="yh-body">
+				if m.Memo != "" {
+					{ m.Memo }
+				} else {
+					<span class="text-ink-500 italic">메모 없음</span>
+				}
+			</p>
+		</div>
+		<button
+			class="yh-eyebrow-xs inline-flex items-center gap-1.5 shrink-0"
+			hx-get={ "/admin/members/" + m.ID + "/memo/edit" }
+			hx-target="#member-memo"
+			hx-swap="outerHTML"
+		>
+			@component.Icon("pencil", 12)
+			수정
+		</button>
+	</div>
+}
+
+// MemberMemoEdit — edit mode (textarea + 저장/취소).
+templ MemberMemoEdit(m Member) {
+	<form
+		id="member-memo"
+		hx-patch={ "/admin/members/" + m.ID + "/memo" }
+		hx-target="#member-memo"
+		hx-swap="outerHTML"
+		class="py-5"
+	>
+		<p class="yh-eyebrow-xs mb-2">MEMO</p>
+		<textarea name="memo" rows="3" class="yh-input" autofocus>{ m.Memo }</textarea>
+		<div class="flex gap-2 mt-3">
+			<button type="submit" class="yh-btn yh-btn-primary yh-btn-sm">저장</button>
+			<button
+				type="button"
+				class="yh-btn yh-btn-ghost yh-btn-sm"
+				hx-get={ "/admin/members/" + m.ID + "/memo" }
+				hx-target="#member-memo"
+				hx-swap="outerHTML"
+			>취소</button>
+		</div>
+	</form>
+}
+
+// MemberTransactions — 거래 내역 ul.
+//
+// hx-swap-oob="outerHTML" 항상 포함:
+//   - 첫 페이지 진입 시: HTMX 가 swap context 가 아니라 noop (browser 무시)
+//   - WalletResult fragment 응답에선: HTMX 가 ID 매칭으로 OOB swap 수행
+//     → 충전/차감 직후 거래 내역 자동 갱신
+templ MemberTransactions(txs []Tx) {
+	<ul id="member-transactions" hx-swap-oob="outerHTML" class="list-none m-0 p-0">
+		if len(txs) == 0 {
+			<li class="text-center py-16 px-6">
+				<p class="yh-headline-xs">아직 이용내역이 없습니다</p>
+				<p class="text-[13px] text-ink-500 mt-2">충전하거나 차감하면 여기에 표시됩니다.</p>
+			</li>
+		}
+		for _, t := range txs {
+			<li class="flex items-center gap-4 px-6 py-5 border-b border-sand-200 last:border-0">
+				<div
+					class={ "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+						templ.KV("bg-sand-100 text-ink-900", t.Type == "deduct"),
+						templ.KV("bg-sand-50 text-success", t.Type == "charge") }
+				>
+					if t.Type == "deduct" {
+						@component.Icon("trending-down", 14)
+					} else {
+						@component.Icon("trending-up", 14)
+					}
+				</div>
+				<div class="flex-1 min-w-0">
+					<p class="text-[14px] font-medium truncate">
+						if t.Memo != "" {
+							{ t.Memo }
+						} else if t.Type == "charge" {
+							충전
+						} else {
+							차감
+						}
+					</p>
+					<p class="text-[12px] text-ink-500 mt-0.5">{ t.At }</p>
+				</div>
+				<p class="yh-num text-[16px]">{ t.Amount }</p>
+			</li>
+		}
+	</ul>
+}
+
+// WalletResult — 충전/차감 submit 응답.
+//
+// 메인 swap: balance card → #member-balance-card.
+// OOB swap: transactions ul → #member-transactions (자동, hx-swap-oob 덕분).
+// 그래서 잔액과 거래 내역이 한 번에 갱신됨.
+templ WalletResult(m Member) {
+	@MemberBalanceCard(m)
+	@MemberTransactions(m.Txs)
+}

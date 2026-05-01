@@ -1,0 +1,10 @@
+// Package component — 재사용 templ 컴포넌트.
+package component
+
+import "github.com/mingicho/yuhada/internal/ui"
+
+// Icon — 서버 사이드 임베드 Lucide SVG.
+// stroke-width 1.5 고정.
+templ Icon(name string, size int) {
+	@templ.Raw(string(ui.IconSVG(name, size)))
+}
