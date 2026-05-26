@@ -84,6 +84,11 @@ templ MemberDetail(m Member) {
 							hx-target="#modal-root"
 						>재활성화</button>
 					}
+					<button
+						class="yh-btn yh-btn-ghost text-danger w-full mt-2"
+						hx-get={ "/admin/members/" + m.ID + "/delete/modal" }
+						hx-target="#modal-root"
+					>회원 삭제</button>
 				</div>
 			</header>
 

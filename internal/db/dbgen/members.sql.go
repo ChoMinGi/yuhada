@@ -106,6 +106,24 @@ func (q *Queries) DeactivateMember(ctx context.Context, id string) error {
 	return err
 }
 
+const deleteMember = `-- name: DeleteMember :exec
+DELETE FROM members WHERE id = ?
+`
+
+func (q *Queries) DeleteMember(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteMember, id)
+	return err
+}
+
+const deleteTransactionsByMember = `-- name: DeleteTransactionsByMember :exec
+DELETE FROM transactions WHERE member_id = ?
+`
+
+func (q *Queries) DeleteTransactionsByMember(ctx context.Context, memberID string) error {
+	_, err := q.db.ExecContext(ctx, deleteTransactionsByMember, memberID)
+	return err
+}
+
 const getMember = `-- name: GetMember :one
 SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members WHERE id = ? LIMIT 1
 `

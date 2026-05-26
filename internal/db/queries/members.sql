@@ -53,3 +53,9 @@ SELECT COUNT(*) FROM members WHERE card_uuid IS NOT NULL;
 
 -- name: CountCardsLost :one
 SELECT COUNT(*) FROM members WHERE card_uuid IS NOT NULL AND is_active = 0;
+
+-- name: DeleteMember :exec
+DELETE FROM members WHERE id = ?;
+
+-- name: DeleteTransactionsByMember :exec
+DELETE FROM transactions WHERE member_id = ?;
