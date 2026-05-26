@@ -120,11 +120,20 @@ templ Bare(title string) {
 }
 
 templ adminSidebar(activeKey string) {
+	<!--
+	  사이드바: 모바일은 드로어 (fixed + translate-x), 데스크탑은 정적 컬럼.
+
+	  -translate-x-full 을 정적 class 에 미리 두는 이유: 페이지 풀 reload 마다
+	  Alpine 초기화 전 잠깐 사이드바가 보였다가 닫히는 깜빡임 방지.
+	  처음부터 모바일은 화면 밖, 데스크탑은 md:translate-x-0 으로 자리잡음.
+
+	  nav=true 일 때만 !translate-x-0 으로 강제 슬라이드 인 (모바일 드로어).
+	-->
 	<aside
 		class="w-[220px] shrink-0 bg-sand-100 border-r border-sand-200 flex flex-col h-full
-		       fixed inset-y-0 left-0 z-40 transform transition-transform duration-200 ease-out
+		       fixed inset-y-0 left-0 z-40 transform -translate-x-full transition-transform duration-200 ease-out
 		       md:relative md:translate-x-0 md:transition-none"
-		x-bind:class="nav ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+		x-bind:class="nav && '!translate-x-0'"
 		x-on:click="$event.target.closest('a, button[type=submit]') && (nav = false)"
 	>
 		<div class="p-8 border-b border-sand-200">

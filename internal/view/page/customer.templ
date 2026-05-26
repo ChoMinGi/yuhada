@@ -40,13 +40,13 @@ templ phoneShell() {
 templ Tagged(v CustomerView) {
 	@phoneShell() {
 		<section class="mt-20 text-center">
-			<h1 class="font-display text-[48px] leading-[1.1] text-ink-900 font-light">
-				{ v.Name }<span class="italic">님,</span>
+			<h1 class="font-sans text-[48px] leading-[1.1] text-ink-900 font-light tracking-tight">
+				{ v.Name }<span class="font-display italic">님,</span>
 			</h1>
 		</section>
 		<section class="mt-14 text-center">
 			<p class="yh-eyebrow-xs">BALANCE · 잔액</p>
-			<p class="mt-4 font-display text-[64px] leading-none tabular-nums font-light">{ v.Balance }</p>
+			<p class="yh-num mt-4 text-[64px] leading-none font-light">{ v.Balance }</p>
 		</section>
 		<section class="mt-10 py-5 border-t border-b border-sand-200">
 			<div class="flex justify-between mb-3">
@@ -67,15 +67,15 @@ templ Onboarding(v CustomerView) {
 	@phoneShell() {
 		<section class="mt-20 text-center">
 			<p class="yh-eyebrow-xs">WELCOME</p>
-			<h1 class="mt-5 font-display text-[48px] leading-[1.1] font-light">
-				{ v.Name }<span class="italic">님,</span>
+			<h1 class="mt-5 font-sans text-[48px] leading-[1.1] font-light tracking-tight">
+				{ v.Name }<span class="font-display italic">님,</span>
 			</h1>
 			<p class="mt-4 text-[14px] text-ink-700">첫 방문을 환영합니다</p>
 		</section>
 		<section class="mt-14 text-center">
 			<p class="yh-eyebrow-xs">BALANCE · 잔액</p>
-			<p class="mt-4 font-display text-[56px] leading-none tabular-nums text-ink-500 font-light">₩0</p>
-			<p class="mt-2.5 text-[11px] italic text-ink-500 font-display">충전 전</p>
+			<p class="yh-num mt-4 text-[56px] leading-none text-ink-500 font-light">₩0</p>
+			<p class="mt-2.5 text-[11px] text-ink-500">충전 전</p>
 		</section>
 		<div class="flex-1"></div>
 		<section class="mb-4 px-6 py-5 border border-sand-200 rounded bg-white">
@@ -91,7 +91,7 @@ templ LowBalance(v CustomerView) {
 	@phoneShell() {
 		<section class="mt-18 text-center">
 			<p class="yh-eyebrow-xs">BALANCE · 잔액</p>
-			<p class="mt-5 font-display text-[64px] leading-none tabular-nums font-light">{ v.Balance }</p>
+			<p class="yh-num mt-5 text-[64px] leading-none font-light">{ v.Balance }</p>
 			<p class="mt-6 text-[13px] text-ink-700">{ v.Name } <span class="text-ink-500">님</span></p>
 		</section>
 		<section class="mt-10 p-4 border border-warning rounded flex gap-3" style="background: rgba(212,162,76,0.06)">
@@ -112,7 +112,7 @@ templ Blocked(v CustomerView) {
 	@phoneShell() {
 		<section class="mt-18 text-center">
 			<p class="text-[10px] tracking-[0.22em] uppercase text-danger">● BLOCKED</p>
-			<h1 class="mt-5 font-display text-[36px] leading-[1.15] font-light">
+			<h1 class="mt-5 font-sans text-[36px] leading-[1.15] font-light tracking-tight">
 				분실 신고된<br/>카드입니다
 			</h1>
 			<p class="mt-6 text-[13px] leading-[1.7] text-ink-700 max-w-[280px] mx-auto">
@@ -135,7 +135,7 @@ templ Blocked(v CustomerView) {
 templ CustomerNotFound() {
 	@phoneShell() {
 		<section class="mt-24 text-center">
-			<h1 class="font-display text-[28px] leading-[1.2] font-light text-ink-700">
+			<h1 class="font-sans text-[28px] leading-[1.2] font-light tracking-tight text-ink-700">
 				카드를 찾을 수 없습니다
 			</h1>
 			<p class="mt-6 text-[13px] text-ink-500 leading-[1.7] max-w-[280px] mx-auto">
