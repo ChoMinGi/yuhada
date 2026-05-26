@@ -18,9 +18,11 @@ import (
 
 	"github.com/mingicho/yuhada/internal/auth"
 	"github.com/mingicho/yuhada/internal/config"
+	"github.com/mingicho/yuhada/internal/crypto"
 	"github.com/mingicho/yuhada/internal/db"
 	"github.com/mingicho/yuhada/internal/handler"
 	"github.com/mingicho/yuhada/internal/service"
+	"github.com/mingicho/yuhada/internal/sms"
 )
 
 func main() {
@@ -49,8 +51,18 @@ func main() {
 
 	session := auth.NewSessionManager(database, cfg.CookieSecure)
 
+	// 암호화 핸들
+	enc, err := crypto.New(cfg.EncryptionKey)
+	if err != nil {
+		logger.Error("encryption init failed", "err", err)
+		os.Exit(1)
+	}
+	if enc != nil {
+		logger.Info("PII encryption enabled")
+	}
+
 	// 서비스 레이어
-	services := service.New(database)
+	services := service.New(database, enc)
 
 	// 관리자 부트스트랩 — PIN 우선, 비번은 fallback.
 	bootCtx, bootCancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -59,10 +71,24 @@ func main() {
 	}
 	bootCancel()
 
+	// 기존 평문 레코드 암호화 마이그레이션 (1회성)
+	migrCtx, migrCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	if err := services.Member.MigrateEncryption(migrCtx); err != nil {
+		logger.Warn("encryption migration failed", "err", err)
+	}
+	migrCancel()
+
+	// SMS 클라이언트
+	smsClient := sms.New(cfg.AligoKey, cfg.AligoUserID, cfg.AligoSender)
+	if smsClient.Enabled() {
+		logger.Info("SMS notifications enabled", "sender", cfg.AligoSender)
+	}
+
 	deps := &handler.Deps{
 		Session:     session,
 		Services:    services,
-		EnableDebug: cfg.Env != "prod", // dev/test에서만 /debug/* 노출
+		SMS:         smsClient,
+		EnableDebug: !cfg.IsProd(),
 	}
 	router := handler.NewRouter(deps)
 

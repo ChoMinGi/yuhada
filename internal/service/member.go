@@ -5,16 +5,19 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 
+	"github.com/mingicho/yuhada/internal/crypto"
 	"github.com/mingicho/yuhada/internal/db/dbgen"
 	"github.com/mingicho/yuhada/internal/util"
 )
 
 type MemberService struct {
-	db *sql.DB
-	q  *dbgen.Queries
+	db  *sql.DB
+	q   *dbgen.Queries
+	enc *crypto.Enc
 }
 
 // Sort 옵션 — SearchMembers 결과를 in-memory 정렬.
@@ -48,20 +51,18 @@ func (s *MemberService) Create(ctx context.Context, in CreateMemberInput) (dbgen
 
 	params := dbgen.CreateMemberParams{
 		ID:       util.NewID(),
-		Name:     strings.TrimSpace(in.Name),
-		Phone:    phone,
+		Name:     s.enc.Encrypt(strings.TrimSpace(in.Name)),
+		Phone:    s.enc.EncryptDeterministic(phone),
 		CardUuid: nullStr(in.CardUUID),
 		Balance:  0,
-		Memo:     nullStr(in.Memo),
+		Memo:     encryptNullStr(s.enc, in.Memo),
 	}
 	m, err := s.q.CreateMember(ctx, params)
 	if err != nil {
 		return dbgen.Member{}, mapInsertErr(err)
 	}
 
-	// 초기 충전이 있으면 wallet 경로로 처리 (감사 로그 + 트랜잭션 보장)
-	// wallet은 순환 import 피하려고 여기서 직접 호출 X.
-	// 호출 쪽(핸들러)이 Create → Charge 순서로 부르는 게 깔끔. 여기선 INSERT만.
+	s.decryptMember(&m)
 	return m, nil
 }
 
@@ -71,6 +72,10 @@ func (s *MemberService) Get(ctx context.Context, id string) (dbgen.Member, error
 	if errors.Is(err, sql.ErrNoRows) {
 		return dbgen.Member{}, ErrNotFound
 	}
+	if err != nil {
+		return dbgen.Member{}, err
+	}
+	s.decryptMember(&m)
 	return m, err
 }
 
@@ -80,17 +85,39 @@ func (s *MemberService) GetByCardUUID(ctx context.Context, cardUUID string) (dbg
 	if errors.Is(err, sql.ErrNoRows) {
 		return dbgen.Member{}, ErrNotFound
 	}
+	if err != nil {
+		return dbgen.Member{}, err
+	}
+	s.decryptMember(&m)
 	return m, err
 }
 
 // Search — 회원 검색 + 정렬.
+// 암호화 활성 시 전체 조회 후 Go에서 필터링.
 func (s *MemberService) Search(ctx context.Context, q string, sortKey SortKey) ([]dbgen.Member, error) {
-	// LIKE 패턴 래핑 ('q' → '%q%', 빈 문자열 → '%')
-	pattern := "%" + q + "%"
-	members, err := s.q.SearchMembers(ctx, pattern)
-	if err != nil {
-		return nil, err
+	var members []dbgen.Member
+	var err error
+
+	if s.enc != nil {
+		// 암호화 모드: 전체 조회 → 복호화 → 필터
+		members, err = s.q.ListAllMembers(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for i := range members {
+			s.decryptMember(&members[i])
+		}
+		if q = strings.TrimSpace(q); q != "" {
+			members = filterMembers(members, q)
+		}
+	} else {
+		pattern := "%" + q + "%"
+		members, err = s.q.SearchMembers(ctx, pattern)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	applySort(members, sortKey)
 	return members, nil
 }
@@ -98,7 +125,7 @@ func (s *MemberService) Search(ctx context.Context, q string, sortKey SortKey) (
 // UpdateMemo — 메모만 수정.
 func (s *MemberService) UpdateMemo(ctx context.Context, id, memo string) error {
 	return s.q.UpdateMemberMemo(ctx, dbgen.UpdateMemberMemoParams{
-		Memo: nullStr(memo),
+		Memo: encryptNullStr(s.enc, memo),
 		ID:   id,
 	})
 }
@@ -124,6 +151,34 @@ func (s *MemberService) Reactivate(ctx context.Context, id string) error {
 	return s.q.ReactivateMember(ctx, id)
 }
 
+// Delete — 회원 + 거래 내역 삭제.
+func (s *MemberService) Delete(ctx context.Context, id string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	q := dbgen.New(tx)
+	if err := q.DeleteTransactionsByMember(ctx, id); err != nil {
+		return fmt.Errorf("delete transactions: %w", err)
+	}
+	if err := q.DeleteMember(ctx, id); err != nil {
+		return fmt.Errorf("delete member: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+	committed = true
+	return nil
+}
+
 // LinkKakao — 카카오 user id 연결 (본인 인증 후).
 func (s *MemberService) LinkKakao(ctx context.Context, id, kakaoUserID string) error {
 	return s.q.LinkKakaoUser(ctx, dbgen.LinkKakaoUserParams{
@@ -132,9 +187,77 @@ func (s *MemberService) LinkKakao(ctx context.Context, id, kakaoUserID string) e
 	})
 }
 
+// MigrateEncryption — 기존 평문 레코드를 암호화. 서버 시작 시 1회 호출.
+func (s *MemberService) MigrateEncryption(ctx context.Context) error {
+	if s.enc == nil {
+		return nil
+	}
+	members, err := s.q.ListAllMembers(ctx)
+	if err != nil {
+		return err
+	}
+	migrated := 0
+	for _, m := range members {
+		if crypto.IsEncrypted(m.Name) {
+			continue // 이미 암호화됨
+		}
+		encName := s.enc.Encrypt(m.Name)
+		encPhone := s.enc.EncryptDeterministic(m.Phone)
+		var encMemo sql.NullString
+		if m.Memo.Valid {
+			encMemo = sql.NullString{String: s.enc.Encrypt(m.Memo.String), Valid: true}
+		}
+		_, err := s.db.ExecContext(ctx,
+			"UPDATE members SET name = ?, phone = ?, memo = ? WHERE id = ?",
+			encName, encPhone, encMemo, m.ID)
+		if err != nil {
+			return fmt.Errorf("migrate member %s: %w", m.ID, err)
+		}
+		migrated++
+	}
+	if migrated > 0 {
+		slog.Info("encryption migration", "migrated", migrated)
+	}
+	return nil
+}
+
 // ─────────────────────────────────────────────
 // helpers
 // ─────────────────────────────────────────────
+
+func (s *MemberService) decryptMember(m *dbgen.Member) {
+	if s.enc == nil {
+		return
+	}
+	m.Name = s.enc.Decrypt(m.Name)
+	m.Phone = s.enc.Decrypt(m.Phone)
+	if m.Memo.Valid {
+		m.Memo.String = s.enc.Decrypt(m.Memo.String)
+	}
+}
+
+func filterMembers(members []dbgen.Member, q string) []dbgen.Member {
+	q = strings.ToLower(q)
+	out := members[:0]
+	for _, m := range members {
+		if strings.Contains(strings.ToLower(m.Name), q) ||
+			strings.Contains(m.Phone, q) {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+func encryptNullStr(enc *crypto.Enc, s string) sql.NullString {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return sql.NullString{}
+	}
+	if enc != nil {
+		s = enc.Encrypt(s)
+	}
+	return sql.NullString{String: s, Valid: true}
+}
 
 func nullStr(s string) sql.NullString {
 	if strings.TrimSpace(s) == "" {

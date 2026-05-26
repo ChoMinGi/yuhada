@@ -6,27 +6,21 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/mingicho/yuhada/internal/crypto"
 	"github.com/mingicho/yuhada/internal/db/dbgen"
 	"github.com/mingicho/yuhada/internal/util"
 )
 
 // WalletService — 충전/차감. 가장 중요한 비즈니스 로직.
-//
-// 트랜잭션 보장:
-//   - db.SetMaxOpenConns(1)로 물리적 직렬화 (DB 레이어)
-//   - db.BeginTx 로 논리적 원자성
-//   - CHECK (balance >= 0) 로 음수 잔액 물리적 차단 (DDL 레이어)
-//   - 서비스에서 사전 검증 → 친절한 에러 메시지
-//
-// 기존 Postgres RPC (charge_member / deduct_member) 를 Go 레이어로 이식한 것.
 type WalletService struct {
-	db *sql.DB
+	db  *sql.DB
+	enc *crypto.Enc
 }
 
 type WalletResult struct {
-	Member        dbgen.Member
-	Transaction   dbgen.Transaction
-	NewBalance    int64
+	Member      dbgen.Member
+	Transaction dbgen.Transaction
+	NewBalance  int64
 }
 
 // Charge — 회원 잔액 증가 + 거래 로그.
@@ -43,7 +37,7 @@ func (w *WalletService) Deduct(ctx context.Context, memberID string, amount int6
 func (w *WalletService) mutate(
 	ctx context.Context,
 	memberID string,
-	delta int64, // 양수 = 충전, 음수 = 차감
+	delta int64,
 	txType, memo, createdBy string,
 ) (WalletResult, error) {
 	if delta == 0 {
@@ -116,10 +110,23 @@ func (w *WalletService) mutate(
 	}
 	committed = true
 
-	m.Balance = newBalance // 반영된 값으로 반환
+	m.Balance = newBalance
+	// 복호화 — 핸들러가 이름/전화번호를 표시할 수 있도록.
+	w.decryptMember(&m)
 	return WalletResult{
 		Member:      m,
 		Transaction: t,
 		NewBalance:  newBalance,
 	}, nil
+}
+
+func (w *WalletService) decryptMember(m *dbgen.Member) {
+	if w.enc == nil {
+		return
+	}
+	m.Name = w.enc.Decrypt(m.Name)
+	m.Phone = w.enc.Decrypt(m.Phone)
+	if m.Memo.Valid {
+		m.Memo.String = w.enc.Decrypt(m.Memo.String)
+	}
 }

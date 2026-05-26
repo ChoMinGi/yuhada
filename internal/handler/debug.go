@@ -11,8 +11,7 @@ import (
 	"github.com/mingicho/yuhada/internal/service"
 )
 
-// DebugHandlers — 개발·검증용 JSON endpoint 모음.
-// Step 4에서 RequireAdmin 뒤로 이동 예정.
+// DebugHandlers — 개발·검증용 JSON endpoint 모음 (APP_ENV=dev 에서만 노출).
 type DebugHandlers struct {
 	Services *service.Services
 }

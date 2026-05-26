@@ -6,12 +6,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mingicho/yuhada/internal/crypto"
 	"github.com/mingicho/yuhada/internal/db/dbgen"
 )
 
 type TransactionService struct {
-	db *sql.DB
-	q  *dbgen.Queries
+	db  *sql.DB
+	q   *dbgen.Queries
+	enc *crypto.Enc
 }
 
 // Period — 기간 필터 값.
@@ -27,13 +29,12 @@ const (
 // Range — period를 (start, end) ISO8601 문자열로 변환.
 func (p Period) Range(now time.Time) (start, end string) {
 	now = now.UTC()
-	endT := now.Add(time.Minute) // 약간의 여유
+	endT := now.Add(time.Minute)
 	var startT time.Time
 	switch p {
 	case PeriodToday:
 		startT = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	case PeriodWeek:
-		// 월요일 시작
 		dow := int(now.Weekday())
 		if dow == 0 {
 			dow = 7
@@ -56,7 +57,6 @@ func (s *TransactionService) ListByMember(ctx context.Context, memberID string) 
 }
 
 // ListRecent — 대시보드용 최근 N건 (회원명 join).
-// SQL에서 최대 20건 고정. 호출자가 필요하면 slice trim.
 func (s *TransactionService) ListRecent(ctx context.Context, limit int) ([]dbgen.ListRecentTransactionsRow, error) {
 	rows, err := s.q.ListRecentTransactions(ctx)
 	if err != nil {
@@ -65,19 +65,19 @@ func (s *TransactionService) ListRecent(ctx context.Context, limit int) ([]dbgen
 	if limit > 0 && len(rows) > limit {
 		rows = rows[:limit]
 	}
+	// 회원명 복호화
+	for i := range rows {
+		rows[i].MemberName = s.enc.Decrypt(rows[i].MemberName)
+	}
 	return rows, nil
 }
 
 // TxFilter — 거래 리스트/합계 공통 필터.
-//
-//   - Type ""              : 전체
-//   - Type "charge"/"deduct": 해당 타입만
-//   - Q   ""              : 회원 검색 없음
-//   - Q   "최"/"010-"     : 회원명/전화번호 LIKE 검색
 type TxFilter struct {
-	Period Period
-	Type   string
-	Q      string
+	Period    Period
+	Type      string
+	Q         string
+	memberIDs []string // 내부 사용: 암호화 모드에서 Q → member ID 변환 결과
 }
 
 // normalizeType — 알 수 없는 값은 ""(전체)로.
@@ -88,8 +88,29 @@ func (f TxFilter) normalizedType() string {
 	return ""
 }
 
+// resolveQ — 암호화 활성 + Q 비어있지 않으면, 이름/전화번호 검색을 member ID 목록으로 치환.
+func (s *TransactionService) resolveQ(ctx context.Context, f *TxFilter) {
+	if s.enc == nil || strings.TrimSpace(f.Q) == "" {
+		return
+	}
+	members, err := s.q.ListAllMembers(ctx)
+	if err != nil {
+		return
+	}
+	q := strings.ToLower(strings.TrimSpace(f.Q))
+	var ids []string
+	for _, m := range members {
+		name := strings.ToLower(s.enc.Decrypt(m.Name))
+		phone := s.enc.Decrypt(m.Phone)
+		if strings.Contains(name, q) || strings.Contains(phone, q) {
+			ids = append(ids, m.ID)
+		}
+	}
+	f.memberIDs = ids
+	f.Q = "" // SQL LIKE 사용 안 함
+}
+
 // whereClause — 동적 WHERE 절과 args 빌드.
-// caller 가 base SELECT 뒤에 이걸 이어붙여서 사용.
 func (f TxFilter) whereClause() (string, []any) {
 	start, end := f.Period.Range(time.Now())
 	var sb strings.Builder
@@ -100,19 +121,28 @@ func (f TxFilter) whereClause() (string, []any) {
 		sb.WriteString(" AND t.type = ?")
 		args = append(args, t)
 	}
-	if q := strings.TrimSpace(f.Q); q != "" {
+
+	if len(f.memberIDs) > 0 {
+		// 암호화 모드: member ID 목록으로 필터
+		placeholders := strings.Repeat("?,", len(f.memberIDs))
+		sb.WriteString(" AND t.member_id IN (" + placeholders[:len(placeholders)-1] + ")")
+		for _, id := range f.memberIDs {
+			args = append(args, id)
+		}
+	} else if q := strings.TrimSpace(f.Q); q != "" {
+		// 평문 모드: SQL LIKE
 		sb.WriteString(" AND (m.name LIKE ? OR m.phone LIKE ?)")
 		like := "%" + q + "%"
 		args = append(args, like, like)
 	}
+
 	return sb.String(), args
 }
 
 // ListInPeriod — 기간 + 타입 + 회원 검색 필터.
-//
-// sqlc 가 동적 WHERE 를 못 다루므로 direct SQL.
-// row 타입은 sqlc 가 만든 ListTransactionsInPeriodRow 재사용.
 func (s *TransactionService) ListInPeriod(ctx context.Context, f TxFilter) ([]dbgen.ListTransactionsInPeriodRow, error) {
+	s.resolveQ(ctx, &f)
+
 	const base = `SELECT
 	  t.id, t.type, t.amount, t.memo, t.balance_after, t.created_at,
 	  m.id, m.name
@@ -138,18 +168,18 @@ func (s *TransactionService) ListInPeriod(ctx context.Context, f TxFilter) ([]db
 		); err != nil {
 			return nil, err
 		}
+		// 회원명 복호화
+		r.MemberName = s.enc.Decrypt(r.MemberName)
 		out = append(out, r)
 	}
 	return out, rows.Err()
 }
 
 // SumsInPeriod — 기간 + 회원 검색 필터의 충전/차감 합계.
-//
-// Type 필터는 KPI 에 적용하지 않는다 — 사용자가 "차감만" 보고 있어도
-// "오늘 충전 ₩…" 합계는 여전히 보여주는 게 의미 있음.
 func (s *TransactionService) SumsInPeriod(ctx context.Context, f TxFilter) (deduct, charge int64, err error) {
-	// Type 만 빼고 Period/Q 적용.
-	scoped := TxFilter{Period: f.Period, Q: f.Q}
+	s.resolveQ(ctx, &f)
+
+	scoped := TxFilter{Period: f.Period, memberIDs: f.memberIDs}
 	where, args := scoped.whereClause()
 	const base = `SELECT COALESCE(SUM(t.amount), 0)
 	FROM transactions t
