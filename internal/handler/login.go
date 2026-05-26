@@ -10,6 +10,7 @@ import (
 	"github.com/mingicho/yuhada/internal/auth"
 	"github.com/mingicho/yuhada/internal/httpx"
 	"github.com/mingicho/yuhada/internal/service"
+	"github.com/mingicho/yuhada/internal/sms"
 	"github.com/mingicho/yuhada/internal/view/page"
 )
 
@@ -17,6 +18,7 @@ import (
 type PageHandlers struct {
 	Services *service.Services
 	Session  *scs.SessionManager
+	SMS      *sms.Client
 }
 
 // GET / — 비로그인이면 로그인, 로그인된 상태면 admin 으로.

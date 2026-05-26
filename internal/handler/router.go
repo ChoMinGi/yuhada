@@ -11,12 +11,14 @@ import (
 
 	"github.com/mingicho/yuhada/internal/auth"
 	"github.com/mingicho/yuhada/internal/service"
+	"github.com/mingicho/yuhada/internal/sms"
 )
 
 // Deps — 핸들러 공통 의존성.
 type Deps struct {
 	Session     *scs.SessionManager
 	Services    *service.Services
+	SMS         *sms.Client
 	EnableDebug bool // dev에서만 /debug/* 노출
 }
 
@@ -41,6 +43,7 @@ func NewRouter(deps *Deps) http.Handler {
 	pages := &PageHandlers{
 		Services: deps.Services,
 		Session:  deps.Session,
+		SMS:      deps.SMS,
 	}
 
 	// ─── 공개 ───
@@ -76,6 +79,7 @@ func NewRouter(deps *Deps) http.Handler {
 
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/", pages.MemberDetailGet)
+				r.Delete("/", pages.MemberDelete)
 
 				// Memo
 				r.Get("/memo", pages.MemoView)
@@ -92,6 +96,7 @@ func NewRouter(deps *Deps) http.Handler {
 				r.Get("/deduct/modal", pages.DeductModal)
 				r.Get("/lost/modal", pages.LostModal)
 				r.Get("/reactivate/modal", pages.ReactivateModal)
+				r.Get("/delete/modal", pages.DeleteModal)
 
 				// Wallet ops
 				r.Post("/charge", pages.ChargeSubmit)
