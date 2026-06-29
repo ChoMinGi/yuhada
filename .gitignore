@@ -10,6 +10,12 @@ vendor/
 /var/*.db-shm
 /var/backup/
 
+# Manual backups (운영 DB 백업 — PII 포함, 절대 커밋 금지)
+/_backups/
+
+# 하네스 작업 산출물 (감사 추적용, 커밋 제외)
+/_workspace/
+
 # templ generated (opt-in: 저장소에 커밋하지 않음)
 internal/view/**/*_templ.go
 
