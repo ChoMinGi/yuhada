@@ -1,0 +1,179 @@
+package page
+
+import (
+	"fmt"
+
+	"github.com/mingicho/yuhada/internal/util"
+	"github.com/mingicho/yuhada/internal/v2/view/component"
+	"github.com/mingicho/yuhada/internal/v2/view/layout"
+)
+
+// Plans — /v2/admin/settings/plans. 가격표(플랜) 관리.
+// 카드 그리드 + "새 상품 추가" 인라인 폼 (details).
+templ Plans(p PlansProps) {
+	@layout.Admin("충전 보너스", "settings.plans") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
+			@component.PageHeader("설정", "충전 보너스", "정액권 상품(등급 · 결제수단)을 관리합니다.") {
+				<button
+					type="button"
+					x-data="{ open: false }"
+					x-on:click="open = !open; if (open) $nextTick(() => document.getElementById('plan-new-form').scrollIntoView({behavior:'smooth'}))"
+					class="yh-btn yh-btn-primary"
+				>
+					@component.Icon("plus", 14)
+					<span class="ml-2">새 상품 추가</span>
+				</button>
+			}
+
+			if p.ErrorMsg != "" {
+				<div class="mb-6 text-[12px] text-danger">{ p.ErrorMsg }</div>
+			}
+
+			<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				for _, row := range p.Rows {
+					@planCard(row)
+				}
+				if len(p.Rows) == 0 {
+					<div class="col-span-full yh-card p-8 text-center">
+						<p class="yh-headline-xs">아직 등록된 상품이 없습니다</p>
+						<p class="text-[13px] text-ink-500 mt-2">"새 상품 추가" 로 첫 상품을 등록하세요.</p>
+					</div>
+				}
+			</section>
+
+			<section id="plan-new-form" class="mt-10">
+				<details class="yh-card p-6">
+					<summary class="yh-eyebrow cursor-pointer select-none">+ 새 상품 추가</summary>
+					<form
+						method="POST"
+						action="/v2/admin/settings/plans"
+						class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4"
+						hx-boost="false"
+					>
+						@planFormFields(PlanRow{IsActive: true})
+						<div class="col-span-full flex justify-end gap-3 mt-2">
+							<button type="reset" class="yh-btn yh-btn-ghost">초기화</button>
+							<button type="submit" class="yh-btn yh-btn-primary">추가</button>
+						</div>
+					</form>
+				</details>
+			</section>
+		</div>
+	}
+}
+
+// planCard — 개별 플랜 카드. 인라인 편집 (Alpine details) + 활성/비활성 토글.
+templ planCard(row PlanRow) {
+	<div
+		class={ "yh-card p-5 flex flex-col gap-3",
+			templ.KV("opacity-50", !row.IsActive) }
+		x-data="{ edit: false }"
+	>
+		<div class="flex items-start justify-between gap-3">
+			<div class="min-w-0 flex-1">
+				<p class="yh-eyebrow-xs mb-1.5">{ row.TierLabel }</p>
+				<p class="text-[13px] text-ink-700">{ payMethodLabel(row.PaymentMethod) }</p>
+			</div>
+			if row.IsActive {
+				<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] tracking-brand uppercase bg-success/10 text-success border border-success/30">ACTIVE</span>
+			} else {
+				<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] tracking-brand uppercase text-ink-500 border border-sand-300">OFF</span>
+			}
+		</div>
+
+		<div x-show="!edit" class="flex flex-col gap-2">
+			<p class="yh-num text-[28px] text-success">+{ util.FormatKRW(row.CreditAmount) }</p>
+			<p class="text-[12px] text-ink-500">받는 돈 { util.FormatKRW(row.Price) }</p>
+			if row.Bonus > 0 {
+				<p class="text-[11px] text-ink-500">보너스 +{ util.FormatKRW(row.Bonus) }</p>
+			}
+			if row.PerkLabel != "" {
+				<p class="text-[11px] text-ink-700 mt-1 flex items-start gap-1.5">
+					<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700">PERK</span>
+					<span class="flex-1">{ row.PerkLabel }</span>
+				</p>
+			}
+			<div class="flex items-center gap-2 mt-3 pt-3 border-t border-sand-200">
+				<button type="button" x-on:click="edit = true" class="yh-eyebrow-xs inline-flex items-center gap-1.5">
+					@component.Icon("pencil", 12)
+					편집
+				</button>
+				<span class="ml-auto"></span>
+				if row.IsActive {
+					<form
+						hx-post={ "/v2/admin/settings/plans/" + row.ID + "/deactivate" }
+						hx-swap="none"
+					>
+						<button type="submit" class="yh-eyebrow-xs text-danger">비활성화</button>
+					</form>
+				} else {
+					<form
+						hx-post={ "/v2/admin/settings/plans/" + row.ID + "/reactivate" }
+						hx-swap="none"
+					>
+						<button type="submit" class="yh-eyebrow-xs text-success">재활성화</button>
+					</form>
+				}
+			</div>
+		</div>
+
+		<form
+			x-show="edit"
+			x-cloak
+			hx-patch={ "/v2/admin/settings/plans/" + row.ID }
+			hx-swap="none"
+			class="grid grid-cols-1 sm:grid-cols-2 gap-3"
+		>
+			@planFormFields(row)
+			<div class="col-span-full flex justify-end gap-2 mt-2">
+				<button type="button" x-on:click="edit = false" class="yh-btn yh-btn-ghost yh-btn-sm">취소</button>
+				<button type="submit" class="yh-btn yh-btn-primary yh-btn-sm">저장</button>
+			</div>
+		</form>
+	</div>
+}
+
+// planFormFields — 신규/편집 공통 필드.
+templ planFormFields(row PlanRow) {
+	<label class="block">
+		<span class="yh-label">등급 라벨</span>
+		<input name="tier_label" class="yh-input" required placeholder="20만원 회원권" value={ row.TierLabel }/>
+	</label>
+	<label class="block">
+		<span class="yh-label">등급 금액 (표기가)</span>
+		<input name="tier_amount" type="number" min="0" step="1000" class="yh-input tabular-nums" required value={ int64ToStr(row.TierAmount) } placeholder="200000"/>
+	</label>
+	<label class="block">
+		<span class="yh-label">결제 수단</span>
+		<div class="flex gap-4 py-3">
+			<label class="inline-flex items-center gap-1.5 text-[13px]">
+				<input type="radio" name="payment_method" value="cash" checked?={ row.PaymentMethod == "cash" || row.PaymentMethod == "" } required/>
+				<span>현금</span>
+			</label>
+			<label class="inline-flex items-center gap-1.5 text-[13px]">
+				<input type="radio" name="payment_method" value="card" checked?={ row.PaymentMethod == "card" }/>
+				<span>카드</span>
+			</label>
+		</div>
+	</label>
+	<label class="block">
+		<span class="yh-label">받는 돈 (매출)</span>
+		<input name="price" type="number" min="0" step="1000" class="yh-input tabular-nums" required value={ int64ToStr(row.Price) } placeholder="200000"/>
+	</label>
+	<label class="block">
+		<span class="yh-label">적립 금액 (잔액 반영)</span>
+		<input name="credit_amount" type="number" min="0" step="1000" class="yh-input tabular-nums" required value={ int64ToStr(row.CreditAmount) } placeholder="240000"/>
+	</label>
+	<label class="block">
+		<span class="yh-label">정렬 순서</span>
+		<input name="display_order" type="number" min="0" class="yh-input tabular-nums" value={ int64ToStr(row.DisplayOrder) } placeholder="10"/>
+	</label>
+	<label class="block sm:col-span-2">
+		<span class="yh-label">증정품 문구 (선택)</span>
+		<input name="perk_label" class="yh-input" value={ row.PerkLabel } placeholder="홈케어 18,000원 증정"/>
+	</label>
+}
+
+func int64ToStr(n int64) string {
+	return fmt.Sprintf("%d", n)
+}
