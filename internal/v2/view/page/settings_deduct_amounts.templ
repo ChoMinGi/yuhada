@@ -1,0 +1,165 @@
+package page
+
+import (
+	"github.com/mingicho/yuhada/internal/util"
+	"github.com/mingicho/yuhada/internal/v2/view/component"
+	"github.com/mingicho/yuhada/internal/v2/view/layout"
+)
+
+// SettingsDeductAmounts — /v2/admin/settings/deduct-amounts. 차감 금액 프리셋 관리.
+// 세로 리스트 + 드래그 앤 드롭 순서 + 편집/비활성화/삭제.
+templ SettingsDeductAmounts(p SettingsDeductAmountsProps) {
+	@layout.Admin("차감 금액", "settings.deduct") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto" x-data="{ newForm: false }">
+			@component.PageHeader("설정", "차감 금액", "차감 모달에 노출되는 금액 버튼을 관리합니다.") {
+				<button
+					type="button"
+					x-on:click="newForm = !newForm; if (newForm) $nextTick(() => document.querySelector('#dap-new-form input[name=amount]')?.focus())"
+					class="yh-btn yh-btn-primary"
+				>
+					@component.Icon("plus", 14)
+					<span class="ml-2">새 금액 추가</span>
+				</button>
+			}
+
+			<!-- 인라인 신규 폼 (상단 버튼으로 토글) -->
+			<div id="dap-new-form" x-show="newForm" x-cloak x-transition class="yh-card p-6 mb-6">
+				<form
+					method="POST"
+					action="/v2/admin/settings/deduct-amounts"
+					class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 items-end"
+					hx-boost="false"
+				>
+					@deductAmountFormFields(DeductAmountRow{IsActive: true, DisplayOrder: int64((len(p.Rows) + 1) * 10)})
+					<div class="flex gap-2">
+						<button type="button" x-on:click="newForm = false" class="yh-btn yh-btn-ghost yh-btn-sm">취소</button>
+						<button type="submit" class="yh-btn yh-btn-primary yh-btn-sm">추가</button>
+					</div>
+				</form>
+			</div>
+
+			if p.ErrorMsg != "" {
+				<div class="mb-6 text-[12px] text-danger">{ p.ErrorMsg }</div>
+			}
+
+			if len(p.Rows) == 0 {
+				<div class="yh-card p-8 text-center">
+					<p class="yh-headline-xs">등록된 프리셋이 없습니다</p>
+					<p class="text-[13px] text-ink-500 mt-2">"새 금액 추가" 로 첫 프리셋을 등록하세요.</p>
+				</div>
+			} else {
+				<div id="dap-sortable" class="yh-card divide-y divide-sand-200 overflow-hidden">
+					for _, row := range p.Rows {
+						@deductAmountRow(row)
+					}
+				</div>
+				<p class="text-[13px] text-ink-500 mt-3">
+					왼쪽 손잡이(≡)를 눌러 끌어놓으면 순서가 자동 저장됩니다.
+				</p>
+			}
+
+			<!-- 드래그 앤 드롭 순서 저장 -->
+			<script>
+				(function initDapSort() {
+					if (typeof Sortable === 'undefined') { setTimeout(initDapSort, 50); return; }
+					const el = document.getElementById('dap-sortable');
+					if (!el) return;
+					Sortable.create(el, {
+						handle: '.dap-handle',
+						animation: 160,
+						ghostClass: 'opacity-40',
+						onEnd: function () {
+							const ids = Array.from(el.children)
+								.map(function (c) { return c.getAttribute('data-id'); })
+								.filter(Boolean);
+							fetch('/v2/admin/settings/deduct-amounts/reorder', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({ order: ids })
+							});
+						}
+					});
+				})();
+			</script>
+		</div>
+	}
+}
+
+// deductAmountRow — 세로 리스트 한 줄. 편집 모드 x-show 전환.
+templ deductAmountRow(row DeductAmountRow) {
+	<div
+		data-id={ row.ID }
+		class={ "flex flex-col gap-3 p-4 sm:p-5",
+			templ.KV("opacity-50", !row.IsActive) }
+		x-data="{ edit: false }"
+	>
+		<div x-show="!edit" class="flex items-center gap-3 sm:gap-4">
+			<!-- 드래그 손잡이 -->
+			<button type="button" class="dap-handle cursor-move text-ink-500 hover:text-ink-900 shrink-0 p-1" aria-label="순서 변경">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+					<circle cx="9" cy="6" r="1.5"></circle>
+					<circle cx="9" cy="12" r="1.5"></circle>
+					<circle cx="9" cy="18" r="1.5"></circle>
+					<circle cx="15" cy="6" r="1.5"></circle>
+					<circle cx="15" cy="12" r="1.5"></circle>
+					<circle cx="15" cy="18" r="1.5"></circle>
+				</svg>
+			</button>
+
+			<p class="yh-num text-[24px] sm:text-[28px] text-ink-900 flex-1 min-w-0">{ util.FormatKRW(row.Amount) }</p>
+
+			if row.IsActive {
+				<span class="inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] tracking-brand uppercase bg-success/10 text-success border border-success/30 shrink-0">ACTIVE</span>
+			} else {
+				<span class="inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] tracking-brand uppercase text-ink-500 border border-sand-300 shrink-0">OFF</span>
+			}
+
+			<div class="flex items-center gap-3 sm:gap-4 shrink-0">
+				<button type="button" x-on:click="edit = true" class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1">
+					@component.Icon("pencil", 14)
+					편집
+				</button>
+				if row.IsActive {
+					<form hx-post={ "/v2/admin/settings/deduct-amounts/" + row.ID + "/deactivate" } hx-swap="none">
+						<button type="submit" class="text-[13px] text-ink-500 hover:text-ink-900">비활성화</button>
+					</form>
+				} else {
+					<form hx-post={ "/v2/admin/settings/deduct-amounts/" + row.ID + "/reactivate" } hx-swap="none">
+						<button type="submit" class="text-[13px] text-success">재활성화</button>
+					</form>
+				}
+				<form
+					hx-delete={ "/v2/admin/settings/deduct-amounts/" + row.ID }
+					hx-swap="none"
+					hx-confirm={ "이 금액(" + util.FormatKRW(row.Amount) + ")을 완전히 삭제할까요? 되돌릴 수 없습니다." }
+				>
+					<button type="submit" class="text-[13px] text-danger">삭제</button>
+				</form>
+			</div>
+		</div>
+
+		<!-- 편집 인라인 폼 -->
+		<form
+			x-show="edit"
+			x-cloak
+			hx-patch={ "/v2/admin/settings/deduct-amounts/" + row.ID }
+			hx-swap="none"
+			class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end"
+		>
+			@deductAmountFormFields(row)
+			<div class="flex justify-end gap-2">
+				<button type="button" x-on:click="edit = false" class="yh-btn yh-btn-ghost yh-btn-sm">취소</button>
+				<button type="submit" class="yh-btn yh-btn-primary yh-btn-sm">저장</button>
+			</div>
+		</form>
+	</div>
+}
+
+// deductAmountFormFields — 금액 입력 + display_order hidden (드래그로 관리됨).
+templ deductAmountFormFields(row DeductAmountRow) {
+	<label class="block">
+		<span class="yh-label">금액 (원)</span>
+		<input name="amount" type="number" min="1" step="1000" class="yh-input tabular-nums" required value={ int64ToStr(row.Amount) } placeholder="20000"/>
+	</label>
+	<input name="display_order" type="hidden" value={ int64ToStr(row.DisplayOrder) }/>
+}
