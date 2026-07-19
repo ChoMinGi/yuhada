@@ -1,0 +1,290 @@
+package page
+
+import (
+	"github.com/mingicho/yuhada/internal/v2/view/component"
+	"github.com/mingicho/yuhada/internal/v2/view/layout"
+)
+
+// MemberDetail — /v2/admin/members/{id}.
+// 배치 순서: 헤더 → BALANCE → MEMBERSHIPS (신규) → CARD → MEMO → 최근 거래.
+templ MemberDetail(p MemberDetailProps) {
+	@layout.Admin(p.Name, "members") {
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-[820px] mx-auto">
+			<a href="/v2/admin/members" class="yh-eyebrow-xs inline-flex items-center gap-1.5 mb-6">
+				@component.Icon("chevron-left", 12)
+				회원 관리
+			</a>
+
+			<header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 sm:gap-8 mb-8 sm:mb-10">
+				<div class="min-w-0 flex-1">
+					<p class="yh-eyebrow mb-4 flex items-center gap-2">
+						<span>회원</span>
+						if !p.Active {
+							<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] tracking-brand uppercase text-danger border border-danger">비활성</span>
+						}
+					</p>
+					<h1 class="yh-headline-l text-[26px] sm:text-[32px] leading-tight">{ p.Name }</h1>
+					<p class="text-[16px] sm:text-[17px] text-ink-700 tabular-nums mt-3">{ p.Phone }</p>
+				</div>
+				<div class="shrink-0 sm:w-[180px]">
+					if p.Active {
+						<div class="flex sm:flex-col gap-2">
+							<button
+								class="yh-btn yh-btn-primary flex-1 sm:flex-none"
+								hx-get={ "/v2/admin/members/" + p.ID + "/charge/modal" }
+								hx-target="#modal-root"
+							>충전</button>
+							<button
+								class="yh-btn yh-btn-secondary flex-1 sm:flex-none"
+								hx-get={ "/v2/admin/members/" + p.ID + "/deduct/modal" }
+								hx-target="#modal-root"
+							>차감</button>
+						</div>
+					}
+				</div>
+			</header>
+
+			@memberBalanceCard(p)
+
+			<div class="mt-8 sm:mt-10 grid gap-6 sm:gap-8">
+				@MemberMemoRow(p)
+			</div>
+
+			<h2 class="yh-display-s mt-10 mb-4">최근 거래</h2>
+			<div class="yh-card overflow-hidden">
+				@memberTransactions(p.RecentTxs)
+			</div>
+
+			<!-- Danger zone: 가장 마지막 액션. 실수 방지 위해 하단 격리 + 명확한 디바이더 -->
+			<hr class="mt-20 mb-8 border-0 h-px bg-ink-500/30"/>
+			<footer class="flex justify-center">
+				<button
+					class="yh-eyebrow-xs text-danger inline-flex items-center gap-1.5 hover:opacity-80 py-2 px-4"
+					hx-delete={ "/v2/admin/members/" + p.ID }
+					hx-confirm="정말 이 회원을 삭제하시겠습니까? 거래 내역도 함께 삭제됩니다."
+				>
+					@component.Icon("trash-2", 12)
+					회원 삭제
+				</button>
+			</footer>
+		</div>
+	}
+}
+
+templ memberBalanceCard(p MemberDetailProps) {
+	<div class="yh-card p-5 sm:p-8">
+		<p class="yh-eyebrow mb-3 sm:mb-4">잔액</p>
+		<p class="yh-num text-[40px] sm:text-[48px] lg:text-[56px] whitespace-nowrap">{ p.Balance }</p>
+		<div class="mt-5 sm:mt-8 pt-4 sm:pt-6 border-t border-sand-200 grid grid-cols-2 gap-4 sm:gap-8">
+			<div>
+				<p class="yh-eyebrow mb-1.5 sm:mb-2">총 충전</p>
+				<p class="yh-num text-[17px] sm:text-[20px] whitespace-nowrap">{ p.TotalIn }</p>
+			</div>
+			<div>
+				<p class="yh-eyebrow mb-1.5 sm:mb-2">총 차감</p>
+				<p class="yh-num text-[17px] sm:text-[20px] whitespace-nowrap">{ p.TotalOut }</p>
+			</div>
+		</div>
+	</div>
+}
+
+// memberMembershipsSection — 정액권 판매 이력 카드 리스트.
+// pricing-model §6 표시 규칙 준수: tier_label · pay_method · purchased_at · +credit_amount · perk_label.
+templ memberMembershipsSection(p MemberDetailProps) {
+	<section>
+		<div class="flex items-end justify-between mb-4">
+			<h2 class="yh-headline-s">정액권 이력</h2>
+			<p class="yh-eyebrow-xs">정액권 이력 { membershipCountStr(p) }</p>
+		</div>
+		if len(p.Memberships) == 0 {
+			<div class="yh-card p-8 text-center">
+				<p class="yh-body-sm text-ink-500">아직 정액권 판매 이력이 없습니다.</p>
+			</div>
+		} else {
+			<ul class="list-none m-0 p-0 flex flex-col gap-3">
+				for _, ms := range p.Memberships {
+					<li class="yh-card p-5 sm:p-6 flex items-start justify-between gap-4">
+						<div class="min-w-0 flex-1">
+							<p class="yh-eyebrow-xs mb-1.5 flex items-center gap-1.5 flex-wrap">
+								<span>{ ms.TierLabel }</span>
+								if ms.PayMethod != "" {
+									<span class="text-ink-500">·</span>
+									<span>{ payMethodLabel(ms.PayMethod) }</span>
+								}
+								if ms.Status != "" && ms.Status != "active" {
+									<span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] tracking-brand uppercase text-ink-500 border border-sand-300">{ ms.Status }</span>
+								}
+							</p>
+							<p class="text-[12px] text-ink-500 tabular-nums">{ ms.PurchasedAt }</p>
+							if ms.PerkLabel != "" {
+								<p class="text-[12px] text-ink-700 mt-2 flex items-start gap-1.5">
+									<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700">PERK</span>
+									<span class="flex-1">{ ms.PerkLabel }</span>
+								</p>
+							}
+						</div>
+						<p class="yh-num text-[18px] sm:text-[20px] text-success shrink-0">+{ ms.CreditAmount }</p>
+					</li>
+				}
+			</ul>
+		}
+	</section>
+}
+
+templ memberCardRow(p MemberDetailProps) {
+	<div class="flex items-center justify-between gap-4 py-5 border-b border-sand-200">
+		<div>
+			<p class="yh-eyebrow-xs mb-2">카드</p>
+			if p.Card != "" {
+				<p class="font-mono text-[13px] text-ink-700">{ p.Card }</p>
+			} else {
+				<span class="inline-flex items-center px-2 py-0.5 rounded-sm border border-sand-300 text-[10px] tracking-brand uppercase text-ink-500">미발급</span>
+			}
+		</div>
+		if p.Card != "" {
+			<button
+				x-data="{ copied:false }"
+				x-on:click={ "navigator.clipboard.writeText('" + p.Card + "'); copied=true; setTimeout(()=>copied=false, 1500)" }
+				class="yh-eyebrow-xs inline-flex items-center gap-1.5"
+			>
+				<span x-show="!copied">복사</span>
+				<span x-show="copied" x-cloak class="text-success">복사됨</span>
+			</button>
+		}
+	</div>
+}
+
+// MemberMemoRow — HTMX view partial. 핸들러가 GET /v2/admin/members/{id}/memo 에서 렌더.
+templ MemberMemoRow(p MemberDetailProps) {
+	<div id="member-memo" class="py-5">
+		<div class="flex items-center justify-between gap-4 mb-2">
+			<p class="yh-eyebrow">메모</p>
+			<button
+				class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1.5 shrink-0 py-1 px-2 rounded transition"
+				hx-get={ "/v2/admin/members/" + p.ID + "/memo/edit" }
+				hx-target="#member-memo"
+				hx-swap="outerHTML"
+			>
+				@component.Icon("pencil", 14)
+				<span>수정</span>
+			</button>
+		</div>
+		<p class="text-[15px] sm:text-[16px] text-ink-900 leading-relaxed break-all">
+			if p.Memo != "" {
+				{ p.Memo }
+			} else {
+				<span class="text-ink-500 italic">메모 없음</span>
+			}
+		</p>
+	</div>
+}
+
+// MemberMemoEdit — 편집 mode (textarea + 저장/취소).
+templ MemberMemoEdit(p MemberDetailProps) {
+	<form
+		id="member-memo"
+		hx-patch={ "/v2/admin/members/" + p.ID + "/memo" }
+		hx-target="#member-memo"
+		hx-swap="outerHTML"
+		class="py-5"
+	>
+		<p class="yh-eyebrow mb-2">메모</p>
+		<textarea name="memo" rows="3" class="yh-input" autofocus>{ p.Memo }</textarea>
+		<div class="flex gap-2 mt-3">
+			<button type="submit" class="yh-btn yh-btn-primary yh-btn-sm">저장</button>
+			<button
+				type="button"
+				class="yh-btn yh-btn-ghost yh-btn-sm"
+				hx-get={ "/v2/admin/members/" + p.ID + "/memo" }
+				hx-target="#member-memo"
+				hx-swap="outerHTML"
+			>취소</button>
+		</div>
+	</form>
+}
+
+// memberTransactions — 최근 거래. R3 LEFT JOIN 결과: TierLabel 있으면 뱃지.
+templ memberTransactions(txs []MemberTx) {
+	<ul class="list-none m-0 p-0">
+		if len(txs) == 0 {
+			<li class="text-center py-16 px-6">
+				<p class="yh-headline-xs">아직 거래 내역이 없습니다</p>
+				<p class="text-[13px] text-ink-500 mt-2">충전하거나 차감하면 여기에 표시됩니다.</p>
+			</li>
+		}
+		for _, t := range txs {
+			<li class="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 sm:py-5 border-b border-sand-200 last:border-0">
+				<div
+					class={ "w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
+						templ.KV("bg-sand-100 text-ink-900", t.Type != "charge"),
+						templ.KV("bg-sand-50 text-success", t.Type == "charge") }
+				>
+					if t.Type == "charge" {
+						@component.Icon("trending-up", 15)
+					} else {
+						@component.Icon("trending-down", 15)
+					}
+				</div>
+				<div class="flex-1 min-w-0">
+					<p class="text-[14px] sm:text-[15px] font-medium flex items-center gap-2 flex-wrap">
+						if t.TierLabel != "" {
+							<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700">
+								{ t.TierLabel }
+								if t.PayMethod != "" {
+									<span class="ml-1">· { payMethodLabel(t.PayMethod) }</span>
+								}
+							</span>
+						}
+						if t.Memo != "" {
+							<span class="truncate">{ t.Memo }</span>
+						} else if t.Type == "charge" && t.TierLabel == "" {
+							<span>일반 충전</span>
+						} else if t.Type != "charge" {
+							<span>차감</span>
+						}
+						// tier 있는 charge 는 뱃지 자체가 정보 전달 — 추가 텍스트 없음
+					</p>
+					<p class="text-[12px] text-ink-500 tabular-nums mt-0.5">{ t.At }</p>
+					if t.PerkLabel != "" {
+						<p class="text-[11px] text-ink-500 mt-1">증정 · { t.PerkLabel }</p>
+					}
+				</div>
+				<p
+					class={ "yh-num text-[17px] sm:text-[19px] shrink-0 tabular-nums whitespace-nowrap",
+						templ.KV("text-success", t.Type == "charge"),
+						templ.KV("text-ink-900", t.Type != "charge") }
+				>
+					{ t.Amount }
+				</p>
+			</li>
+		}
+	</ul>
+}
+
+// payMethodLabel — 'cash'/'card' → 한국어.
+func payMethodLabel(m string) string {
+	switch m {
+	case "cash":
+		return "현금"
+	case "card":
+		return "카드"
+	}
+	return m
+}
+
+// membershipCountStr — "3건" 형식.
+func membershipCountStr(p MemberDetailProps) string {
+	n := len(p.Memberships)
+	if n == 0 {
+		return "0건"
+	}
+	// 간단 itoa (fmt 안 쓰고 두께 최소화).
+	buf := [8]byte{}
+	i := len(buf)
+	for n > 0 {
+		i--
+		buf[i] = byte('0' + n%10)
+		n /= 10
+	}
+	return string(buf[i:]) + "건"
+}
