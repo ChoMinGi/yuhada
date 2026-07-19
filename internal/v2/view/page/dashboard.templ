@@ -1,0 +1,118 @@
+package page
+
+import (
+	"github.com/mingicho/yuhada/internal/v2/view/component"
+	"github.com/mingicho/yuhada/internal/v2/view/layout"
+)
+
+// Dashboard — /v2/admin. v1 랜딩 스타일 재구성.
+// 상단 기간 필터 → 큰 날짜 → 차감/충전 카드 2장 → 최근 활동 리스트.
+templ Dashboard(p DashboardProps) {
+	@layout.Admin("대시보드", "dashboard") {
+		<div class="px-4 py-6 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
+			<!-- 기간 필터 pill -->
+			<nav class="inline-flex bg-sand-100 rounded-md p-1 mb-8 sm:mb-10" aria-label="기간 필터">
+				@dashPeriodTab(p.Period, "today", "오늘")
+				@dashPeriodTab(p.Period, "this-week", "이번 주")
+				@dashPeriodTab(p.Period, "this-month", "이번 달")
+				@dashPeriodTab(p.Period, "all", "전체")
+			</nav>
+
+			<header class="mb-6 sm:mb-8">
+				<p class="yh-eyebrow mb-2 sm:mb-3">{ p.PeriodLabel }</p>
+				<h1 class="yh-headline-l text-[26px] sm:text-[32px] leading-tight">{ p.DateTitle }</h1>
+			</header>
+
+			<!-- 차감 / 충전 카드 2장 -->
+			<section class="grid grid-cols-2 gap-3 sm:gap-4 mb-8 sm:mb-12">
+				<div class="yh-card p-4 sm:p-6">
+					<p class="yh-eyebrow-xs mb-2">
+						if p.Period == "today" {
+							오늘 차감
+						} else {
+							기간 차감
+						}
+					</p>
+					<p class="yh-num text-[22px] sm:text-[32px] text-ink-900 whitespace-nowrap">{ p.DeductTotal }</p>
+				</div>
+				<div class="yh-card p-4 sm:p-6">
+					<p class="yh-eyebrow-xs mb-2">
+						if p.Period == "today" {
+							오늘 충전
+						} else {
+							기간 충전
+						}
+					</p>
+					<p class="yh-num text-[22px] sm:text-[32px] text-ink-900 whitespace-nowrap">{ p.ChargeTotal }</p>
+				</div>
+			</section>
+
+			<!-- 최근 활동 -->
+			<section>
+				<div class="flex items-center justify-between mb-3 sm:mb-4">
+					<h2 class="yh-display-s">Recent Activity</h2>
+					<a href="/v2/admin/members" class="text-[12px] sm:text-[13px] text-ink-500 inline-flex items-center gap-1 hover:text-ink-900">
+						전체 보기
+						@component.Icon("chevron-right", 12)
+					</a>
+				</div>
+				if len(p.Recent) == 0 {
+					<div class="yh-card p-8 text-center">
+						<p class="text-[13px] text-ink-500">아직 활동이 없어요</p>
+					</div>
+				} else {
+					<ul class="yh-card divide-y divide-sand-200 overflow-hidden">
+						for _, a := range p.Recent {
+							@dashActivityRow(a)
+						}
+					</ul>
+				}
+			</section>
+		</div>
+	}
+}
+
+// dashPeriodTab — 기간 필터 pill 한 개.
+templ dashPeriodTab(current, key, label string) {
+	<a
+		href={ templ.SafeURL("/v2/admin?period=" + key) }
+		class={ "px-3 sm:px-4 py-1.5 rounded text-[13px] sm:text-[14px] transition",
+			templ.KV("bg-ink-900 text-sand-50", current == key),
+			templ.KV("text-ink-700 hover:bg-sand-200/60", current != key) }
+	>{ label }</a>
+}
+
+// dashActivityRow — 최근 활동 한 줄.
+templ dashActivityRow(a DashActivity) {
+	<li class="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-sand-50/60 transition">
+		<div class={ "w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
+			templ.KV("bg-sand-100 text-success", a.Type == "charge"),
+			templ.KV("bg-sand-100 text-ink-500", a.Type != "charge") }
+		>
+			if a.Type == "charge" {
+				@component.Icon("trending-up", 14)
+			} else {
+				@component.Icon("trending-down", 14)
+			}
+		</div>
+		<a href={ templ.SafeURL("/v2/admin/members/" + a.MemberID) } class="flex-1 min-w-0">
+			<p class="text-[14px] sm:text-[15px] font-medium text-ink-900 truncate">{ a.MemberName }</p>
+			<p class="text-[11px] sm:text-[12px] text-ink-500 mt-0.5 truncate">
+				if a.Memo != "" {
+					{ a.Memo } · { a.At }
+				} else {
+					if a.Type == "charge" {
+						충전 · { a.At }
+					} else {
+						차감 · { a.At }
+					}
+				}
+			</p>
+		</a>
+		<p
+			class={ "yh-num text-[14px] sm:text-[16px] shrink-0 tabular-nums whitespace-nowrap",
+				templ.KV("text-success", a.Type == "charge"),
+				templ.KV("text-ink-900", a.Type != "charge") }
+		>{ a.Amount }</p>
+	</li>
+}
