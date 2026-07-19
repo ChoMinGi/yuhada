@@ -1,0 +1,199 @@
+package page
+
+import (
+	"fmt"
+
+	"github.com/mingicho/yuhada/internal/util"
+	"github.com/mingicho/yuhada/internal/v2/view/component"
+)
+
+// DeductModal — GET /v2/admin/members/{id}/deduct/modal partial.
+// "차감하기" 클릭 시 즉시 실행이 아니라 확인 화면으로 슬라이드 전환.
+templ DeductModal(p DeductModalProps) {
+	<div
+		class="yh-card w-full max-w-[440px] max-h-[90vh] overflow-y-auto"
+		x-data={ deductModalAlpine(p) }
+		x-init="$nextTick(() => shown = true)"
+		x-show="shown"
+		x-transition:enter="transition ease-out duration-250"
+		x-transition:enter-start="opacity-0 scale-95"
+		x-transition:enter-end="opacity-100 scale-100"
+	>
+		<header class="p-8 pb-0 flex items-start justify-between gap-6">
+			<div>
+				<p class="yh-eyebrow mb-2">차감</p>
+				<h2 class="yh-headline-m" x-text="step === 'confirm' ? '확인' : '차감'"></h2>
+				<p class="yh-body-sm text-ink-500 mt-1" x-show="step === 'confirm'" x-cloak>이대로 진행할까요?</p>
+			</div>
+			<button class="p-1.5 text-ink-500" x-on:click="$dispatch('closemodal')" aria-label="닫기">
+				@component.Icon("x", 18)
+			</button>
+		</header>
+
+		<div class="p-8 relative">
+			<!-- STEP 1: 입력 화면 -->
+			<div
+				x-show="step === 'form'"
+				x-transition:enter="transition ease-out duration-250"
+				x-transition:enter-start="opacity-0 -translate-x-6"
+				x-transition:enter-end="opacity-100 translate-x-0"
+				x-transition:leave="transition ease-in duration-200"
+				x-transition:leave-start="opacity-100 translate-x-0"
+				x-transition:leave-end="opacity-0 -translate-x-6"
+			>
+				<label class="yh-label">차감 금액</label>
+				<div class="flex items-baseline gap-2 border-b border-sand-300 pb-2 focus-within:border-ink-900">
+					<span class="yh-num text-[40px] text-ink-500">₩</span>
+					<input
+						type="text"
+						inputmode="numeric"
+						autocomplete="off"
+						autofocus
+						x-model="amountStr"
+						x-on:input="amount = parseInt((amountStr||'').replace(/[^0-9]/g, '')) || 0; amountStr = amount > 0 ? amount.toLocaleString('ko-KR') : ''"
+						class="yh-num flex-1 bg-transparent border-0 outline-none text-[40px] text-ink-900 p-0"
+					/>
+				</div>
+
+				if len(p.DeductAmts) > 0 {
+					<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
+						for _, n := range p.DeductAmts {
+							<button
+								type="button"
+								x-on:click={ fmt.Sprintf("setAmount(%d)", n) }
+								x-bind:class={ fmt.Sprintf("amount === %d ? 'bg-ink-900 text-sand-50 border-ink-900' : 'bg-transparent text-ink-900 border-sand-300 hover:border-ink-900'", n) }
+								class="h-11 border rounded text-[11px] tracking-brand uppercase tabular-nums transition"
+							>
+								{ util.FormatKRW(n) }
+							</button>
+						}
+					</div>
+				}
+
+				<div class="mt-7">
+					<label class="yh-label" for="deduct-service">시술 / 메모</label>
+					<input
+						id="deduct-service"
+						type="text"
+						maxlength="50"
+						x-model="service"
+						placeholder="예: 디자이너 컷, 매직스트레이트"
+						class="yh-input"
+					/>
+					if len(p.ServiceMemos) > 0 {
+						<div class="flex flex-wrap gap-1.5 mt-3">
+							for _, preset := range p.ServiceMemos {
+								<button
+									type="button"
+									x-on:click={ fmt.Sprintf("service = %q", preset) }
+									x-bind:class={ fmt.Sprintf("service === %q ? 'bg-ink-900 text-sand-50 border-ink-900' : 'bg-transparent text-ink-700 border-sand-300 hover:border-ink-900'", preset) }
+									class="px-2.5 h-7 border rounded-sm text-[11px] tracking-brand uppercase transition"
+								>
+									{ preset }
+								</button>
+							}
+						</div>
+					}
+				</div>
+
+				<div class="flex gap-3 mt-8">
+					<button type="button" class="yh-btn yh-btn-ghost flex-1" x-on:click="$dispatch('closemodal')">취소</button>
+					<button
+						type="button"
+						class="yh-btn yh-btn-primary flex-1"
+						x-on:click="goConfirm()"
+						x-bind:disabled="amount <= 0"
+					>다음</button>
+				</div>
+			</div>
+
+			<!-- STEP 2: 확인 화면 -->
+			<div
+				x-show="step === 'confirm'"
+				x-cloak
+				x-transition:enter="transition ease-out duration-300"
+				x-transition:enter-start="opacity-0 translate-x-8"
+				x-transition:enter-end="opacity-100 translate-x-0"
+				x-transition:leave="transition ease-in duration-200"
+				x-transition:leave-start="opacity-100 translate-x-0"
+				x-transition:leave-end="opacity-0 translate-x-8"
+			>
+				<div class="yh-card p-6 sm:p-8 flex flex-col items-center text-center gap-3">
+					<p class="yh-eyebrow-xs text-ink-500">CONFIRM</p>
+					<p class="text-[15px] sm:text-[16px] text-ink-900">
+						<span class="font-semibold" x-text="memberName"></span>님
+					</p>
+					<div>
+						<p x-show="service" class="mb-1" x-cloak>
+							<span class="inline-flex items-center px-2 py-0.5 rounded-sm bg-sand-100 text-[11px] tracking-brand uppercase text-ink-700" x-text="service"></span>
+						</p>
+						<p class="yh-num text-[32px] sm:text-[38px] text-ink-900 whitespace-nowrap" x-text="'−₩' + (amount||0).toLocaleString('ko-KR')"></p>
+					</div>
+					<p class="text-[13px] text-ink-500 mt-1">위 금액을 차감하시겠습니까?</p>
+				</div>
+
+				<div class="flex gap-3 mt-6">
+					<button
+						type="button"
+						x-on:click="cancel()"
+						class="yh-btn yh-btn-ghost flex-1"
+						x-bind:disabled="submitting"
+					>취소</button>
+					<button
+						type="button"
+						x-on:click="submit()"
+						class="yh-btn yh-btn-primary flex-1"
+						x-bind:disabled="submitting"
+					>
+						<span x-show="!submitting">차감 확정</span>
+						<span x-show="submitting" x-cloak>처리 중...</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+// deductModalAlpine — Alpine 상태 (JSON 리터럴).
+// step: form | confirm.  submit(): fetch → 모달 닫고 페이지 새로고침.
+func deductModalAlpine(p DeductModalProps) string {
+	return `{
+		shown: false,
+		step: 'form',
+		submitting: false,
+		amount: 0,
+		amountStr: '',
+		service: '',
+		memberID: '` + p.MemberID + `',
+		memberName: ` + templJSString(p.MemberName) + `,
+		setAmount(n) { this.amount = n; this.amountStr = n.toLocaleString('ko-KR'); },
+		goConfirm() {
+			if (this.amount <= 0) return;
+			this.step = 'confirm';
+		},
+		cancel() { this.step = 'form'; },
+		async submit() {
+			if (this.submitting || this.amount <= 0) return;
+			if (window.__v2DeductInFlight) return;
+			window.__v2DeductInFlight = true;
+			this.submitting = true;
+			const body = new URLSearchParams();
+			body.append('amount', String(this.amount));
+			body.append('service_name', this.service || '');
+			try {
+				const res = await fetch('/v2/admin/members/' + this.memberID + '/deduct', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					body
+				});
+				if (!res.ok) throw new Error('차감 실패: ' + res.status);
+				window.dispatchEvent(new CustomEvent('closemodal'));
+				setTimeout(() => window.location.reload(), 220);
+			} catch (e) {
+				this.submitting = false;
+				window.__v2DeductInFlight = false;
+				alert(e.message || '차감 실패');
+			}
+		}
+	}`
+}
