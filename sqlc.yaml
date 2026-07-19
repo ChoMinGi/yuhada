@@ -20,3 +20,32 @@ sql:
             go_type: "bool"
           - column: "admin_users.is_active"
             go_type: "bool"
+
+  # ───── V2 (테스트 환경) ─────
+  # isolation-rules.md §1-2: 별도 dbgen 패키지 (internal/v2/db/dbgen).
+  # v1 dbgen과 타입/함수가 이름은 겹칠 수 있지만 import 경로가 다름 (v2 전용 패키지 절대 경로).
+  - engine: "sqlite"
+    queries: "internal/v2/db/queries"
+    schema: "migrations-v2"
+    gen:
+      go:
+        package: "dbgen"
+        out: "internal/v2/db/dbgen"
+        sql_package: "database/sql"
+        emit_interface: false
+        emit_json_tags: true
+        json_tags_case_style: "camel"
+        emit_db_tags: false
+        emit_empty_slices: true
+        emit_prepared_queries: false
+        overrides:
+          - column: "members.is_active"
+            go_type: "bool"
+          - column: "admin_users.is_active"
+            go_type: "bool"
+          - column: "membership_plans.is_active"
+            go_type: "bool"
+          - column: "deduct_amount_presets.is_active"
+            go_type: "bool"
+          - column: "service_memo_presets.is_active"
+            go_type: "bool"

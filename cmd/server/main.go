@@ -16,6 +16,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/mingicho/yuhada/internal/auth"
 	"github.com/mingicho/yuhada/internal/config"
 	"github.com/mingicho/yuhada/internal/crypto"
@@ -23,6 +25,14 @@ import (
 	"github.com/mingicho/yuhada/internal/handler"
 	"github.com/mingicho/yuhada/internal/service"
 	"github.com/mingicho/yuhada/internal/sms"
+
+	// V2 — dev only (옵션 C 정책, isolation-rules.md §6)
+	v2auth "github.com/mingicho/yuhada/internal/v2/auth"
+	v2handler "github.com/mingicho/yuhada/internal/v2/handler"
+	v2migrate "github.com/mingicho/yuhada/internal/v2/migrate"
+	v2seed "github.com/mingicho/yuhada/internal/v2/seed"
+	v2service "github.com/mingicho/yuhada/internal/v2/service"
+	v2sms "github.com/mingicho/yuhada/internal/v2/sms"
 )
 
 func main() {
@@ -92,9 +102,57 @@ func main() {
 	}
 	router := handler.NewRouter(deps)
 
+	// ───── V2 마운트 (dev only — 옵션 C, isolation-rules.md §6) ─────
+	root := chi.NewMux()
+	root.Mount("/", router)
+
+	if !cfg.IsProd() {
+		if err := os.MkdirAll(filepath.Dir(cfg.DBV2Path), 0o750); err != nil {
+			logger.Error("v2 mkdir failed", "err", err)
+			os.Exit(1)
+		}
+		v2DB, err := db.Open(cfg.DBV2Path)
+		if err != nil {
+			logger.Error("v2 db open failed", "err", err, "path", cfg.DBV2Path)
+			os.Exit(1)
+		}
+		defer v2DB.Close()
+		logger.Info("v2 db opened", "path", cfg.DBV2Path)
+
+		// R7: 자동 마이그레이션 (goose in-process). seed 이전.
+		if err := v2migrate.Up(v2DB); err != nil {
+			logger.Error("v2 migrate failed", "err", err)
+			os.Exit(1)
+		}
+		logger.Info("v2 migrate applied")
+
+		v2Session := v2auth.NewSessionManager(v2DB, cfg.CookieSecure)
+		v2Services := v2service.New(v2DB, enc)
+		v2SMS := v2sms.New()
+
+		// 시드는 실패해도 부팅 계속 (Warn 만).
+		seedCtx, seedCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if err := v2seed.EnsureSeeded(seedCtx, v2DB, v2Services); err != nil {
+			logger.Warn("v2 seed failed", "err", err)
+		}
+		seedCancel()
+
+		v2Router := v2handler.NewRouter(&v2handler.Deps{
+			Session:     v2Session,
+			Services:    v2Services,
+			SMS:         v2SMS,
+			AdminPIN:    cfg.AdminPinV2,
+			EnableDebug: true,
+		})
+		root.Mount("/v2", v2Router)
+		logger.Info("v2 mounted at /v2 (dev)")
+	} else {
+		logger.Info("v2 mount skipped (prod policy — isolation-rules §6)")
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           router,
+		Handler:           root,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,

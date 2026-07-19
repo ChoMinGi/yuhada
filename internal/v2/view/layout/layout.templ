@@ -1,0 +1,215 @@
+// Package layout — v2 페이지 공통 HTML shell.
+//
+// v1 layout 을 참조하되 import 하지 않고 v2 안에서 재구현
+// (isolation-rules §1-2). 최상단에 TestBanner 를 무조건 노출한다.
+package layout
+
+import "github.com/mingicho/yuhada/internal/v2/view/component"
+
+// NavItem — 사이드바 항목.
+type NavItem struct {
+	Key, Label, Icon, Href string
+}
+
+// AdminNavTop — 상단(그룹 없는) 메인 링크.
+var AdminNavTop = []NavItem{
+	{"dashboard", "대시보드", "layout-dashboard", "/v2/admin"},
+	{"sales", "매출", "trending-up", "/v2/admin/sales"},
+	{"members", "회원 관리", "users", "/v2/admin/members"},
+}
+
+// AdminNavSettings — "설정" 그룹 하위 링크. 아이콘은 표시하지 않고 서브 항목으로 렌더.
+var AdminNavSettings = []NavItem{
+	{"settings.plans", "충전 보너스", "package", "/v2/admin/settings/plans"},
+	{"settings.deduct", "차감 금액", "trending-down", "/v2/admin/settings/deduct-amounts"},
+	{"settings.memos", "시술 메모", "pencil", "/v2/admin/settings/service-memos"},
+}
+
+// Admin — 사이드바 + 메인 컨텐츠 + TEST 배너 + 모달/토스트 mount points.
+// 페이지 최상단 32px 는 항상 TEST 배너가 차지한다.
+templ Admin(title string, activeKey string) {
+	<!DOCTYPE html>
+	<html lang="ko" class="h-full">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } · YUHADA HAIR (v2 TEST)</title>
+			<link rel="stylesheet" href="/static/css/app.css"/>
+			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
+			<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
+			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+			<script>
+				// Alpine 3.14는 MutationObserver로 새 DOM을 자동 init.
+				// 이미 초기화된 노드(_x_dataStack)는 skip해서 이중 리스너를 방지한다.
+				document.addEventListener('htmx:afterSwap', function (e) {
+					if (window.Alpine && e.detail && e.detail.elt) {
+						Array.prototype.forEach.call(e.detail.elt.children, function (c) {
+							if (!c._x_dataStack) window.Alpine.initTree(c);
+						});
+					}
+				});
+			</script>
+		</head>
+		<body
+			class="h-full overflow-hidden bg-sand-50 text-ink-900 font-sans"
+			x-data="{ nav: false }"
+			x-on:htmx:after-swap.window="nav = false"
+		>
+			@component.TestBanner()
+
+			<!-- Mobile top bar — md 미만에서만 표시. TEST 배너(top:0, h-8) 아래로 밀림. -->
+			<div class="md:hidden fixed top-8 left-0 right-0 h-12 z-30 flex items-center px-4 bg-sand-50/90 backdrop-blur border-b border-sand-200">
+				<button
+					type="button"
+					x-on:click="nav = true"
+					class="p-2 -ml-2 text-ink-900"
+					aria-label="메뉴 열기"
+				>
+					@component.Icon("menu", 20)
+				</button>
+				<a href="/v2/admin" class="ml-2 leading-none flex items-baseline gap-2">
+					<span class="font-display italic text-[18px] tracking-wide-serif text-ink-900">yhd</span>
+					<span class="text-[13px] text-ink-700">유하다 헤어</span>
+				</a>
+			</div>
+
+			<!-- 모바일 드로어 backdrop -->
+			<div
+				x-show="nav"
+				x-cloak
+				x-on:click="nav = false"
+				x-transition.opacity.duration.150ms
+				class="md:hidden fixed inset-0 z-30 bg-ink-900/40"
+			></div>
+
+			<!-- 전체 화면에서 TEST 배너 32px 만큼 위쪽 여유. -->
+			<div class="flex h-full pt-8">
+				@adminSidebar(activeKey)
+				<main class="flex-1 overflow-y-auto pt-12 md:pt-0 yh-page-enter">
+					{ children... }
+				</main>
+			</div>
+			@modalRoot()
+			@toastRoot()
+		</body>
+	</html>
+}
+
+// Bare — 사이드바 없는 풀스크린 (로그인 등). TEST 배너는 그대로 노출.
+templ Bare(title string) {
+	<!DOCTYPE html>
+	<html lang="ko">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } · YUHADA HAIR (v2 TEST)</title>
+			<link rel="stylesheet" href="/static/css/app.css"/>
+			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
+			<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
+			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+			<script>
+				document.addEventListener('htmx:afterSwap', function (e) {
+					if (window.Alpine && e.detail && e.detail.elt) {
+						Array.prototype.forEach.call(e.detail.elt.children, function (c) {
+							if (!c._x_dataStack) window.Alpine.initTree(c);
+						});
+					}
+				});
+			</script>
+		</head>
+		<body class="bg-sand-50 text-ink-900 font-sans min-h-screen pt-8">
+			@component.TestBanner()
+			{ children... }
+			@modalRoot()
+			@toastRoot()
+		</body>
+	</html>
+}
+
+templ adminSidebar(activeKey string) {
+	<aside
+		class="w-[220px] shrink-0 bg-sand-100 border-r border-sand-200 flex flex-col h-full
+		       fixed top-8 bottom-0 left-0 z-40 transform -translate-x-full transition-transform duration-200 ease-out
+		       md:relative md:top-0 md:translate-x-0 md:transition-none"
+		x-bind:class="nav && '!translate-x-0'"
+		x-on:click="$event.target.closest('a, button[type=submit]') && (nav = false)"
+	>
+		<div class="p-8 border-b border-sand-200">
+			<a href="/v2/admin" class="flex flex-col items-start leading-none">
+				<div class="flex items-baseline gap-2">
+					<span class="font-display italic text-[28px] tracking-wide-serif text-ink-900">yhd</span>
+					<span class="text-[14px] text-ink-700">유하다 헤어</span>
+				</div>
+				<span class="mt-1.5 font-display text-[9px] tracking-[0.22em] uppercase text-ink-900">v2 · TEST</span>
+			</a>
+		</div>
+		<nav class="flex-1 p-3 overflow-y-auto flex flex-col gap-1">
+			for _, it := range AdminNavTop {
+				<a
+					href={ templ.SafeURL(it.Href) }
+					class={ "flex items-center gap-3 px-4 py-3 rounded text-[15px] transition",
+						templ.KV("bg-ink-900 text-sand-50", activeKey == it.Key),
+						templ.KV("text-ink-700 hover:bg-sand-200/60", activeKey != it.Key) }
+				>
+					@component.Icon(it.Icon, 16)
+					<span class="flex-1">{ it.Label }</span>
+				</a>
+			}
+			<div class="yh-eyebrow-xs text-ink-500 px-4 mt-8 mb-3 text-[12px]">설정</div>
+			for _, it := range AdminNavSettings {
+				<a
+					href={ templ.SafeURL(it.Href) }
+					class={ "flex items-center gap-3 px-4 py-3.5 rounded text-[15px] transition",
+						templ.KV("bg-ink-900 text-sand-50", activeKey == it.Key),
+						templ.KV("text-ink-700 hover:bg-sand-200/60", activeKey != it.Key) }
+				>
+					@component.Icon(it.Icon, 14)
+					<span class="flex-1">{ it.Label }</span>
+				</a>
+			}
+		</nav>
+		<form
+			method="POST"
+			action="/v2/logout"
+			class="p-3 border-t border-sand-200"
+			hx-boost="false"
+		>
+			<button
+				class="w-full flex items-center gap-3 px-4 py-3 text-[15px] text-ink-700 hover:bg-sand-200/60 rounded transition"
+				type="submit"
+			>
+				@component.Icon("log-out", 16)
+				<span class="flex-1 text-left">로그아웃</span>
+			</button>
+		</form>
+	</aside>
+}
+
+// modalRoot — HTMX 모달 마운트 포인트 (v1 와 동일 패턴).
+templ modalRoot() {
+	<div
+		id="modal-root"
+		x-data="{ open:false, show(){this.open=true}, hide(){this.open=false} }"
+		x-on:openmodal.window="show()"
+		x-on:closemodal.window="hide()"
+		x-on:keydown.escape.window="hide()"
+		x-show="open"
+		x-cloak
+		x-transition:enter="transition ease-out duration-200"
+		x-transition:enter-start="opacity-0"
+		x-transition:enter-end="opacity-100"
+		x-transition:leave="transition ease-in duration-150"
+		x-transition:leave-start="opacity-100"
+		x-transition:leave-end="opacity-0"
+		class="fixed inset-0 z-50 flex items-center justify-center p-6"
+		style="background: rgba(26,22,20,0.55)"
+		x-on:click.self="hide()"
+		hx-on::after-swap="if (this.children.length > 0) window.dispatchEvent(new CustomEvent('openmodal'))"
+	></div>
+}
+
+templ toastRoot() {
+	<div id="toast-root" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40"></div>
+}

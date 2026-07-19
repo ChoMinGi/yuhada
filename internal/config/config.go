@@ -28,6 +28,10 @@ type Config struct {
 	AdminBootPW     string // 비밀번호 fallback (옵션)
 	AdminBootPIN    string // 6자리 PIN — 메인 로그인 수단
 	CookieSecure    bool
+	// V2: 별도 SQLite 파일 경로 (isolation-rules.md §1-1)
+	DBV2Path        string
+	// V2: 전용 PIN — env ADMIN_PIN_V2, 기본값 "0000"
+	AdminPinV2      string
 }
 
 // IsProd — 프로덕션 환경 여부.
@@ -51,6 +55,9 @@ func Load() (Config, error) {
 		AdminBootEmail: env("ADMIN_BOOTSTRAP_EMAIL", ""),
 		AdminBootPW:    env("ADMIN_BOOTSTRAP_PW", ""),
 		AdminBootPIN:   env("ADMIN_BOOTSTRAP_PIN", ""),
+		// V2 추가 (isolation-rules.md §1-1, §1-5)
+		DBV2Path:   env("DB_V2_PATH", "./var/yuhada-v2.db"),
+		AdminPinV2: env("ADMIN_PIN_V2", "0000"),
 	}
 
 	cfg.CookieSecure, _ = strconv.ParseBool(env("COOKIE_SECURE", "false"))

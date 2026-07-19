@@ -30,6 +30,8 @@
    ───────────────────────────────────────────── */
 @source "../internal/view/**/*.templ";
 @source "../internal/view/**/*_templ.go";
+@source "../internal/v2/view/**/*.templ";
+@source "../internal/v2/view/**/*_templ.go";
 
 /* ─────────────────────────────────────────────
    YUHADA HAIR — Design Tokens
