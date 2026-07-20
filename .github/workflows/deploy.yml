@@ -47,9 +47,10 @@ jobs:
           # Upload binary
           scp dist/yuhada root@${HOST}:/opt/yuhada/yuhada.new
 
-          # Upload static + migrations
+          # Upload static + migrations (v1 및 v2)
           rsync -az --delete static/ root@${HOST}:/opt/yuhada/static/
           rsync -az --delete migrations/ root@${HOST}:/opt/yuhada/migrations/
+          rsync -az --delete migrations-v2/ root@${HOST}:/opt/yuhada/migrations-v2/
 
           # Swap binary + restart
           ssh root@${HOST} << 'EOF'
