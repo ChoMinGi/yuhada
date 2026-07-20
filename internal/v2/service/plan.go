@@ -32,28 +32,28 @@ type CreatePlanInput struct {
 type UpdatePlanInput = CreatePlanInput
 
 // ListActive — 활성 플랜만 (충전 모달용).
-func (s *PlanService) ListActive(ctx context.Context) ([]dbgen.MembershipPlan, error) {
+func (s *PlanService) ListActive(ctx context.Context) ([]dbgen.V2MembershipPlan, error) {
 	return s.q.ListActivePlans(ctx)
 }
 
 // ListAll — 관리 화면용 (비활성 포함).
-func (s *PlanService) ListAll(ctx context.Context) ([]dbgen.MembershipPlan, error) {
+func (s *PlanService) ListAll(ctx context.Context) ([]dbgen.V2MembershipPlan, error) {
 	return s.q.ListAllPlans(ctx)
 }
 
 // Get — 단건 조회.
-func (s *PlanService) Get(ctx context.Context, id string) (dbgen.MembershipPlan, error) {
+func (s *PlanService) Get(ctx context.Context, id string) (dbgen.V2MembershipPlan, error) {
 	p, err := s.q.GetPlan(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return dbgen.MembershipPlan{}, ErrNotFound
+		return dbgen.V2MembershipPlan{}, ErrNotFound
 	}
 	return p, err
 }
 
 // Create — 신규 등록. id 는 UUID 로 서버 발급.
-func (s *PlanService) Create(ctx context.Context, in CreatePlanInput) (dbgen.MembershipPlan, error) {
+func (s *PlanService) Create(ctx context.Context, in CreatePlanInput) (dbgen.V2MembershipPlan, error) {
 	if err := validatePlan(in); err != nil {
-		return dbgen.MembershipPlan{}, err
+		return dbgen.V2MembershipPlan{}, err
 	}
 	return s.q.CreatePlan(ctx, dbgen.CreatePlanParams{
 		ID:            util.NewID(),

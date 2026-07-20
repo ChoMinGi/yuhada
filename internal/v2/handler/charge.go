@@ -98,8 +98,8 @@ func (h *PageHandlers) ChargeSubmit(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, dest, http.StatusSeeOther)
 }
 
-// planRowFromDB — dbgen.MembershipPlan → page.PlanRow.
-func planRowFromDB(p dbgen.MembershipPlan) page.PlanRow {
+// planRowFromDB — dbgen.V2MembershipPlan → page.PlanRow.
+func planRowFromDB(p dbgen.V2MembershipPlan) page.PlanRow {
 	perk := ""
 	if p.PerkLabel.Valid {
 		perk = p.PerkLabel.String

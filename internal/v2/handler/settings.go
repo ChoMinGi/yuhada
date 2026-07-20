@@ -280,8 +280,8 @@ func redirectSettings(w http.ResponseWriter, r *http.Request, dest string) {
 	http.Redirect(w, r, dest, http.StatusSeeOther)
 }
 
-// deductAmountRowFromDB — dbgen.DeductAmountPreset → page.DeductAmountRow.
-func deductAmountRowFromDB(p dbgen.DeductAmountPreset) page.DeductAmountRow {
+// deductAmountRowFromDB — dbgen.V2DeductAmountPreset → page.DeductAmountRow.
+func deductAmountRowFromDB(p dbgen.V2DeductAmountPreset) page.DeductAmountRow {
 	return page.DeductAmountRow{
 		ID:           p.ID,
 		Amount:       p.Amount,
@@ -290,8 +290,8 @@ func deductAmountRowFromDB(p dbgen.DeductAmountPreset) page.DeductAmountRow {
 	}
 }
 
-// serviceMemoRowFromDB — dbgen.ServiceMemoPreset → page.ServiceMemoRow.
-func serviceMemoRowFromDB(p dbgen.ServiceMemoPreset) page.ServiceMemoRow {
+// serviceMemoRowFromDB — dbgen.V2ServiceMemoPreset → page.ServiceMemoRow.
+func serviceMemoRowFromDB(p dbgen.V2ServiceMemoPreset) page.ServiceMemoRow {
 	return page.ServiceMemoRow{
 		ID:           p.ID,
 		Label:        p.Label,

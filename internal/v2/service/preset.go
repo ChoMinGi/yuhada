@@ -22,12 +22,12 @@ type PresetService struct {
 // ─────────────────────────────────────────────
 
 // ListActiveDeductAmounts — 활성 프리셋만 (차감 모달용).
-func (s *PresetService) ListActiveDeductAmounts(ctx context.Context) ([]dbgen.DeductAmountPreset, error) {
+func (s *PresetService) ListActiveDeductAmounts(ctx context.Context) ([]dbgen.V2DeductAmountPreset, error) {
 	return s.q.ListActiveDeductPresets(ctx)
 }
 
 // ListAllDeductAmounts — 관리 화면용 (비활성 포함).
-func (s *PresetService) ListAllDeductAmounts(ctx context.Context) ([]dbgen.DeductAmountPreset, error) {
+func (s *PresetService) ListAllDeductAmounts(ctx context.Context) ([]dbgen.V2DeductAmountPreset, error) {
 	return s.q.ListAllDeductPresets(ctx)
 }
 
@@ -108,12 +108,12 @@ func (s *PresetService) ReorderDeductAmounts(ctx context.Context, orderedIDs []s
 // ─────────────────────────────────────────────
 
 // ListActiveServiceMemos — 활성 프리셋만 (차감 모달용).
-func (s *PresetService) ListActiveServiceMemos(ctx context.Context) ([]dbgen.ServiceMemoPreset, error) {
+func (s *PresetService) ListActiveServiceMemos(ctx context.Context) ([]dbgen.V2ServiceMemoPreset, error) {
 	return s.q.ListActiveServiceMemoPresets(ctx)
 }
 
 // ListAllServiceMemos — 관리 화면용 (비활성 포함).
-func (s *PresetService) ListAllServiceMemos(ctx context.Context) ([]dbgen.ServiceMemoPreset, error) {
+func (s *PresetService) ListAllServiceMemos(ctx context.Context) ([]dbgen.V2ServiceMemoPreset, error) {
 	return s.q.ListAllServiceMemoPresets(ctx)
 }
 

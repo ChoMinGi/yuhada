@@ -4,10 +4,12 @@
 *.out
 vendor/
 
-# SQLite runtime (로컬 DB + WAL/SHM 파일)
+# SQLite runtime (로컬 DB + WAL/SHM 파일 + ad-hoc 백업)
 /var/*.db
 /var/*.db-wal
 /var/*.db-shm
+/var/*.bak-*
+/var/*.coexist-*
 /var/backup/
 
 # Manual backups (운영 DB 백업 — PII 포함, 절대 커밋 금지)

@@ -118,10 +118,10 @@ func (h *PageHandlers) loadMemberDetail(w http.ResponseWriter, r *http.Request) 
 // buildMemberDetail — dbgen 결과를 view prop 으로 매핑.
 // 정액권 뱃지: chargeRows 의 PlanSnapshot 이 유효하면 json.Unmarshal 로 파싱.
 func buildMemberDetail(
-	m dbgen.Member,
-	memberships []dbgen.Membership,
+	m dbgen.V2Member,
+	memberships []dbgen.V2Membership,
 	chargeRows []dbgen.ListChargeHistoryWithPlanRow,
-	deducts []dbgen.Transaction,
+	deducts []dbgen.V2Transaction,
 ) page.MemberDetailProps {
 	memo := ""
 	if m.Memo.Valid {

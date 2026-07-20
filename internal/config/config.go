@@ -29,9 +29,13 @@ type Config struct {
 	AdminBootPIN    string // 6자리 PIN — 메인 로그인 수단
 	CookieSecure    bool
 	// V2: 별도 SQLite 파일 경로 (isolation-rules.md §1-1)
+	// v1 DB 와 같은 파일로 지정하면 v2_ prefix 테이블로 공존 가능.
 	DBV2Path        string
 	// V2: 전용 PIN — env ADMIN_PIN_V2, 기본값 "0000"
 	AdminPinV2      string
+	// V2: prod 에서도 마운트할지 여부 (dev 는 항상 마운트).
+	// prod 시연 필요 시 env V2_ENABLE=true 로 opt-in.
+	V2Enable        bool
 }
 
 // IsProd — 프로덕션 환경 여부.
@@ -59,6 +63,7 @@ func Load() (Config, error) {
 		DBV2Path:   env("DB_V2_PATH", "./var/yuhada-v2.db"),
 		AdminPinV2: env("ADMIN_PIN_V2", "0000"),
 	}
+	cfg.V2Enable, _ = strconv.ParseBool(env("V2_ENABLE", "false"))
 
 	cfg.CookieSecure, _ = strconv.ParseBool(env("COOKIE_SECURE", "false"))
 

@@ -40,13 +40,13 @@ type CreateMemberInput struct {
 }
 
 // Create — 회원 insert. PII 는 v1 crypto 로 암호화.
-func (s *MemberService) Create(ctx context.Context, in CreateMemberInput) (dbgen.Member, error) {
+func (s *MemberService) Create(ctx context.Context, in CreateMemberInput) (dbgen.V2Member, error) {
 	phone := util.NormalizePhone(in.Phone)
 	if phone == "" {
-		return dbgen.Member{}, fmt.Errorf("%w: phone required", ErrInvalidInput)
+		return dbgen.V2Member{}, fmt.Errorf("%w: phone required", ErrInvalidInput)
 	}
 	if strings.TrimSpace(in.Name) == "" {
-		return dbgen.Member{}, fmt.Errorf("%w: name required", ErrInvalidInput)
+		return dbgen.V2Member{}, fmt.Errorf("%w: name required", ErrInvalidInput)
 	}
 
 	params := dbgen.CreateMemberParams{
@@ -59,28 +59,28 @@ func (s *MemberService) Create(ctx context.Context, in CreateMemberInput) (dbgen
 	}
 	m, err := s.q.CreateMember(ctx, params)
 	if err != nil {
-		return dbgen.Member{}, mapInsertErr(err)
+		return dbgen.V2Member{}, mapInsertErr(err)
 	}
 	s.decryptMember(&m)
 	return m, nil
 }
 
 // Get — 단건 조회 + 복호화.
-func (s *MemberService) Get(ctx context.Context, id string) (dbgen.Member, error) {
+func (s *MemberService) Get(ctx context.Context, id string) (dbgen.V2Member, error) {
 	m, err := s.q.GetMember(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return dbgen.Member{}, ErrNotFound
+		return dbgen.V2Member{}, ErrNotFound
 	}
 	if err != nil {
-		return dbgen.Member{}, err
+		return dbgen.V2Member{}, err
 	}
 	s.decryptMember(&m)
 	return m, nil
 }
 
 // Search — 회원 검색 + 정렬. 암호화 활성 시 전체 조회 후 in-memory 필터.
-func (s *MemberService) Search(ctx context.Context, q string, sortKey SortKey) ([]dbgen.Member, error) {
-	var members []dbgen.Member
+func (s *MemberService) Search(ctx context.Context, q string, sortKey SortKey) ([]dbgen.V2Member, error) {
+	var members []dbgen.V2Member
 	var err error
 
 	if s.enc != nil {
@@ -129,7 +129,7 @@ func (s *MemberService) Delete(ctx context.Context, id string) error {
 	}()
 
 	// memberships 먼저 (charge_tx_id → transactions FK).
-	if _, err := tx.ExecContext(ctx, `DELETE FROM memberships WHERE member_id = ?`, id); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM v2_memberships WHERE member_id = ?`, id); err != nil {
 		return fmt.Errorf("delete memberships: %w", err)
 	}
 	q := dbgen.New(tx)
@@ -151,7 +151,7 @@ func (s *MemberService) Delete(ctx context.Context, id string) error {
 // helpers (v1 service.member 과 동일 패턴)
 // ─────────────────────────────────────────────
 
-func (s *MemberService) decryptMember(m *dbgen.Member) {
+func (s *MemberService) decryptMember(m *dbgen.V2Member) {
 	if s.enc == nil {
 		return
 	}
@@ -162,7 +162,7 @@ func (s *MemberService) decryptMember(m *dbgen.Member) {
 	}
 }
 
-func filterMembers(members []dbgen.Member, q string) []dbgen.Member {
+func filterMembers(members []dbgen.V2Member, q string) []dbgen.V2Member {
 	q = strings.ToLower(q)
 	out := members[:0]
 	for _, m := range members {
@@ -192,7 +192,7 @@ func nullStr(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: true}
 }
 
-func applySort(members []dbgen.Member, key SortKey) {
+func applySort(members []dbgen.V2Member, key SortKey) {
 	switch key {
 	case SortBalanceDesc:
 		sort.SliceStable(members, func(i, j int) bool {

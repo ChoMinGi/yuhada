@@ -102,11 +102,13 @@ func main() {
 	}
 	router := handler.NewRouter(deps)
 
-	// ───── V2 마운트 (dev only — 옵션 C, isolation-rules.md §6) ─────
+	// ───── V2 마운트 ─────
+	// dev: 무조건 마운트. prod: env V2_ENABLE=true 로 opt-in (시연용).
+	// v2 는 v2_ prefix 로 격리되어 v1 DB 와 같은 파일에 공존 가능 (isolation-rules §1).
 	root := chi.NewMux()
 	root.Mount("/", router)
 
-	if !cfg.IsProd() {
+	if !cfg.IsProd() || cfg.V2Enable {
 		if err := os.MkdirAll(filepath.Dir(cfg.DBV2Path), 0o750); err != nil {
 			logger.Error("v2 mkdir failed", "err", err)
 			os.Exit(1)
@@ -117,7 +119,7 @@ func main() {
 			os.Exit(1)
 		}
 		defer v2DB.Close()
-		logger.Info("v2 db opened", "path", cfg.DBV2Path)
+		logger.Info("v2 db opened", "path", cfg.DBV2Path, "prod_opt_in", cfg.IsProd() && cfg.V2Enable)
 
 		// R7: 자동 마이그레이션 (goose in-process). seed 이전.
 		if err := v2migrate.Up(v2DB); err != nil {
@@ -145,9 +147,13 @@ func main() {
 			EnableDebug: true,
 		})
 		root.Mount("/v2", v2Router)
-		logger.Info("v2 mounted at /v2 (dev)")
+		mode := "dev"
+		if cfg.IsProd() {
+			mode = "prod (V2_ENABLE=true opt-in — 시연 모드)"
+		}
+		logger.Info("v2 mounted at /v2", "mode", mode)
 	} else {
-		logger.Info("v2 mount skipped (prod policy — isolation-rules §6)")
+		logger.Info("v2 mount skipped (prod default — V2_ENABLE 미설정)")
 	}
 
 	srv := &http.Server{

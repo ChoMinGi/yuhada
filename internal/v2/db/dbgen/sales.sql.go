@@ -16,8 +16,8 @@ SELECT
   m.name,
   m.balance,
   MAX(t.created_at) AS last_tx_at
-FROM members m
-LEFT JOIN transactions t ON t.member_id = m.id
+FROM v2_members m
+LEFT JOIN v2_transactions t ON t.member_id = m.id
 WHERE m.is_active = 1 AND m.balance > 0
 GROUP BY m.id
 HAVING (MAX(t.created_at) IS NULL OR MAX(t.created_at) < ?)
@@ -34,8 +34,8 @@ type ListDormantMembersRow struct {
 	LastTxAt interface{} `json:"lastTxAt"`
 }
 
-// Active members (is_active=1) with balance > 0 whose last transaction is older
-// than the cutoff, or who have no transactions at all. Limit 20.
+// Active v2_members (is_active=1) with balance > 0 whose last transaction is older
+// than the cutoff, or who have no v2_transactions at all. Limit 20.
 func (q *Queries) ListDormantMembers(ctx context.Context, createdAt string) ([]ListDormantMembersRow, error) {
 	rows, err := q.db.QueryContext(ctx, listDormantMembers, createdAt)
 	if err != nil {
@@ -71,8 +71,8 @@ SELECT
   m.plan_snapshot AS plan_snapshot,
   m.purchased_at  AS purchased_at,
   mb.name         AS member_name
-FROM memberships m
-JOIN members mb ON mb.id = m.member_id
+FROM v2_memberships m
+JOIN v2_members mb ON mb.id = m.member_id
 WHERE m.status = 'active'
   AND datetime(m.purchased_at, '+1 year') >= ?
   AND datetime(m.purchased_at, '+1 year') < ?
@@ -131,9 +131,9 @@ SELECT
   t.member_id     AS member_id,
   mb.name         AS member_name,
   m.plan_snapshot AS plan_snapshot
-FROM transactions t
-LEFT JOIN memberships m ON m.charge_tx_id = t.id
-LEFT JOIN members mb    ON mb.id           = t.member_id
+FROM v2_transactions t
+LEFT JOIN v2_memberships m ON m.charge_tx_id = t.id
+LEFT JOIN v2_members mb    ON mb.id           = t.member_id
 WHERE t.type = 'charge'
   AND t.created_at >= ?
 ORDER BY t.created_at DESC
@@ -190,9 +190,9 @@ SELECT
   t.member_id     AS member_id,
   mb.name         AS member_name,
   m.plan_snapshot AS plan_snapshot
-FROM transactions t
-LEFT JOIN memberships m ON m.charge_tx_id = t.id
-LEFT JOIN members mb    ON mb.id           = t.member_id
+FROM v2_transactions t
+LEFT JOIN v2_memberships m ON m.charge_tx_id = t.id
+LEFT JOIN v2_members mb    ON mb.id           = t.member_id
 WHERE t.type = 'charge'
   AND t.created_at >= ?
 ORDER BY t.created_at DESC
@@ -209,9 +209,9 @@ type ListSalesInPeriodRow struct {
 
 // v2 sales dashboard queries.
 // Powers /v2/admin/sales aggregations. SQL fetches rows; Go layer aggregates.
-// LEFT JOIN to memberships so we capture both plan-based and generic charges
+// LEFT JOIN to v2_memberships so we capture both plan-based and generic charges
 // (plan_snapshot IS NULL means a generic non-plan charge).
-// member_id and member_name power ERP KPIs (active / repeat / TOP members).
+// member_id and member_name power ERP KPIs (active / repeat / TOP v2_members).
 // Name is emitted as ciphertext here; service layer decrypts via crypto.Enc.Decrypt.
 func (q *Queries) ListSalesInPeriod(ctx context.Context, createdAt string) ([]ListSalesInPeriodRow, error) {
 	rows, err := q.db.QueryContext(ctx, listSalesInPeriod, createdAt)

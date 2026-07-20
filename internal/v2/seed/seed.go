@@ -21,7 +21,7 @@ import (
 func EnsureSeeded(ctx context.Context, database *sql.DB, s *service.Services) error {
 	// 회원 수 확인 (이미 있으면 스킵).
 	var count int64
-	if err := database.QueryRowContext(ctx, `SELECT COUNT(*) FROM members`).Scan(&count); err != nil {
+	if err := database.QueryRowContext(ctx, `SELECT COUNT(*) FROM v2_members`).Scan(&count); err != nil {
 		return fmt.Errorf("count members: %w", err)
 	}
 	if count > 0 {

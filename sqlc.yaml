@@ -21,9 +21,9 @@ sql:
           - column: "admin_users.is_active"
             go_type: "bool"
 
-  # ───── V2 (테스트 환경) ─────
+  # ───── V2 (테스트 환경, v1 DB 공존 준비) ─────
   # isolation-rules.md §1-2: 별도 dbgen 패키지 (internal/v2/db/dbgen).
-  # v1 dbgen과 타입/함수가 이름은 겹칠 수 있지만 import 경로가 다름 (v2 전용 패키지 절대 경로).
+  # 모든 테이블은 v2_ prefix 로 격리. rename 으로 struct 이름은 짧게 유지.
   - engine: "sqlite"
     queries: "internal/v2/db/queries"
     schema: "migrations-v2"
@@ -38,14 +38,24 @@ sql:
         emit_db_tags: false
         emit_empty_slices: true
         emit_prepared_queries: false
+        rename:
+          v2_members: "Member"
+          v2_transactions: "Transaction"
+          v2_admin_users: "AdminUser"
+          v2_kakao_verify_requests: "KakaoVerifyRequest"
+          v2_sessions: "Session"
+          v2_membership_plans: "MembershipPlan"
+          v2_memberships: "Membership"
+          v2_deduct_amount_presets: "DeductAmountPreset"
+          v2_service_memo_presets: "ServiceMemoPreset"
         overrides:
-          - column: "members.is_active"
+          - column: "v2_members.is_active"
             go_type: "bool"
-          - column: "admin_users.is_active"
+          - column: "v2_admin_users.is_active"
             go_type: "bool"
-          - column: "membership_plans.is_active"
+          - column: "v2_membership_plans.is_active"
             go_type: "bool"
-          - column: "deduct_amount_presets.is_active"
+          - column: "v2_deduct_amount_presets.is_active"
             go_type: "bool"
-          - column: "service_memo_presets.is_active"
+          - column: "v2_service_memo_presets.is_active"
             go_type: "bool"

@@ -27,7 +27,8 @@ func Up(db *sql.DB) error {
 	if err := goose.SetDialect("sqlite3"); err != nil {
 		return fmt.Errorf("v2 migrate: set dialect: %w", err)
 	}
-	// 기본 로컬 파일시스템 사용 (goose.SetBaseFS 미호출).
+	// v1 과 같은 DB 파일을 공유해도 버전 트래킹이 섞이지 않도록 별도 테이블 사용.
+	goose.SetTableName("v2_goose_db_version")
 	if err := goose.Up(db, Dir); err != nil {
 		return fmt.Errorf("v2 migrate: up: %w", err)
 	}

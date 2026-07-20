@@ -8,7 +8,7 @@ import (
 	"database/sql"
 )
 
-type AdminUser struct {
+type V2AdminUser struct {
 	ID          string         `json:"id"`
 	Email       string         `json:"email"`
 	PwHash      string         `json:"pwHash"`
@@ -21,7 +21,7 @@ type AdminUser struct {
 	PinHash     sql.NullString `json:"pinHash"`
 }
 
-type DeductAmountPreset struct {
+type V2DeductAmountPreset struct {
 	ID           string `json:"id"`
 	Amount       int64  `json:"amount"`
 	DisplayOrder int64  `json:"displayOrder"`
@@ -30,7 +30,7 @@ type DeductAmountPreset struct {
 	UpdatedAt    string `json:"updatedAt"`
 }
 
-type KakaoVerifyRequest struct {
+type V2KakaoVerifyRequest struct {
 	ID                string         `json:"id"`
 	KakaoUserID       string         `json:"kakaoUserId"`
 	KakaoName         sql.NullString `json:"kakaoName"`
@@ -45,7 +45,7 @@ type KakaoVerifyRequest struct {
 	CreatedAt         string         `json:"createdAt"`
 }
 
-type Member struct {
+type V2Member struct {
 	ID          string         `json:"id"`
 	Name        string         `json:"name"`
 	Phone       string         `json:"phone"`
@@ -58,7 +58,7 @@ type Member struct {
 	KakaoUserID sql.NullString `json:"kakaoUserId"`
 }
 
-type Membership struct {
+type V2Membership struct {
 	ID           string         `json:"id"`
 	MemberID     string         `json:"memberId"`
 	PlanID       sql.NullString `json:"planId"`
@@ -69,7 +69,7 @@ type Membership struct {
 	CreatedBy    sql.NullString `json:"createdBy"`
 }
 
-type MembershipPlan struct {
+type V2MembershipPlan struct {
 	ID            string         `json:"id"`
 	TierLabel     string         `json:"tierLabel"`
 	TierAmount    int64          `json:"tierAmount"`
@@ -83,7 +83,7 @@ type MembershipPlan struct {
 	UpdatedAt     string         `json:"updatedAt"`
 }
 
-type ServiceMemoPreset struct {
+type V2ServiceMemoPreset struct {
 	ID           string `json:"id"`
 	Label        string `json:"label"`
 	DisplayOrder int64  `json:"displayOrder"`
@@ -92,13 +92,13 @@ type ServiceMemoPreset struct {
 	UpdatedAt    string `json:"updatedAt"`
 }
 
-type Session struct {
+type V2Session struct {
 	Token  string  `json:"token"`
 	Data   []byte  `json:"data"`
 	Expiry float64 `json:"expiry"`
 }
 
-type Transaction struct {
+type V2Transaction struct {
 	ID           string         `json:"id"`
 	MemberID     string         `json:"memberId"`
 	Type         string         `json:"type"`

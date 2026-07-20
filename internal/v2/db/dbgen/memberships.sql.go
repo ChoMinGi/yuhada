@@ -12,7 +12,7 @@ import (
 
 const createMembership = `-- name: CreateMembership :one
 
-INSERT INTO memberships
+INSERT INTO v2_memberships
   (id, member_id, plan_id, plan_snapshot, charge_tx_id, status, created_by)
 VALUES (?, ?, ?, ?, ?, 'active', ?)
 RETURNING id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by
@@ -27,10 +27,10 @@ type CreateMembershipParams struct {
 	CreatedBy    sql.NullString `json:"createdBy"`
 }
 
-// v2 memberships queries.
+// v2 v2_memberships queries.
 // plan_snapshot is a JSON blob written by the service layer at charge time
 // so historical rows survive plan edits/deletion (see pricing-model.md section 4).
-func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipParams) (Membership, error) {
+func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipParams) (V2Membership, error) {
 	row := q.db.QueryRowContext(ctx, createMembership,
 		arg.ID,
 		arg.MemberID,
@@ -39,7 +39,7 @@ func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipPara
 		arg.ChargeTxID,
 		arg.CreatedBy,
 	)
-	var i Membership
+	var i V2Membership
 	err := row.Scan(
 		&i.ID,
 		&i.MemberID,
@@ -54,12 +54,12 @@ func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipPara
 }
 
 const getMembership = `-- name: GetMembership :one
-SELECT id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by FROM memberships WHERE id = ? LIMIT 1
+SELECT id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by FROM v2_memberships WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetMembership(ctx context.Context, id string) (Membership, error) {
+func (q *Queries) GetMembership(ctx context.Context, id string) (V2Membership, error) {
 	row := q.db.QueryRowContext(ctx, getMembership, id)
-	var i Membership
+	var i V2Membership
 	err := row.Scan(
 		&i.ID,
 		&i.MemberID,
@@ -88,8 +88,8 @@ SELECT
   m.plan_snapshot AS plan_snapshot,
   m.status        AS membership_status,
   m.purchased_at  AS purchased_at
-FROM transactions t
-LEFT JOIN memberships m ON m.charge_tx_id = t.id
+FROM v2_transactions t
+LEFT JOIN v2_memberships m ON m.charge_tx_id = t.id
 WHERE t.member_id = ?
   AND t.type      = 'charge'
 ORDER BY t.created_at DESC
@@ -112,8 +112,8 @@ type ListChargeHistoryWithPlanRow struct {
 	PurchasedAt      sql.NullString `json:"purchasedAt"`
 }
 
-// R3: transactions LEFT JOIN memberships convention (pricing-model.md section 8).
-// Used by the recent-transactions section on member detail so the UI can
+// R3: v2_transactions LEFT JOIN v2_memberships convention (pricing-model.md section 8).
+// Used by the recent-v2_transactions section on member detail so the UI can
 // render a plan tier badge when plan_snapshot IS NOT NULL, and fall back
 // to a plain "generic charge" line when it is NULL.
 func (q *Queries) ListChargeHistoryWithPlan(ctx context.Context, memberID string) ([]ListChargeHistoryWithPlanRow, error) {
@@ -154,22 +154,22 @@ func (q *Queries) ListChargeHistoryWithPlan(ctx context.Context, memberID string
 }
 
 const listMembershipsByMember = `-- name: ListMembershipsByMember :many
-SELECT id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by FROM memberships
+SELECT id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by FROM v2_memberships
 WHERE member_id = ?
 ORDER BY purchased_at DESC
 `
 
 // Powers the MEMBERSHIPS section on the member detail screen.
 // Ordered latest-first.
-func (q *Queries) ListMembershipsByMember(ctx context.Context, memberID string) ([]Membership, error) {
+func (q *Queries) ListMembershipsByMember(ctx context.Context, memberID string) ([]V2Membership, error) {
 	rows, err := q.db.QueryContext(ctx, listMembershipsByMember, memberID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Membership{}
+	items := []V2Membership{}
 	for rows.Next() {
-		var i Membership
+		var i V2Membership
 		if err := rows.Scan(
 			&i.ID,
 			&i.MemberID,
@@ -198,7 +198,7 @@ SELECT
   COALESCE(SUM(CAST(json_extract(plan_snapshot, '$.price') AS INTEGER)), 0) AS revenue,
   COALESCE(SUM(CAST(json_extract(plan_snapshot, '$.credit_amount') AS INTEGER)), 0) AS liability,
   COUNT(*) AS sold
-FROM memberships
+FROM v2_memberships
 WHERE purchased_at >= ?
   AND status = 'active'
 `
@@ -210,7 +210,7 @@ type SumMembershipRevenueSinceRow struct {
 }
 
 // Revenue stats for tax reporting: revenue = SUM(price),
-// liability = SUM(credit_amount), across active memberships since ?.
+// liability = SUM(credit_amount), across active v2_memberships since ?.
 func (q *Queries) SumMembershipRevenueSince(ctx context.Context, purchasedAt string) (SumMembershipRevenueSinceRow, error) {
 	row := q.db.QueryRowContext(ctx, sumMembershipRevenueSince, purchasedAt)
 	var i SumMembershipRevenueSinceRow
@@ -219,7 +219,7 @@ func (q *Queries) SumMembershipRevenueSince(ctx context.Context, purchasedAt str
 }
 
 const updateMembershipStatus = `-- name: UpdateMembershipStatus :exec
-UPDATE memberships SET status = ? WHERE id = ?
+UPDATE v2_memberships SET status = ? WHERE id = ?
 `
 
 type UpdateMembershipStatusParams struct {
@@ -228,8 +228,8 @@ type UpdateMembershipStatusParams struct {
 }
 
 // Refund/expire/transfer transitions (R5).
-// The service layer MUST wrap this together with the transactions
-// and members.balance updates in a single BEGIN IMMEDIATE tx.
+// The service layer MUST wrap this together with the v2_transactions
+// and v2_members.balance updates in a single BEGIN IMMEDIATE tx.
 func (q *Queries) UpdateMembershipStatus(ctx context.Context, arg UpdateMembershipStatusParams) error {
 	_, err := q.db.ExecContext(ctx, updateMembershipStatus, arg.Status, arg.ID)
 	return err

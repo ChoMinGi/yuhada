@@ -11,7 +11,7 @@
 -- 보너스     = credit_amount - price (실질 할인/마케팅 비용)
 
 -- +goose StatementBegin
-INSERT OR IGNORE INTO membership_plans
+INSERT OR IGNORE INTO v2_membership_plans
   (id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active)
 VALUES
   ('plan-20-card', '20만원 회원권', 200000, 'card', 200000, 220000, NULL,                        11, 1),
@@ -23,5 +23,5 @@ VALUES
 -- +goose StatementEnd
 
 -- +goose Down
--- 시드는 되돌리지 않음 (수동 삭제 필요 시 DELETE FROM membership_plans WHERE id LIKE 'plan-%').
+-- 시드는 되돌리지 않음 (수동 삭제 필요 시 DELETE FROM v2_membership_plans WHERE id LIKE 'plan-%').
 SELECT 1;

@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
+	"github.com/alexedwards/scs/v2/memstore"
 )
 
 // 세션 키.
@@ -26,9 +26,13 @@ const (
 // 만료:
 //   - Lifetime    12시간 — v2는 실험 환경. 하루 이상 세션 유지 필요 없음.
 //   - IdleTimeout 2시간
+// database 파라미터는 인터페이스 호환을 위해 유지하나 memstore 는 사용하지 않는다.
+// v1 sqlite3 store 와 같은 DB 파일을 공유할 때 sessions 테이블이 충돌하지 않도록
+// 인메모리 스토어를 선택했다. 시연 환경(재시작 시 재로그인 무방)에 적합.
 func NewSessionManager(database *sql.DB, secure bool) *scs.SessionManager {
+	_ = database
 	sm := scs.New()
-	sm.Store = sqlite3store.New(database)
+	sm.Store = memstore.New()
 	sm.Lifetime = 12 * time.Hour
 	sm.IdleTimeout = 2 * time.Hour
 	sm.Cookie.Name = "yuhada_v2_session"

@@ -98,7 +98,7 @@ func (h *PageHandlers) MemberDelete(w http.ResponseWriter, r *http.Request) {
 // helpers
 // ─────────────────────────────────────────────
 
-func memberRowFromDB(m dbgen.Member) page.MemberRow {
+func memberRowFromDB(m dbgen.V2Member) page.MemberRow {
 	row := page.MemberRow{
 		ID:       m.ID,
 		Name:     m.Name,

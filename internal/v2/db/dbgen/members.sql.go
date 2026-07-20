@@ -11,7 +11,7 @@ import (
 )
 
 const addToBalance = `-- name: AddToBalance :exec
-UPDATE members SET balance = balance + ? WHERE id = ?
+UPDATE v2_members SET balance = balance + ? WHERE id = ?
 `
 
 type AddToBalanceParams struct {
@@ -25,7 +25,7 @@ func (q *Queries) AddToBalance(ctx context.Context, arg AddToBalanceParams) erro
 }
 
 const countActiveMembers = `-- name: CountActiveMembers :one
-SELECT COUNT(*) FROM members WHERE is_active = 1
+SELECT COUNT(*) FROM v2_members WHERE is_active = 1
 `
 
 func (q *Queries) CountActiveMembers(ctx context.Context) (int64, error) {
@@ -37,7 +37,7 @@ func (q *Queries) CountActiveMembers(ctx context.Context) (int64, error) {
 
 const createMember = `-- name: CreateMember :one
 
-INSERT INTO members (id, name, phone, card_uuid, balance, memo)
+INSERT INTO v2_members (id, name, phone, card_uuid, balance, memo)
 VALUES (?, ?, ?, ?, ?, ?)
 RETURNING id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id
 `
@@ -51,9 +51,9 @@ type CreateMemberParams struct {
 	Memo     sql.NullString `json:"memo"`
 }
 
-// Cloned from v1 internal/db/queries/members.sql (v2-isolated dbgen).
+// Cloned from v1 internal/db/queries/v2_members.sql (v2-isolated dbgen).
 // Signatures match v1 for behavioural parity.
-func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Member, error) {
+func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (V2Member, error) {
 	row := q.db.QueryRowContext(ctx, createMember,
 		arg.ID,
 		arg.Name,
@@ -62,7 +62,7 @@ func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Mem
 		arg.Balance,
 		arg.Memo,
 	)
-	var i Member
+	var i V2Member
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -79,7 +79,7 @@ func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Mem
 }
 
 const deactivateMember = `-- name: DeactivateMember :exec
-UPDATE members SET is_active = 0 WHERE id = ?
+UPDATE v2_members SET is_active = 0 WHERE id = ?
 `
 
 func (q *Queries) DeactivateMember(ctx context.Context, id string) error {
@@ -88,7 +88,7 @@ func (q *Queries) DeactivateMember(ctx context.Context, id string) error {
 }
 
 const deleteMember = `-- name: DeleteMember :exec
-DELETE FROM members WHERE id = ?
+DELETE FROM v2_members WHERE id = ?
 `
 
 func (q *Queries) DeleteMember(ctx context.Context, id string) error {
@@ -97,12 +97,12 @@ func (q *Queries) DeleteMember(ctx context.Context, id string) error {
 }
 
 const getMember = `-- name: GetMember :one
-SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members WHERE id = ? LIMIT 1
+SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM v2_members WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetMember(ctx context.Context, id string) (Member, error) {
+func (q *Queries) GetMember(ctx context.Context, id string) (V2Member, error) {
 	row := q.db.QueryRowContext(ctx, getMember, id)
-	var i Member
+	var i V2Member
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -119,15 +119,15 @@ func (q *Queries) GetMember(ctx context.Context, id string) (Member, error) {
 }
 
 const getMemberByCardUUID = `-- name: GetMemberByCardUUID :one
-SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members
+SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM v2_members
 WHERE card_uuid = ?
   AND is_active = 1
 LIMIT 1
 `
 
-func (q *Queries) GetMemberByCardUUID(ctx context.Context, cardUuid sql.NullString) (Member, error) {
+func (q *Queries) GetMemberByCardUUID(ctx context.Context, cardUuid sql.NullString) (V2Member, error) {
 	row := q.db.QueryRowContext(ctx, getMemberByCardUUID, cardUuid)
-	var i Member
+	var i V2Member
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -144,12 +144,12 @@ func (q *Queries) GetMemberByCardUUID(ctx context.Context, cardUuid sql.NullStri
 }
 
 const getMemberByPhone = `-- name: GetMemberByPhone :one
-SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members WHERE phone = ? LIMIT 1
+SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM v2_members WHERE phone = ? LIMIT 1
 `
 
-func (q *Queries) GetMemberByPhone(ctx context.Context, phone string) (Member, error) {
+func (q *Queries) GetMemberByPhone(ctx context.Context, phone string) (V2Member, error) {
 	row := q.db.QueryRowContext(ctx, getMemberByPhone, phone)
-	var i Member
+	var i V2Member
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -166,18 +166,18 @@ func (q *Queries) GetMemberByPhone(ctx context.Context, phone string) (Member, e
 }
 
 const listAllMembers = `-- name: ListAllMembers :many
-SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members ORDER BY created_at DESC LIMIT 500
+SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM v2_members ORDER BY created_at DESC LIMIT 500
 `
 
-func (q *Queries) ListAllMembers(ctx context.Context) ([]Member, error) {
+func (q *Queries) ListAllMembers(ctx context.Context) ([]V2Member, error) {
 	rows, err := q.db.QueryContext(ctx, listAllMembers)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Member{}
+	items := []V2Member{}
 	for rows.Next() {
-		var i Member
+		var i V2Member
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -204,7 +204,7 @@ func (q *Queries) ListAllMembers(ctx context.Context) ([]Member, error) {
 }
 
 const reactivateMember = `-- name: ReactivateMember :exec
-UPDATE members SET is_active = 1 WHERE id = ?
+UPDATE v2_members SET is_active = 1 WHERE id = ?
 `
 
 func (q *Queries) ReactivateMember(ctx context.Context, id string) error {
@@ -213,21 +213,21 @@ func (q *Queries) ReactivateMember(ctx context.Context, id string) error {
 }
 
 const searchMembers = `-- name: SearchMembers :many
-SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members
+SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM v2_members
 WHERE (name LIKE ?1 OR phone LIKE ?1)
 ORDER BY created_at DESC
 LIMIT 500
 `
 
-func (q *Queries) SearchMembers(ctx context.Context, name string) ([]Member, error) {
+func (q *Queries) SearchMembers(ctx context.Context, name string) ([]V2Member, error) {
 	rows, err := q.db.QueryContext(ctx, searchMembers, name)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Member{}
+	items := []V2Member{}
 	for rows.Next() {
-		var i Member
+		var i V2Member
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -254,7 +254,7 @@ func (q *Queries) SearchMembers(ctx context.Context, name string) ([]Member, err
 }
 
 const subFromBalance = `-- name: SubFromBalance :exec
-UPDATE members SET balance = balance - ? WHERE id = ?
+UPDATE v2_members SET balance = balance - ? WHERE id = ?
 `
 
 type SubFromBalanceParams struct {
@@ -268,7 +268,7 @@ func (q *Queries) SubFromBalance(ctx context.Context, arg SubFromBalanceParams) 
 }
 
 const updateMemberCard = `-- name: UpdateMemberCard :exec
-UPDATE members SET card_uuid = ? WHERE id = ?
+UPDATE v2_members SET card_uuid = ? WHERE id = ?
 `
 
 type UpdateMemberCardParams struct {
@@ -282,7 +282,7 @@ func (q *Queries) UpdateMemberCard(ctx context.Context, arg UpdateMemberCardPara
 }
 
 const updateMemberMemo = `-- name: UpdateMemberMemo :exec
-UPDATE members SET memo = ? WHERE id = ?
+UPDATE v2_members SET memo = ? WHERE id = ?
 `
 
 type UpdateMemberMemoParams struct {

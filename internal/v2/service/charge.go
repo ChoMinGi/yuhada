@@ -24,8 +24,8 @@ type ChargeService struct {
 
 // ChargeResult — 충전 결과. MembershipID 는 plan 기반일 때만 non-empty.
 type ChargeResult struct {
-	Member       dbgen.Member
-	Transaction  dbgen.Transaction
+	Member       dbgen.V2Member
+	Transaction  dbgen.V2Transaction
 	MembershipID string // "" = 일반 충전
 	NewBalance   int64
 }
@@ -355,7 +355,7 @@ func (s *ChargeService) transitionMembership(ctx context.Context, membershipID, 
 // helpers
 // ─────────────────────────────────────────────
 
-func (s *ChargeService) decryptMember(m *dbgen.Member) {
+func (s *ChargeService) decryptMember(m *dbgen.V2Member) {
 	if s.enc == nil {
 		return
 	}
@@ -368,7 +368,7 @@ func (s *ChargeService) decryptMember(m *dbgen.Member) {
 
 // marshalPlanSnapshot — pricing-model.md §4 스키마와 1:1 일치.
 // perk_label 은 NULL 이면 JSON null 로 (빈 문자열 아님).
-func marshalPlanSnapshot(p dbgen.MembershipPlan) (string, error) {
+func marshalPlanSnapshot(p dbgen.V2MembershipPlan) (string, error) {
 	var perk any
 	if p.PerkLabel.Valid {
 		perk = p.PerkLabel.String

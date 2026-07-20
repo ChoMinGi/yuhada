@@ -16,7 +16,7 @@ type MembershipService struct {
 
 // ListByMember — 특정 회원의 정액권 구매 이력 (최신순).
 // 회원 상세 MEMBERSHIPS 섹션 데이터.
-func (s *MembershipService) ListByMember(ctx context.Context, memberID string) ([]dbgen.Membership, error) {
+func (s *MembershipService) ListByMember(ctx context.Context, memberID string) ([]dbgen.V2Membership, error) {
 	return s.q.ListMembershipsByMember(ctx, memberID)
 }
 
@@ -28,10 +28,10 @@ func (s *MembershipService) ListChargeHistoryWithPlan(ctx context.Context, membe
 }
 
 // Get — 단건 조회.
-func (s *MembershipService) Get(ctx context.Context, id string) (dbgen.Membership, error) {
+func (s *MembershipService) Get(ctx context.Context, id string) (dbgen.V2Membership, error) {
 	m, err := s.q.GetMembership(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return dbgen.Membership{}, ErrNotFound
+		return dbgen.V2Membership{}, ErrNotFound
 	}
 	return m, err
 }
