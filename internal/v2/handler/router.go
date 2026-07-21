@@ -14,17 +14,20 @@ import (
 	"github.com/a-h/templ"
 
 	v2auth "github.com/mingicho/yuhada/internal/v2/auth"
+	v2kakao "github.com/mingicho/yuhada/internal/v2/kakao"
 	v2service "github.com/mingicho/yuhada/internal/v2/service"
 	v2sms "github.com/mingicho/yuhada/internal/v2/sms"
 )
 
 // Deps — v2 핸들러 공통 의존성.
 type Deps struct {
-	Session     *scs.SessionManager
-	Services    *v2service.Services
-	SMS         *v2sms.Client
-	AdminPIN    string // cfg.AdminPinV2 (env: ADMIN_PIN_V2)
-	EnableDebug bool
+	Session      *scs.SessionManager
+	Services     *v2service.Services
+	SMS          *v2sms.Client
+	AdminPIN     string          // cfg.AdminPinV2 (env: ADMIN_PIN_V2) — fallback
+	Kakao        *v2kakao.Config // v2 관리자 카카오 OAuth (선택)
+	AdminKakaoID string          // 화이트리스트 (env: ADMIN_KAKAO_ID_V2). 미설정 시 첫 시도 화면에서 캡처.
+	EnableDebug  bool
 }
 
 // PageHandlers — 페이지 + 폼 submit 핸들러 공통 컨테이너.
@@ -55,6 +58,8 @@ func NewRouter(deps *Deps) http.Handler {
 		r.Get("/", h.Home)
 		r.Get("/login", h.LoginGet)
 		r.Post("/login", h.LoginPost)
+		r.Get("/kakao/login", h.KakaoLogin)
+		r.Get("/kakao/callback", h.KakaoCallback)
 	})
 	r.Post("/logout", h.LogoutPost)
 

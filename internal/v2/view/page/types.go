@@ -6,8 +6,9 @@ package page
 
 // LoginProps — /v2/login 페이지.
 type LoginProps struct {
-	ErrorMsg string
-	Next     string
+	ErrorMsg     string
+	Next         string
+	KakaoEnabled bool // 서버에 카카오 OAuth 설정되어 있으면 버튼 노출
 }
 
 // DashboardProps — /v2/admin 대시보드 (v1 랜딩 스타일).

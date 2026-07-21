@@ -20,7 +20,10 @@ func (h *PageHandlers) Home(w http.ResponseWriter, r *http.Request) {
 // LoginGet — /v2/login.
 func (h *PageHandlers) LoginGet(w http.ResponseWriter, r *http.Request) {
 	next := r.URL.Query().Get("next")
-	render(w, r, http.StatusOK, page.Login(page.LoginProps{Next: next}))
+	render(w, r, http.StatusOK, page.Login(page.LoginProps{
+		Next:         next,
+		KakaoEnabled: h.Deps.Kakao != nil && h.Deps.Kakao.Enabled(),
+	}))
 }
 
 // LoginPost — PIN 검증 (env ADMIN_PIN_V2 와 단순 비교).
@@ -38,8 +41,9 @@ func (h *PageHandlers) LoginPost(w http.ResponseWriter, r *http.Request) {
 
 	if pin == "" || pin != h.Deps.AdminPIN {
 		render(w, r, http.StatusUnauthorized, page.Login(page.LoginProps{
-			ErrorMsg: "PIN이 올바르지 않습니다",
-			Next:     next,
+			ErrorMsg:     "PIN이 올바르지 않습니다",
+			Next:         next,
+			KakaoEnabled: h.Deps.Kakao != nil && h.Deps.Kakao.Enabled(),
 		}))
 		return
 	}

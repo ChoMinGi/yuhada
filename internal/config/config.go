@@ -36,6 +36,9 @@ type Config struct {
 	// V2: prod 에서도 마운트할지 여부 (dev 는 항상 마운트).
 	// prod 시연 필요 시 env V2_ENABLE=true 로 opt-in.
 	V2Enable        bool
+	// V2 카카오 로그인 (선택). KakaoClientID/Secret 는 v1 과 공유, redirect 만 별도.
+	KakaoRedirectV2 string
+	AdminKakaoIDV2  string
 }
 
 // IsProd — 프로덕션 환경 여부.
@@ -64,6 +67,8 @@ func Load() (Config, error) {
 		AdminPinV2: env("ADMIN_PIN_V2", "0000"),
 	}
 	cfg.V2Enable, _ = strconv.ParseBool(env("V2_ENABLE", "false"))
+	cfg.KakaoRedirectV2 = env("KAKAO_REDIRECT_V2", "")
+	cfg.AdminKakaoIDV2 = env("ADMIN_KAKAO_ID_V2", "")
 
 	cfg.CookieSecure, _ = strconv.ParseBool(env("COOKIE_SECURE", "false"))
 

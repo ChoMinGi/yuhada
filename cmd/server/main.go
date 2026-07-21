@@ -29,6 +29,7 @@ import (
 	// V2 — dev only (옵션 C 정책, isolation-rules.md §6)
 	v2auth "github.com/mingicho/yuhada/internal/v2/auth"
 	v2handler "github.com/mingicho/yuhada/internal/v2/handler"
+	v2kakao "github.com/mingicho/yuhada/internal/v2/kakao"
 	v2migrate "github.com/mingicho/yuhada/internal/v2/migrate"
 	v2seed "github.com/mingicho/yuhada/internal/v2/seed"
 	v2service "github.com/mingicho/yuhada/internal/v2/service"
@@ -139,12 +140,19 @@ func main() {
 		}
 		seedCancel()
 
+		v2Kakao := &v2kakao.Config{
+			ClientID:     cfg.KakaoClientID,
+			ClientSecret: cfg.KakaoSecret,
+			RedirectURI:  cfg.KakaoRedirectV2,
+		}
 		v2Router := v2handler.NewRouter(&v2handler.Deps{
-			Session:     v2Session,
-			Services:    v2Services,
-			SMS:         v2SMS,
-			AdminPIN:    cfg.AdminPinV2,
-			EnableDebug: true,
+			Session:      v2Session,
+			Services:     v2Services,
+			SMS:          v2SMS,
+			AdminPIN:     cfg.AdminPinV2,
+			Kakao:        v2Kakao,
+			AdminKakaoID: cfg.AdminKakaoIDV2,
+			EnableDebug:  true,
 		})
 		root.Mount("/v2", v2Router)
 		mode := "dev"
