@@ -48,7 +48,7 @@ func MemberDetail(p MemberDetailProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"px-4 py-5 sm:px-8 sm:py-10 max-w-[820px] mx-auto\"><a href=\"/v2/admin/members\" class=\"yh-eyebrow-xs inline-flex items-center gap-1.5 mb-6\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"px-4 py-5 sm:px-8 sm:py-10 max-w-3xl mx-auto\"><a href=\"/v2/admin/members\" class=\"yh-eyebrow-xs inline-flex items-center gap-1.5 mb-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

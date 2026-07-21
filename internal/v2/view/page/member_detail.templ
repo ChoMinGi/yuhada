@@ -9,7 +9,7 @@ import (
 // 배치 순서: 헤더 → BALANCE → MEMBERSHIPS (신규) → CARD → MEMO → 최근 거래.
 templ MemberDetail(p MemberDetailProps) {
 	@layout.Admin(p.Name, "members") {
-		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-[820px] mx-auto">
+		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-3xl mx-auto">
 			<a href="/v2/admin/members" class="yh-eyebrow-xs inline-flex items-center gap-1.5 mb-6">
 				@component.Icon("chevron-left", 12)
 				회원 관리
