@@ -32,6 +32,7 @@ func TestBothFrontendsObserveOneLedgerAndCustomerBalance(t *testing.T) {
 	login := httptest.NewRecorder()
 	s2.LoadAndSave(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s2.Put(r.Context(), auth2.SessionKeyRole, auth2.RoleAdmin)
+		s2.Put(r.Context(), auth2.SessionKeyKakaoID, "fixture-kakao")
 		s2.Put(r.Context(), auth2.SessionKeyAdminID, "fixture-admin")
 		w.WriteHeader(204)
 	})).ServeHTTP(login, httptest.NewRequest("GET", "/v2/login", nil))
@@ -94,7 +95,7 @@ func TestBothFrontendsObserveOneLedgerAndCustomerBalance(t *testing.T) {
 	}
 }
 
-func TestNewFrontendUsesExistingAdministratorPIN(t *testing.T) {
+func TestNeitherFrontendAcceptsAdministratorPIN(t *testing.T) {
 	db, h, _, _ := handlerLedgerFixture(t)
 	legacy := service1.New(db, nil)
 	if err := legacy.Admin.Bootstrap(t.Context(), "fixture-admin@example.com", "123456", ""); err != nil {
@@ -103,19 +104,21 @@ func TestNewFrontendUsesExistingAdministratorPIN(t *testing.T) {
 	sm := auth2.NewSessionManager(db, false)
 	h.Deps.Legacy = legacy
 	h.Deps.Session = sm
-	h.Deps.AdminPIN = "654321"
-	r := sm.LoadAndSave(http.HandlerFunc(h.LoginPost))
-	post := func(pin, next string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest("POST", "/v2/login", strings.NewReader(url.Values{"pin": {pin}, "next": {next}}.Encode()))
+	r := chi.NewRouter()
+	r.Mount("/v2", NewRouter(h.Deps))
+	r.Mount("/", handler1.NewRouter(&handler1.Deps{Session: auth1.NewSessionManager(db, false), Services: legacy, SMS: sms.New("", "", "")}))
+	post := func(path, pin string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", path, strings.NewReader(url.Values{"pin": {pin}}.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 		return w
 	}
-	if w := post("654321", "/v2/admin"); w.Code != 401 {
-		t.Fatalf("standalone config bypassed real admin PIN: %d", w.Code)
-	}
-	if w := post("123456", "https://evil.example"); w.Code != 303 || w.Header().Get("Location") != "/v2/admin" {
-		t.Fatalf("old PIN or safe return failed: %d %q", w.Code, w.Header().Get("Location"))
+	for _, path := range []string{"/login", "/v2/login"} {
+		for _, pin := range []string{"123456", "654321", "0000", ""} {
+			if w := post(path, pin); w.Code != 405 {
+				t.Errorf("retired PIN login %s returned %d", path, w.Code)
+			}
+		}
 	}
 }

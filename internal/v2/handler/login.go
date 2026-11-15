@@ -1,18 +1,19 @@
 package handler
 
 import (
-	"crypto/subtle"
+	"github.com/alexedwards/scs/v2"
 	"net/http"
 	"strings"
 
+	legacyauth "github.com/mingicho/yuhada/internal/auth"
 	v2auth "github.com/mingicho/yuhada/internal/v2/auth"
 	"github.com/mingicho/yuhada/internal/v2/view/page"
 )
 
 // Home — /v2/ (비로그인이면 /v2/login, 로그인이면 /v2/admin).
 func (h *PageHandlers) Home(w http.ResponseWriter, r *http.Request) {
-	if h.Deps.Session.GetString(r.Context(), v2auth.SessionKeyRole) == v2auth.RoleAdmin {
-		http.Redirect(w, r, "/v2/admin", http.StatusSeeOther)
+	if v2auth.IsAdmin(r.Context(), h.Deps.Session) {
+		http.Redirect(w, r, h.defaultAdminPath(), http.StatusSeeOther)
 		return
 	}
 	http.Redirect(w, r, "/v2/login", http.StatusSeeOther)
@@ -20,66 +21,52 @@ func (h *PageHandlers) Home(w http.ResponseWriter, r *http.Request) {
 
 // LoginGet — /v2/login.
 func (h *PageHandlers) LoginGet(w http.ResponseWriter, r *http.Request) {
-	next := v2auth.SafeNext(r.URL.Query().Get("next"))
+	next := h.loginNext(r.URL.Query().Get("next"))
 	render(w, r, http.StatusOK, page.Login(page.LoginProps{
 		Next:         next,
 		KakaoEnabled: h.Deps.Kakao != nil && h.Deps.Kakao.Enabled(),
 	}))
 }
 
-// LoginPost — PIN 검증 (env ADMIN_PIN_V2 와 단순 비교).
-// v2 는 admin_users 테이블 사용 안 함 (단순화, isolation-rules §1-5).
-func (h *PageHandlers) LoginPost(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad form", http.StatusBadRequest)
-		return
+func (h *PageHandlers) defaultAdminPath() string {
+	if h.Deps.AuthOnly {
+		return "/admin"
 	}
-	pin := strings.TrimSpace(r.FormValue("pin"))
-	next := v2auth.SafeNext(strings.TrimSpace(r.FormValue("next")))
-	adminID := ""
-	valid := false
-	if h.Deps.Legacy != nil {
-		admin, err := h.Deps.Legacy.Admin.VerifyPIN(r.Context(), pin)
-		valid = err == nil
-		adminID = admin.ID
-	} else if len(pin) == 6 && len(h.Deps.AdminPIN) == 6 {
-		// Standalone fixtures; production always verifies the existing admin hash.
-		valid = subtle.ConstantTimeCompare([]byte(pin), []byte(h.Deps.AdminPIN)) == 1
-	}
+	return "/v2/admin"
+}
 
-	if !valid {
-		render(w, r, http.StatusUnauthorized, page.Login(page.LoginProps{
-			ErrorMsg:     "PIN이 올바르지 않습니다",
-			Next:         next,
-			KakaoEnabled: h.Deps.Kakao != nil && h.Deps.Kakao.Enabled(),
-		}))
-		return
+func (h *PageHandlers) loginNext(value string) string {
+	next := legacyauth.SafeAdminNext(value, h.defaultAdminPath())
+	if h.Deps.AuthOnly && strings.HasPrefix(next, "/v2/admin") {
+		return "/admin"
 	}
-
-	// 세션 회전 (session fixation 방어).
-	if err := h.Deps.Session.RenewToken(r.Context()); err != nil {
-		http.Error(w, "session error", http.StatusInternalServerError)
-		return
-	}
-	h.Deps.Session.Put(r.Context(), v2auth.SessionKeyRole, v2auth.RoleAdmin)
-	if adminID != "" {
-		h.Deps.Session.Put(r.Context(), v2auth.SessionKeyAdminID, adminID)
-	}
-	http.Redirect(w, r, next, http.StatusSeeOther)
+	return next
 }
 
 func (h *PageHandlers) adminID(r *http.Request) string {
+	if id := h.Deps.Session.GetString(r.Context(), v2auth.SessionKeyKakaoID); id != "" {
+		return "kakao:" + id
+	}
 	if id := h.Deps.Session.GetString(r.Context(), v2auth.SessionKeyAdminID); id != "" {
 		return id
-	}
-	if id := h.Deps.Session.GetString(r.Context(), "v2_kakao_id"); id != "" {
-		return "kakao:" + id
 	}
 	return "v2-admin"
 }
 
 // LogoutPost — /v2/logout.
 func (h *PageHandlers) LogoutPost(w http.ResponseWriter, r *http.Request) {
-	_ = h.Deps.Session.Destroy(r.Context())
+	failed := false
+	for _, sm := range []*scs.SessionManager{h.Deps.Session, h.Deps.LegacySession} {
+		if sm == nil {
+			continue
+		}
+		if err := sm.Destroy(r.Context()); err != nil {
+			failed = true
+		}
+	}
+	if failed {
+		http.Error(w, "로그아웃하지 못했습니다. 다시 시도해 주세요.", http.StatusInternalServerError)
+		return
+	}
 	http.Redirect(w, r, "/v2/login", http.StatusSeeOther)
 }

@@ -2,12 +2,10 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/httprate"
 
 	"github.com/mingicho/yuhada/internal/auth"
 	"github.com/mingicho/yuhada/internal/service"
@@ -16,10 +14,11 @@ import (
 
 // Deps — 핸들러 공통 의존성.
 type Deps struct {
-	Session     *scs.SessionManager
-	Services    *service.Services
-	SMS         *sms.Client
-	EnableDebug bool // dev에서만 /debug/* 노출
+	Session      *scs.SessionManager
+	Services     *service.Services
+	SMS          *sms.Client
+	EnableDebug  bool // dev에서만 /debug/* 노출
+	KakaoSession *scs.SessionManager
 }
 
 // NewRouter — chi 라우터 구성.
@@ -33,6 +32,9 @@ func NewRouter(deps *Deps) http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Compress(5))
 	r.Use(deps.Session.LoadAndSave)
+	if deps.KakaoSession != nil {
+		r.Use(deps.KakaoSession.LoadAndSave)
+	}
 
 	// 정적 파일 (CSS, fonts, icons 등)
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
@@ -41,21 +43,17 @@ func NewRouter(deps *Deps) http.Handler {
 	r.Get("/healthz", healthz)
 
 	pages := &PageHandlers{
-		Services: deps.Services,
-		Session:  deps.Session,
-		SMS:      deps.SMS,
+		Services:     deps.Services,
+		Session:      deps.Session,
+		SMS:          deps.SMS,
+		KakaoSession: deps.KakaoSession,
 	}
 
 	// ─── 공개 ───
 	r.Get("/", pages.Home)
 
-	// 로그인 — 이미 인증된 상태면 /admin으로
-	r.Group(func(r chi.Router) {
-		r.Use(auth.RedirectIfAuthed(deps.Session, "/admin"))
-		r.Get("/login", pages.LoginGet)
-		// POST /login 은 IP 기준 분당 10회 rate limit
-		r.With(httprate.LimitByIP(10, 1*time.Minute)).Post("/login", pages.LoginPost)
-	})
+	// The retired login URL always forwards to the Kakao-only login.
+	r.Get("/login", pages.LoginGet)
 	r.Post("/logout", pages.LogoutPost)
 
 	// ─── 고객 모바일 (NFC 태깅 진입) ───

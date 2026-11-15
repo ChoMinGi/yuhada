@@ -30,6 +30,7 @@ func TestSessionSurvivesManagerRestart(t *testing.T) {
 	w := httptest.NewRecorder()
 	s1.LoadAndSave(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s1.Put(r.Context(), SessionKeyRole, RoleAdmin)
+		s1.Put(r.Context(), SessionKeyKakaoID, "fixture-kakao")
 		w.WriteHeader(204)
 	})).ServeHTTP(w, httptest.NewRequest("GET", "/v2/login", nil))
 	s2 := NewSessionManager(db, false)

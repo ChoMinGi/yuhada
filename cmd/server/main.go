@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 
 	"github.com/mingicho/yuhada/internal/auth"
@@ -74,13 +75,6 @@ func main() {
 	// 서비스 레이어
 	services := service.New(database, enc)
 
-	// 관리자 부트스트랩 — PIN 우선, 비번은 fallback.
-	bootCtx, bootCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	if err := services.Admin.Bootstrap(bootCtx, cfg.AdminBootEmail, cfg.AdminBootPIN, cfg.AdminBootPW); err != nil {
-		logger.Warn("admin bootstrap failed", "err", err)
-	}
-	bootCancel()
-
 	// 기존 평문 레코드 암호화 마이그레이션 (1회성)
 	migrCtx, migrCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	if err := services.Member.MigrateEncryption(migrCtx); err != nil {
@@ -94,11 +88,23 @@ func main() {
 		logger.Info("SMS notifications enabled", "sender", cfg.AligoSender)
 	}
 
+	// Kakao authentication remains available even when the new admin UI is disabled.
+	var ready int
+	schemaErr := database.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('membership_plans','memberships','deduct_amount_presets','service_memo_presets','admin_sessions_v2')`).Scan(&ready)
+	var v2Session *scs.SessionManager
+	if schemaErr == nil && ready == 5 {
+		v2Session = v2auth.NewSessionManager(database, cfg.CookieSecure)
+	}
+	v2Kakao := &v2kakao.Config{
+		ClientID: cfg.KakaoClientID, ClientSecret: cfg.KakaoSecret,
+		RedirectURI: cfg.KakaoRedirectV2, RequireEmail: strings.TrimSpace(cfg.AdminKakaoEmailsV2) != "",
+	}
 	deps := &handler.Deps{
-		Session:     session,
-		Services:    services,
-		SMS:         smsClient,
-		EnableDebug: !cfg.IsProd(),
+		Session:      session,
+		Services:     services,
+		SMS:          smsClient,
+		EnableDebug:  !cfg.IsProd(),
+		KakaoSession: v2Session,
 	}
 	router := handler.NewRouter(deps)
 
@@ -108,37 +114,25 @@ func main() {
 	root := chi.NewMux()
 	root.Mount("/", router)
 
-	if !cfg.IsProd() || cfg.V2Enable {
-		var ready int
-		err := database.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('membership_plans','memberships','deduct_amount_presets','service_memo_presets','admin_sessions_v2')`).Scan(&ready)
-		if err != nil || ready != 5 {
-			logger.Error("v2 schema unavailable; apply migrations first; v1 remains available", "err", err)
-		} else {
-			v2Session := v2auth.NewSessionManager(database, cfg.CookieSecure)
-			v2Services := v2service.New(database, enc)
-			v2Kakao := &v2kakao.Config{
-				ClientID:     cfg.KakaoClientID,
-				ClientSecret: cfg.KakaoSecret,
-				RedirectURI:  cfg.KakaoRedirectV2,
-				RequireEmail: strings.TrimSpace(cfg.AdminKakaoEmailsV2) != "",
-			}
-			v2Router := v2handler.NewRouter(&v2handler.Deps{
-				Session:      v2Session,
-				Services:     v2Services,
-				SMS:          smsClient,
-				AdminPIN:     cfg.AdminPinV2,
-				Kakao:        v2Kakao,
-				AdminKakaoID: cfg.AdminKakaoIDV2,
-				EnableDebug:  !cfg.IsProd(),
-				Legacy:       services,
+	if v2Session != nil {
+		v2Services := v2service.New(database, enc)
+		v2Router := v2handler.NewRouter(&v2handler.Deps{
+			Session:       v2Session,
+			Services:      v2Services,
+			SMS:           smsClient,
+			Kakao:         v2Kakao,
+			AdminKakaoID:  cfg.AdminKakaoIDV2,
+			EnableDebug:   !cfg.IsProd(),
+			Legacy:        services,
+			LegacySession: session,
+			AuthOnly:      cfg.IsProd() && !cfg.V2Enable,
 
-				AdminKakaoEmails: cfg.AdminKakaoEmailsV2,
-			})
-			root.Mount("/v2", v2Router)
-			logger.Info("v2 mounted at /v2 using existing members and transactions")
-		}
+			AdminKakaoEmails: cfg.AdminKakaoEmailsV2,
+		})
+		root.Mount("/v2", v2Router)
+		logger.Info("Kakao authentication mounted; both interfaces use existing ledger", "v2_ui_enabled", !cfg.IsProd() || cfg.V2Enable)
 	} else {
-		logger.Info("v2 mount skipped (prod default — V2_ENABLE 미설정)")
+		logger.Error("Kakao session schema unavailable; apply migrations before admin sign-in", "err", schemaErr)
 	}
 
 	srv := &http.Server{

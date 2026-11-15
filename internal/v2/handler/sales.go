@@ -314,7 +314,7 @@ func buildTierChart(rows []v2service.TierRow) ([]string, []int) {
 	return labels, values
 }
 
-// buildPayChart — 결제수단 건수 도넛 데이터 (정액권만).
+// buildPayChart — 모든 판매의 결제수단 건수. 미상 그룹 포함.
 func buildPayChart(rows []v2service.PayMethodRow) ([]string, []int) {
 	if len(rows) == 0 {
 		return []string{}, []int{}
@@ -327,7 +327,7 @@ func buildPayChart(rows []v2service.PayMethodRow) ([]string, []int) {
 		} else if r.PayMethod == "cash" {
 			labels = append(labels, "현금")
 		} else {
-			labels = append(labels, r.PayMethod)
+			labels = append(labels, "결제수단 미상")
 		}
 		values = append(values, r.Count)
 	}
@@ -430,8 +430,6 @@ func toUTCIso(t time.Time) string {
 func buildSummaryCards(s v2service.SalesSummary, usedPct int) page.SalesSummaryCards {
 	return page.SalesSummaryCards{
 		RealRevenue:   util.FormatKRW(s.RealRevenue),
-		UnknownCredit: util.FormatKRW(s.UnknownCredit),
-		UnknownCount:  fmt.Sprintf("%d", s.UnknownCount),
 		CreditTotal:   util.FormatKRW(s.CreditTotal),
 		BonusCost:     util.FormatKRW(s.BonusCost),
 		TxCount:       fmt.Sprintf("%d건", s.TxCount),
@@ -469,9 +467,6 @@ func buildTierRows(rows []v2service.TierRow) []page.SalesTierRow {
 			CountLabel:  fmt.Sprintf("%d건", r.Count),
 			TotalPrice:  util.FormatKRW(r.TotalPrice),
 			TotalCredit: util.FormatKRW(r.TotalCredit),
-		}
-		if r.IsGeneric {
-			row.TotalPrice = "미확정"
 		}
 		if !r.IsGeneric && r.TotalBonus > 0 {
 			row.TotalBonus = util.FormatKRW(r.TotalBonus)
@@ -515,6 +510,9 @@ func buildRecentRows(rows []v2service.RecentSale) []page.SalesRecentRow {
 			TierLabel:  r.TierLabel,
 			PayMethod:  r.PayMethod,
 			IsGeneric:  r.TierLabel == "",
+		}
+		if r.CreditAmount != r.Amount {
+			row.Credit = "적립 " + util.FormatKRW(r.CreditAmount)
 		}
 		out = append(out, row)
 	}

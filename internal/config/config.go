@@ -12,29 +12,24 @@ import (
 
 // Config — .env 또는 환경변수에서 로드.
 type Config struct {
-	Env             string // "dev" | "prod"
-	Addr            string // ":8080"
-	DBPath          string // SQLite 파일 경로
-	SessionSecret   []byte // 32B 이상
-	EncryptionKey   []byte // 32B AES-256 키 (빈값이면 암호화 비활성)
-	AligoKey        string // 알리고 SMS API 키
-	AligoUserID     string // 알리고 계정 ID
-	AligoSender     string // 발신번호
-	KakaoClientID   string
-	KakaoSecret     string
-	KakaoRedirect   string
-	LogLevel        string // "debug" | "info" | "warn" | "error"
-	AdminBootEmail  string // 첫 실행 시 관리자 식별자 (이메일)
-	AdminBootPW     string // 비밀번호 fallback (옵션)
-	AdminBootPIN    string // 6자리 PIN — 메인 로그인 수단
-	CookieSecure    bool
+	Env           string // "dev" | "prod"
+	Addr          string // ":8080"
+	DBPath        string // SQLite 파일 경로
+	SessionSecret []byte // 32B 이상
+	EncryptionKey []byte // 32B AES-256 키 (빈값이면 암호화 비활성)
+	AligoKey      string // 알리고 SMS API 키
+	AligoUserID   string // 알리고 계정 ID
+	AligoSender   string // 발신번호
+	KakaoClientID string
+	KakaoSecret   string
+	KakaoRedirect string
+	LogLevel      string // "debug" | "info" | "warn" | "error"
+	CookieSecure  bool
 	// Deprecated: retained for old environment files. Both frontends use DBPath.
-	DBV2Path        string
-	// Standalone test PIN. Production verifies the existing administrator PIN hash.
-	AdminPinV2      string
+	DBV2Path string
 	// V2: prod 에서도 마운트할지 여부 (dev 는 항상 마운트).
 	// prod 에서 새 관리자 화면 활성화 시 V2_ENABLE=true.
-	V2Enable        bool
+	V2Enable bool
 	// V2 카카오 로그인 (선택). KakaoClientID/Secret 는 v1 과 공유, redirect 만 별도.
 	KakaoRedirectV2 string
 	AdminKakaoIDV2  string
@@ -50,22 +45,18 @@ func Load() (Config, error) {
 	_ = godotenv.Load() // 없어도 OK
 
 	cfg := Config{
-		Env:            normalizeEnv(env("APP_ENV", "dev")),
-		Addr:           env("APP_ADDR", ":8080"),
-		DBPath:         env("DB_PATH", "./var/yuhada.db"),
-		LogLevel:       env("LOG_LEVEL", "info"),
-		AligoKey:       env("ALIGO_API_KEY", ""),
-		AligoUserID:    env("ALIGO_USER_ID", ""),
-		AligoSender:    env("ALIGO_SENDER", ""),
-		KakaoClientID:  env("KAKAO_CLIENT_ID", ""),
-		KakaoSecret:    env("KAKAO_CLIENT_SECRET", ""),
-		KakaoRedirect:  env("KAKAO_REDIRECT_URL", ""),
-		AdminBootEmail: env("ADMIN_BOOTSTRAP_EMAIL", ""),
-		AdminBootPW:    env("ADMIN_BOOTSTRAP_PW", ""),
-		AdminBootPIN:   env("ADMIN_BOOTSTRAP_PIN", ""),
-		// Legacy v2 environment compatibility; production uses DBPath and the existing PIN hash.
-		DBV2Path:   env("DB_V2_PATH", "./var/yuhada-v2.db"),
-		AdminPinV2: env("ADMIN_PIN_V2", ""),
+		Env:           normalizeEnv(env("APP_ENV", "dev")),
+		Addr:          env("APP_ADDR", ":8080"),
+		DBPath:        env("DB_PATH", "./var/yuhada.db"),
+		LogLevel:      env("LOG_LEVEL", "info"),
+		AligoKey:      env("ALIGO_API_KEY", ""),
+		AligoUserID:   env("ALIGO_USER_ID", ""),
+		AligoSender:   env("ALIGO_SENDER", ""),
+		KakaoClientID: env("KAKAO_CLIENT_ID", ""),
+		KakaoSecret:   env("KAKAO_CLIENT_SECRET", ""),
+		KakaoRedirect: env("KAKAO_REDIRECT_URL", ""),
+		// Legacy database-path compatibility. PIN environment settings are unused.
+		DBV2Path: env("DB_V2_PATH", "./var/yuhada-v2.db"),
 	}
 	cfg.V2Enable, _ = strconv.ParseBool(env("V2_ENABLE", "false"))
 	cfg.KakaoRedirectV2 = env("KAKAO_REDIRECT_V2", "")

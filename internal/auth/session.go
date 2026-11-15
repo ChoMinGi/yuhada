@@ -15,7 +15,7 @@ import (
 //   - Lifetime    30일 — 절대 상한. 이후 무조건 재로그인.
 //   - IdleTimeout 12시간 — 마지막 활동 이후 미사용 시 만료.
 //
-// 매장 영업 시나리오: 영업 종료 후 밤새 미사용 → 다음날 아침 PIN 재입력.
+// 매장 영업 시나리오: 영업 종료 후 밤새 미사용 → 다음날 아침 카카오 재로그인.
 // 영업 중에는 페이지 이동/액션마다 갱신되어 끊김 없음.
 func NewSessionManager(database *sql.DB, secure bool) *scs.SessionManager {
 	sm := scs.New()

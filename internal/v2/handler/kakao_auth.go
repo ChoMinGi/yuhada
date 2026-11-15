@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"strings"
 
 	v2auth "github.com/mingicho/yuhada/internal/v2/auth"
@@ -24,9 +23,7 @@ func (h *PageHandlers) KakaoLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	state := randHex(16)
 	h.Deps.Session.Put(r.Context(), kakaoStateSessionKey, state)
-	if next := r.URL.Query().Get("next"); next != "" {
-		h.Deps.Session.Put(r.Context(), "v2_kakao_next", v2auth.SafeNext(next))
-	}
+	h.Deps.Session.Put(r.Context(), "v2_kakao_next", h.loginNext(r.URL.Query().Get("next")))
 	http.Redirect(w, r, h.Deps.Kakao.AuthorizeURL(state), http.StatusSeeOther)
 }
 
@@ -99,8 +96,14 @@ func (h *PageHandlers) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "로그인 세션을 생성하지 못했습니다. 다시 시도해 주세요.", http.StatusInternalServerError)
 		return
 	}
+	kakaoID := fmt.Sprint(u.ID)
+	if err := h.authorizeLegacy(r.Context(), kakaoID, true); err != nil {
+		http.Error(w, "로그인 세션을 생성하지 못했습니다. 다시 시도해 주세요.", http.StatusInternalServerError)
+		return
+	}
 	h.Deps.Session.Put(r.Context(), v2auth.SessionKeyRole, v2auth.RoleAdmin)
-	h.Deps.Session.Put(r.Context(), "v2_kakao_id", fmt.Sprint(u.ID))
+	h.Deps.Session.Put(r.Context(), v2auth.SessionKeyKakaoID, kakaoID)
+	h.Deps.Session.Put(r.Context(), v2auth.SessionKeyAdminID, "kakao:"+kakaoID)
 	slog.Info("v2 kakao login ok")
 
 	next := q.Get("next")
@@ -108,10 +111,7 @@ func (h *PageHandlers) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 		next = saved
 	}
 	h.Deps.Session.Remove(r.Context(), "v2_kakao_next")
-	if !safeKakaoNext(next) {
-		next = "/v2/admin"
-	}
-	http.Redirect(w, r, next, http.StatusSeeOther)
+	http.Redirect(w, r, h.loginNext(next), http.StatusSeeOther)
 }
 
 func verifiedKakaoEmail(account v2kakao.AccountInfo) bool {
@@ -132,12 +132,6 @@ func kakaoEmailAllowed(email, whitelist string) bool {
 		}
 	}
 	return false
-}
-
-func safeKakaoNext(next string) bool {
-	parsed, err := url.Parse(next)
-	return err == nil && strings.HasPrefix(next, "/") && !strings.HasPrefix(next, "//") &&
-		!strings.ContainsAny(next, "\\\r\n") && parsed.Host == "" && parsed.Scheme == ""
 }
 
 func randHex(n int) string {

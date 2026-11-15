@@ -177,7 +177,7 @@ func TestInitialChargeAtomicAndShared(t *testing.T) {
 		t.Fatal("partial registration persisted")
 	}
 }
-func TestLifetimeTotalsAndUnknownPaymentsHaveNoDisplayLimit(t *testing.T) {
+func TestLifetimeTotalsAndAllChargeSalesHaveNoDisplayLimit(t *testing.T) {
 	_, s, _ := sharedFixture(t)
 	ctx := context.Background()
 	id := fixtureMember(t, s)
@@ -202,15 +202,15 @@ func TestLifetimeTotalsAndUnknownPaymentsHaveNoDisplayLimit(t *testing.T) {
 		t.Fatalf("ledger %+v %v", ledger, err)
 	}
 	summary, err := s.Sales.SalesSummary(ctx, "1970", "")
-	if err != nil || summary.RealRevenue != 0 || summary.UnknownCredit != 605000 || summary.UnknownCount != 605 || summary.CreditTotal != 605000 || summary.AvgTicket != 0 {
-		t.Fatalf("unknown payment %+v %v", summary, err)
+	if err != nil || summary.RealRevenue != 605000 || summary.TxCount != 605 || summary.CreditTotal != 605000 || summary.AvgTicket != 1000 {
+		t.Fatalf("all charge sales %+v %v", summary, err)
 	}
 	top, err := s.Sales.TopMembers(ctx, "1970", "", 5)
-	if err != nil || len(top) != 0 {
-		t.Fatalf("unknown credit in confirmed revenue ranking %+v %v", top, err)
+	if err != nil || len(top) != 1 || top[0].TotalPrice != 605000 || top[0].Count != 605 {
+		t.Fatalf("all charge ranking %+v %v", top, err)
 	}
 	daily, err := s.Sales.DailyRevenue(ctx, "1970", "")
-	if err != nil || len(daily) != 0 {
-		t.Fatalf("unknown credit in revenue chart %+v %v", daily, err)
+	if err != nil || len(daily) != 1 || daily[0].Revenue != 605000 {
+		t.Fatalf("all charge revenue chart %+v %v", daily, err)
 	}
 }

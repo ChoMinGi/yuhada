@@ -181,8 +181,6 @@ type SalesSummaryCards struct {
 	// CreditUsedPct — 잔액 적립 총액 대비 실제 소진(차감+환불) 비율 (0..100).
 	// UI 에서 카드 뒷배경 프로그레스로 시각화.
 	CreditUsedPct int
-	UnknownCredit string // 실결제액이 확인되지 않은 일반·기존 충전 적립액
-	UnknownCount  string
 }
 
 // SalesTopMember — TOP 회원 위젯 한 줄 (포맷 완료).
@@ -208,7 +206,7 @@ type SalesTierRow struct {
 
 // SalesPayMethodRow — 결제수단 비율 한 줄.
 type SalesPayMethodRow struct {
-	PayMethod  string // "card" | "cash"
+	PayMethod  string // "card" | "cash" | "unknown"
 	CountLabel string // "5건"
 	TotalPrice string // "₩1,500,000"
 	Percent    int    // 0..100 (합계 기준)
@@ -216,6 +214,7 @@ type SalesPayMethodRow struct {
 
 // SalesRecentRow — 최근 판매 이력 한 줄.
 type SalesRecentRow struct {
+	Credit     string // 보너스 적립으로 판매액과 다를 때 표시
 	MemberID   string
 	MemberName string
 	Amount     string // "+₩240,000"

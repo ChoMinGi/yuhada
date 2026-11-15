@@ -1,13 +1,12 @@
 package page
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/mingicho/yuhada/internal/v2/view/layout"
 )
 
-// Login — /v2/login. PIN 6자리 입력. v1 톤 재사용.
+// Login — /v2/login. 허용된 카카오 계정으로만 로그인한다.
 templ Login(p LoginProps) {
 	@layout.Bare("로그인") {
 		<main class="min-h-screen flex flex-col items-center justify-center">
@@ -16,82 +15,23 @@ templ Login(p LoginProps) {
 					<span class="font-display italic text-[40px] tracking-wide-serif">yhd</span>
 					<span class="mt-2 font-display text-[10px] tracking-[0.22em] uppercase">YUHADA HAIR</span>
 				</div>
-				<h1 class="yh-headline-l text-[26px] sm:text-[32px]">로그인</h1>
-				<p class="yh-body-sm text-ink-500 mb-10 mt-2">
-					if p.KakaoEnabled {
-						카카오로 간편 로그인하거나 PIN 을 입력하세요.
-					} else {
-						v2 관리자 PIN 을 입력하세요.
-					}
-				</p>
-
+				<h1 class="yh-headline-l text-[26px] sm:text-[32px] mb-2">로그인</h1>
 				if p.KakaoEnabled {
+					<p class="yh-body-sm text-ink-500 mb-10">허용된 카카오 계정으로 로그인해 주세요.</p>
 					@kakaoButton(p.Next)
-					<div class="flex items-center gap-3 my-8">
-						<div class="flex-1 h-px bg-sand-300"></div>
-						<span class="text-[11px] tracking-brand uppercase text-ink-500">또는 PIN</span>
-						<div class="flex-1 h-px bg-sand-300"></div>
-					</div>
+					<p class="text-[12px] text-ink-500 mt-4">등록되지 않은 계정은 관리자 화면에 접근할 수 없습니다.</p>
+				} else {
+					<p class="yh-body-sm text-ink-500 mt-2">카카오 로그인 설정이 필요합니다. 관리자에게 문의해 주세요.</p>
 				}
-
-				@loginForm(p)
+				if p.ErrorMsg != "" {
+					<p class="text-[12px] text-danger mt-4" role="alert">{ p.ErrorMsg }</p>
+				}
 			</div>
 		</main>
 	}
 }
 
-// loginForm — v2 PIN 입력. 6칸 시각화 + 6자리 채워지면 자동 submit.
-// next 파라미터가 있으면 hidden input 로 보존한다.
-templ loginForm(p LoginProps) {
-	<form
-		method="POST"
-		action="/v2/login"
-		class="flex flex-col gap-6"
-		hx-boost="false"
-		x-data="{ pin: '', submitting: false }"
-	>
-		if p.Next != "" {
-			<input type="hidden" name="next" value={ p.Next }/>
-		}
-		<div>
-			<label class="yh-label" for="pin">PIN</label>
-			<div class="relative" x-on:click="$refs.pinInput.focus()">
-				<input
-					id="pin"
-					name="pin"
-					type="password"
-					inputmode="numeric"
-					pattern="[0-9]{6}"
-					maxlength="6"
-					autocomplete="off"
-					autofocus
-					required
-					x-ref="pinInput"
-					x-model="pin"
-					x-on:input="pin = pin.replace(/\D/g,'').slice(0,6); if (pin.length === 6 && !submitting) { submitting = true; $nextTick(() => $el.form.requestSubmit()); }"
-					class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-				/>
-				<div class="grid grid-cols-6 gap-3 pointer-events-none select-none">
-					for i := 0; i < 6; i++ {
-						@pinBox(i)
-					}
-				</div>
-			</div>
-		</div>
-
-		<div class="min-h-[20px] text-[12px] text-danger">
-			if p.ErrorMsg != "" {
-				{ p.ErrorMsg }
-			}
-		</div>
-
-		<button type="submit" class="yh-btn yh-btn-primary yh-btn-lg w-full" x-bind:disabled="pin.length !== 6">
-			로그인
-		</button>
-	</form>
-}
-
-// kakaoButton — 카카오 브랜드 색(#FEE500) 버튼. next 있으면 콜백 후 그리로.
+// kakaoButton — 허용된 카카오 계정으로 관리자 인증을 시작한다.
 templ kakaoButton(next string) {
 	<a
 		href={ templ.SafeURL(kakaoLoginHref(next)) }
@@ -104,32 +44,9 @@ templ kakaoButton(next string) {
 	</a>
 }
 
-// kakaoLoginHref — next 를 세션 대신 URL 로 넘겨야 콜백에서 복원할 수 있음.
 func kakaoLoginHref(next string) string {
 	if next == "" {
 		return "/v2/kakao/login"
 	}
 	return "/v2/kakao/login?next=" + url.QueryEscape(next)
-}
-
-templ pinBox(idx int) {
-	<div
-		class="h-14 border-b-2 flex items-center justify-center transition-colors duration-150"
-		x-bind:class={ pinBoxBorder(idx) }
-	>
-		<span
-			x-show={ fmt.Sprintf("pin.length > %d", idx) }
-			x-transition:enter="transition ease-out duration-150"
-			x-transition:enter-start="opacity-0 scale-50"
-			x-transition:enter-end="opacity-100 scale-100"
-			class="w-2.5 h-2.5 rounded-full bg-ink-900"
-		></span>
-	</div>
-}
-
-func pinBoxBorder(i int) string {
-	return fmt.Sprintf(
-		"pin.length > %d ? 'border-ink-900' : (pin.length === %d ? 'border-ink-900' : 'border-sand-300')",
-		i, i,
-	)
 }

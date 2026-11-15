@@ -1,7 +1,7 @@
 // Package auth — v2 전용 세션·관리자 인증.
 //
 // v1과 쿠키/세션 테이블을 분리하고 같은 로그인 유지 정책을 사용한다.
-// 운영 PIN 검증은 기존 관리자 서비스에서 수행한다.
+// 허용된 카카오 계정으로만 관리자 세션을 생성한다.
 package auth
 
 import (
@@ -18,6 +18,7 @@ import (
 const (
 	SessionKeyRole    = "v2_role"
 	SessionKeyAdminID = "v2_admin_id"
+	SessionKeyKakaoID = "v2_kakao_id"
 	RoleAdmin         = "admin"
 )
 

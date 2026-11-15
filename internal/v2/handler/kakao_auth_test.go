@@ -88,7 +88,7 @@ func runKakaoCallback(t *testing.T, whitelist, legacyID string, account map[stri
 	})
 	wrapped := sm.LoadAndSave(mux)
 	start := httptest.NewRecorder()
-	wrapped.ServeHTTP(start, httptest.NewRequest("GET", "/start", nil))
+	wrapped.ServeHTTP(start, httptest.NewRequest("GET", "/start?next="+url.QueryEscape(next), nil))
 	if start.Code != 303 {
 		t.Fatalf("start = %d", start.Code)
 	}

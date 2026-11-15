@@ -21,7 +21,7 @@ templ Sales(p SalesProps) {
 			<header class="mb-6 sm:mb-8">
 				<p class="yh-eyebrow mb-2 sm:mb-3">MEMBERSHIP</p>
 				<h1 class="yh-headline-l text-[26px] sm:text-[32px]">매출 대시보드</h1>
-				<p class="yh-body-sm mt-2 text-ink-500">{ p.PeriodLabel } 기준. 확인된 정액권 판매와 잔액 충전 내역.</p>
+				<p class="yh-body-sm mt-2 text-ink-500">{ p.PeriodLabel } 기준. 모든 충전을 판매 금액에 포함합니다.</p>
 			</header>
 
 			<!-- 기간 필터 (dashboard 와 동일 스타일 + '기간 지정' 토글) -->
@@ -82,19 +82,13 @@ templ Sales(p SalesProps) {
 
 			<!-- KPI 5장 (핵심만): 판매 금액/적립/보너스 강조 3장 + 판매 건수/활성 회원 -->
 			<section class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-				@salesSummaryCard("확인된 판매 금액", p.SummaryCards.RealRevenue, "정액권 판매 기록 기준", true)
+				@salesSummaryCard("판매 금액", p.SummaryCards.RealRevenue, "전체 충전 포함 · 정액권 보너스 제외", true)
 				@salesUsageCard(p.SummaryCards.CreditTotal, p.SummaryCards.CreditUsedPct)
 				@salesSummaryCard("보너스 비용", p.SummaryCards.BonusCost, "적립 − 판매", false)
 			</section>
 			<section class="grid grid-cols-2 gap-3 sm:gap-4 mb-8">
 				@salesSummaryCard("충전 건수", p.SummaryCards.TxCount, "정액권 + 일반 충전", false)
 				@salesSummaryCard("활성 회원", p.SummaryCards.ActiveMembers, "이 기간 구매한 사람", false)
-			</section>
-
-			<section class="yh-card p-4 sm:p-5 mb-8">
-				<p class="yh-eyebrow-xs text-ink-500 mb-2">실결제액 미확정 충전</p>
-				<p class="yh-num text-[20px] sm:text-[24px]">{ p.SummaryCards.UnknownCredit } <span class="text-[13px] text-ink-500">· { p.SummaryCards.UnknownCount }건</span></p>
-				<p class="text-[12px] text-ink-500 mt-2">일반·기존 충전의 적립액입니다. 실제 받은 금액을 확인할 수 없어 판매 금액에 포함하지 않습니다.</p>
 			</section>
 
 			<!-- 차트 영역: 라인 (2열) + 등급 도넛 (1열) -->
@@ -285,11 +279,11 @@ templ Sales(p SalesProps) {
 				</div>
 			</section>
 
-			<!-- 결제수단 비율 + 도넛 (정액권만) -->
+			<!-- 결제수단 비율 + 도넛 (일반 충전은 결제수단 미상) -->
 			if len(p.PayRows) > 0 {
 				<section>
 					<div class="flex items-center justify-between mb-3">
-						<h2 class="yh-eyebrow">결제수단 비율 <span class="text-ink-500 normal-case tracking-normal text-[11px]">정액권만</span></h2>
+						<h2 class="yh-eyebrow">결제수단 비율 <span class="text-ink-500 normal-case tracking-normal text-[11px]">일반 충전은 미상</span></h2>
 					</div>
 					<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 						<div class="yh-card p-5 sm:p-6 space-y-4 lg:col-span-2">
@@ -466,14 +460,15 @@ templ salesTierRow(row SalesTierRow) {
 // salesPayRow — 결제수단 한 줄 (프로그레스 바).
 templ salesPayRow(row SalesPayMethodRow) {
 	<div class="flex items-center gap-3 sm:gap-4">
-		<p class="w-12 shrink-0 text-[13px] sm:text-[14px] text-ink-900">{ payMethodLabel(row.PayMethod) }</p>
+		<p class="w-12 shrink-0 text-[13px] sm:text-[14px] text-ink-900">{ salesPayMethodLabel(row.PayMethod) }</p>
 		<p class="w-14 shrink-0 text-[12px] text-ink-500 tabular-nums">{ row.CountLabel }</p>
 		<p class="yh-num text-[14px] sm:text-[15px] text-ink-900 w-28 shrink-0 tabular-nums">{ row.TotalPrice }</p>
 		<div class="flex-1 min-w-0 h-2 rounded-full bg-sand-200 overflow-hidden">
 			<div
 				class={ "h-full",
 					templ.KV("bg-ink-900", row.PayMethod == "card"),
-					templ.KV("bg-success", row.PayMethod == "cash") }
+					templ.KV("bg-success", row.PayMethod == "cash"),
+					templ.KV("bg-ink-500", row.PayMethod == "unknown") }
 				style={ "width:" + strconv.Itoa(row.Percent) + "%" }
 			></div>
 		</div>
@@ -494,7 +489,7 @@ templ salesRecentRow(r SalesRecentRow) {
 			<p class="text-[14px] font-medium text-ink-900 truncate">{ r.MemberName }</p>
 			<p class="text-[11px] text-ink-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
 				if r.IsGeneric {
-					<span>일반 충전 · 실결제액 미확정</span>
+					<span>일반 충전 · 결제수단 미상</span>
 				} else {
 					<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700">
 						{ r.TierLabel }
@@ -510,6 +505,18 @@ templ salesRecentRow(r SalesRecentRow) {
 				}
 			</p>
 		</a>
-		<p class="yh-num text-[14px] sm:text-[15px] text-success shrink-0 tabular-nums">{ r.Amount }</p>
+		<div class="shrink-0 text-right">
+			<p class="yh-num text-[14px] sm:text-[15px] text-success tabular-nums">{ r.Amount }</p>
+			if r.Credit != "" {
+				<p class="text-[11px] text-ink-500 mt-1">{ r.Credit }</p>
+			}
+		</div>
 	</li>
+}
+
+func salesPayMethodLabel(method string) string {
+	if method == "card" || method == "cash" {
+		return payMethodLabel(method)
+	}
+	return "미상"
 }

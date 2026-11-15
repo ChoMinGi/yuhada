@@ -1,14 +1,20 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 
 	"github.com/alexedwards/scs/v2"
+	legacyauth "github.com/mingicho/yuhada/internal/auth"
 )
+
+// IsAdmin requires Kakao proof, so an old PIN-only cookie no longer authorizes.
+func IsAdmin(ctx context.Context, sm *scs.SessionManager) bool {
+	return sm.GetString(ctx, SessionKeyRole) == RoleAdmin && sm.GetString(ctx, SessionKeyKakaoID) != ""
+}
 
 // RequireAdmin — v2 관리자 세션이 없으면 /v2/login 으로 리다이렉트.
 //
@@ -18,17 +24,8 @@ import (
 func RequireAdmin(sm *scs.SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			role := sm.GetString(r.Context(), SessionKeyRole)
-			if role != RoleAdmin {
-				returnTo := SafeNext(r.URL.RequestURI())
-				if r.Method != http.MethodGet {
-					// Wallet/card writes cannot be replayed by a GET after login.
-					u, _ := url.Parse(returnTo)
-					parts := strings.Split(u.Path, "/")
-					if len(parts) >= 6 && strings.HasPrefix(u.Path, "/v2/admin/members/") {
-						returnTo = strings.Join(parts[:5], "/")
-					}
-				}
+			if !IsAdmin(r.Context(), sm) {
+				returnTo := legacyauth.AdminReturnTo(r, "/v2/admin")
 				dest := "/v2/login?" + url.Values{"next": {returnTo}}.Encode()
 				if strings.Contains(r.Header.Get("Accept"), "application/json") || r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
 					w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -49,25 +46,21 @@ func RequireAdmin(sm *scs.SessionManager) func(http.Handler) http.Handler {
 	}
 }
 
-// SafeNext keeps all post-login destinations on the v2 admin read surface.
+// SafeNext keeps post-login destinations on either shared-ledger admin surface.
 func SafeNext(value string) string {
-	u, err := url.Parse(value)
-	if err != nil || u.IsAbs() || u.Host != "" || strings.ContainsAny(value, "\\\r\n") ||
-		(u.Path != "/v2/admin" && !strings.HasPrefix(u.Path, "/v2/admin/")) {
-		return "/v2/admin"
-	}
-	if path.Clean(u.Path) != u.Path {
-		return "/v2/admin"
-	}
-	return u.RequestURI()
+	return legacyauth.SafeAdminNext(value, "/v2/admin")
 }
 
 // RedirectIfAuthed — 이미 인증된 상태로 /v2/login 방문 시 dest 로.
 func RedirectIfAuthed(sm *scs.SessionManager, dest string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if sm.GetString(r.Context(), SessionKeyRole) == RoleAdmin {
-				http.Redirect(w, r, dest, http.StatusSeeOther)
+			if IsAdmin(r.Context(), sm) {
+				destination := legacyauth.SafeAdminNext(r.URL.Query().Get("next"), dest)
+				if dest == "/admin" && strings.HasPrefix(destination, "/v2/admin") {
+					destination = "/admin"
+				}
+				http.Redirect(w, r, destination, http.StatusSeeOther)
 				return
 			}
 			next.ServeHTTP(w, r)

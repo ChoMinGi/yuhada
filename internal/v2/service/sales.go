@@ -14,7 +14,7 @@ import (
 // SalesService — /v2/admin/sales 매출 대시보드 집계.
 // SQL 은 row fetch 만 담당하고 aggregate 는 여기서 수행.
 //
-// Canonical ledger credit without a sale snapshot has no recorded payment amount.
+// Every canonical charge is a sale; recorded plan prices exclude bonus credit.
 type SalesService struct {
 	db  *sql.DB
 	q   *dbgen.Queries
@@ -28,17 +28,15 @@ type SalesService struct {
 // SalesSummary — 상단 요약 카드 8개용 집계 (ERP 스타일).
 // 4장 기본 + 4장 확장. 모두 fetchRange 한 번의 결과에서 도출.
 type SalesSummary struct {
-	// RealRevenue is the recorded payment price from plan snapshots only.
-	RealRevenue   int64
-	UnknownCredit int64
-	UnknownCount  int
+	// RealRevenue is charge amount, or the recorded plan price when present.
+	RealRevenue int64
 	// CreditTotal — 손님 잔액에 적립된 총액(부채) = 정액권 credit + 일반충전 amount.
 	CreditTotal int64
 	// BonusCost — 정액권 (credit − price) 합. 일반충전은 0.
 	BonusCost int64
 	// TxCount — 기간 내 charge 트랜잭션 건수 (정액권 + 일반).
 	TxCount int
-	// AvgTicket is recorded plan payment revenue divided by plan sale count.
+	// AvgTicket is total sale revenue divided by all charge transactions.
 	AvgTicket int64
 	// ActiveMembers — 기간 내 충전 트랜잭션이 있는 unique member_id 수.
 	ActiveMembers int
@@ -62,20 +60,21 @@ type TierRow struct {
 	TotalBonus  int64
 }
 
-// PayMethodRow — 결제수단 비율 (정액권 only).
+// PayMethodRow — 결제수단 비율. 일반 충전은 unknown 그룹으로 포함한다.
 type PayMethodRow struct {
-	PayMethod  string // "card" | "cash"
+	PayMethod  string // "card" | "cash" | "unknown"
 	Count      int
 	TotalPrice int64
 }
 
 // RecentSale — 최근 판매 이력 한 줄 (핸들러가 formatted 문자열 만들기 전 raw).
 type RecentSale struct {
-	TxID       string
-	MemberID   string
-	MemberName string // 복호화 완료
-	Amount     int64
-	CreatedAt  string // ISO8601 UTC (핸들러에서 KST 로 포맷)
+	TxID         string
+	MemberID     string
+	MemberName   string // 복호화 완료
+	Amount       int64  // 판매 금액: 일반 charge amount 또는 plan price
+	CreditAmount int64  // 실제 원장 적립액
+	CreatedAt    string // ISO8601 UTC (핸들러에서 KST 로 포맷)
 	// 정액권일 때만 채워진다. 비어 있으면 일반 충전.
 	TierLabel string
 	PayMethod string
@@ -107,9 +106,8 @@ func (s *SalesService) SalesSummary(ctx context.Context, since, until string) (S
 			out.BonusCost += snap.CreditAmount - snap.Price
 			planCount++
 		} else {
-			// Original and generic credit does not record a paid price.
-			out.UnknownCredit += r.TxAmount
-			out.UnknownCount++
+			// Existing, initial and generic charges are sales at their credited amount.
+			out.RealRevenue += r.TxAmount
 			out.CreditTotal += r.TxAmount
 		}
 		if r.MemberID != "" {
@@ -117,9 +115,7 @@ func (s *SalesService) SalesSummary(ctx context.Context, since, until string) (S
 		}
 	}
 	if out.TxCount > 0 {
-		if planCount > 0 {
-			out.AvgTicket = out.RealRevenue / int64(planCount)
-		}
+		out.AvgTicket = out.RealRevenue / int64(out.TxCount)
 		out.PlanShareBP = planCount * 10000 / out.TxCount
 	}
 	out.ActiveMembers = len(perMember)
@@ -132,7 +128,7 @@ func (s *SalesService) SalesSummary(ctx context.Context, since, until string) (S
 }
 
 // TopMember — 기간 내 판매 금액 상위 회원 한 명.
-// TotalPrice includes only explicitly recorded plan payment prices.
+// TotalPrice includes generic/initial charges and recorded plan payment prices.
 type TopMember struct {
 	MemberID   string
 	Name       string // 복호화 완료. 이름이 비어 있으면 "(삭제된 회원)".
@@ -162,7 +158,7 @@ func (s *SalesService) TopMembers(ctx context.Context, since, until string, limi
 			snap := parseSnapshot(r.PlanSnapshot.String)
 			price = snap.Price
 		} else {
-			continue
+			price = r.TxAmount
 		}
 		b := buckets[r.MemberID]
 		if b == nil {
@@ -226,6 +222,7 @@ func (s *SalesService) SalesByTier(ctx context.Context, since, until string) ([]
 	for _, r := range rows {
 		if !r.PlanSnapshot.Valid {
 			generic.Count++
+			generic.TotalPrice += r.TxAmount
 			generic.TotalCredit += r.TxAmount
 			continue
 		}
@@ -347,8 +344,7 @@ func (s *SalesService) DormantMembers(ctx context.Context, cutoffUTC string) ([]
 	return out, nil
 }
 
-// SalesByPayMethod — 정액권만 결제수단(카드/현금) 별 매출 합계.
-// 일반 충전은 결제수단 미지정이라 제외.
+// SalesByPayMethod includes every sale; generic charges have unknown payment method.
 func (s *SalesService) SalesByPayMethod(ctx context.Context, since, until string) ([]PayMethodRow, error) {
 	rows, err := s.fetchRange(ctx, since, until)
 	if err != nil {
@@ -356,13 +352,13 @@ func (s *SalesService) SalesByPayMethod(ctx context.Context, since, until string
 	}
 	buckets := map[string]*PayMethodRow{}
 	for _, r := range rows {
-		if !r.PlanSnapshot.Valid {
-			continue
-		}
-		snap := parseSnapshot(r.PlanSnapshot.String)
-		pm := snap.PaymentMethod
-		if pm == "" {
-			continue
+		pm, price := "unknown", r.TxAmount
+		if r.PlanSnapshot.Valid {
+			snap := parseSnapshot(r.PlanSnapshot.String)
+			price = snap.Price
+			if snap.PaymentMethod != "" {
+				pm = snap.PaymentMethod
+			}
 		}
 		b := buckets[pm]
 		if b == nil {
@@ -370,8 +366,9 @@ func (s *SalesService) SalesByPayMethod(ctx context.Context, since, until string
 			buckets[pm] = b
 		}
 		b.Count++
-		b.TotalPrice += snap.Price
+		b.TotalPrice += price
 	}
+
 	out := make([]PayMethodRow, 0, len(buckets))
 	for _, b := range buckets {
 		out = append(out, *b)
@@ -406,14 +403,16 @@ func (s *SalesService) RecentSales(ctx context.Context, since, until string, lim
 			name = "(삭제된 회원)"
 		}
 		item := RecentSale{
-			TxID:       r.TxID,
-			MemberID:   r.MemberID,
-			MemberName: name,
-			Amount:     r.TxAmount,
-			CreatedAt:  r.TxCreatedAt,
+			TxID:         r.TxID,
+			MemberID:     r.MemberID,
+			MemberName:   name,
+			Amount:       r.TxAmount,
+			CreditAmount: r.TxAmount,
+			CreatedAt:    r.TxCreatedAt,
 		}
 		if r.PlanSnapshot.Valid {
 			snap := parseSnapshot(r.PlanSnapshot.String)
+			item.Amount = snap.Price
 			item.TierLabel = snap.TierLabel
 			item.PayMethod = snap.PaymentMethod
 			item.PerkLabel = snap.PerkLabel
@@ -462,7 +461,7 @@ func (s *SalesService) DailyRevenue(ctx context.Context, since, until string) ([
 			snap := parseSnapshot(r.PlanSnapshot.String)
 			price = snap.Price
 		} else {
-			continue
+			price = r.TxAmount
 		}
 		agg[day] += price
 	}
