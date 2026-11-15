@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	legacyservice "github.com/mingicho/yuhada/internal/service"
 	"github.com/mingicho/yuhada/internal/util"
-	"github.com/mingicho/yuhada/internal/v2/db/dbgen"
 	"github.com/mingicho/yuhada/internal/v2/view/page"
 )
 
@@ -17,40 +17,33 @@ import (
 func (h *PageHandlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	period := r.URL.Query().Get("period")
-	if !isValidPeriod(period) {
+	period := normalizePeriod(r.URL.Query().Get("period"))
+	legacyPeriod := legacyservice.PeriodToday
+	switch period {
+	case "this-week":
+		legacyPeriod = legacyservice.PeriodWeek
+	case "this-month":
+		legacyPeriod = legacyservice.PeriodMonth
+	case "all":
+		legacyPeriod = legacyservice.PeriodAll
+	default:
 		period = "today"
 	}
-	sinceUTC, untilUTC, _ := periodBounds(period)
-
-	// 트랜잭션 조회 (period 안). ListTransactionsInPeriod 은 until 필수라
-	// "all" 인 경우 사실상 상한 없는 문자열로 처리.
-	if untilUTC == "" {
-		untilUTC = "9999-12-31T23:59:59.999Z"
-	}
-	txs, err := h.Deps.Services.Queries.ListTransactionsInPeriod(ctx, dbgen.ListTransactionsInPeriodParams{
-		CreatedAt:   sinceUTC,
-		CreatedAt_2: untilUTC,
-	})
+	// Keep the original dashboard period boundaries and refund semantics.
+	snapshot, err := h.legacyServices().Stats.Dashboard(ctx, legacyPeriod)
 	if err != nil {
-		slog.Error("v2 dashboard txs", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("v2 dashboard totals", "err", err)
+		http.Error(w, "합계를 불러오지 못했습니다", 500)
 		return
 	}
-
-	// 차감/충전 합계.
-	var chargeTotal, deductTotal int64
-	for _, t := range txs {
-		switch t.TxType {
-		case "charge":
-			chargeTotal += t.TxAmount
-		case "deduct", "refund":
-			deductTotal += t.TxAmount
-		}
+	chargeTotal, deductTotal := snapshot.ChargeTotal, snapshot.DeductTotal
+	txs, err := h.Deps.Services.Queries.ListRecentTransactions(ctx)
+	if err != nil {
+		http.Error(w, "최근 활동을 불러오지 못했습니다", 500)
+		return
 	}
-
-	// 최근 활동 6건 (트랜잭션 이미 created_at DESC).
-	limit := 6
+	// 선택 기간과 별개로 가장 최근 활동 8건을 보여준다.
+	limit := 8
 	if len(txs) < limit {
 		limit = len(txs)
 	}
@@ -75,7 +68,7 @@ func (h *PageHandlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 			Type:       t.TxType,
 			Amount:     sign + util.FormatKRW(t.TxAmount),
 			Memo:       memo,
-			At:         formatKSTDate(t.TxCreatedAt),
+			At:         formatKST(t.TxCreatedAt),
 		})
 	}
 
@@ -120,30 +113,4 @@ func dashDateTitle(period string) string {
 		return "전체 기간"
 	}
 	return fmt.Sprintf("%d년 %d월 %d일", now.Year(), int(now.Month()), now.Day())
-}
-
-// formatKSTDate — DB ISO8601 → "7월 18일" (KST).
-func formatKSTDate(s string) string {
-	if s == "" {
-		return ""
-	}
-	layouts := []string{
-		"2006-01-02T15:04:05.000Z",
-		"2006-01-02T15:04:05Z",
-		time.RFC3339Nano,
-		time.RFC3339,
-	}
-	var t time.Time
-	var err error
-	for _, l := range layouts {
-		t, err = time.Parse(l, s)
-		if err == nil {
-			break
-		}
-	}
-	if err != nil {
-		return s
-	}
-	t = t.In(kstLocSales())
-	return fmt.Sprintf("%d월 %d일", int(t.Month()), t.Day())
 }

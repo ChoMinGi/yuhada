@@ -11,7 +11,7 @@ import (
 )
 
 const deleteTransactionsByMember = `-- name: DeleteTransactionsByMember :exec
-DELETE FROM v2_transactions WHERE member_id = ?
+DELETE FROM transactions WHERE member_id = ?
 `
 
 func (q *Queries) DeleteTransactionsByMember(ctx context.Context, memberID string) error {
@@ -21,7 +21,7 @@ func (q *Queries) DeleteTransactionsByMember(ctx context.Context, memberID strin
 
 const insertTransaction = `-- name: InsertTransaction :one
 
-INSERT INTO v2_transactions (id, member_id, type, amount, balance_after, memo, created_by)
+INSERT INTO transactions (id, member_id, type, amount, balance_after, memo, created_by)
 VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING id, member_id, type, amount, balance_after, memo, created_by, created_at
 `
@@ -36,7 +36,7 @@ type InsertTransactionParams struct {
 	CreatedBy    sql.NullString `json:"createdBy"`
 }
 
-// Cloned from v1 internal/db/queries/v2_transactions.sql (v2-isolated dbgen).
+// Cloned from v1 internal/db/queries/transactions.sql (v2-isolated dbgen).
 func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionParams) (V2Transaction, error) {
 	row := q.db.QueryRowContext(ctx, insertTransaction,
 		arg.ID,
@@ -71,9 +71,9 @@ SELECT
   t.created_at    AS tx_created_at,
   m.id            AS member_id,
   m.name          AS member_name
-FROM v2_transactions t
-JOIN v2_members m ON m.id = t.member_id
-ORDER BY t.created_at DESC
+FROM transactions t
+JOIN members m ON m.id = t.member_id
+ORDER BY t.created_at DESC, t.id DESC
 LIMIT 20
 `
 
@@ -121,9 +121,9 @@ func (q *Queries) ListRecentTransactions(ctx context.Context) ([]ListRecentTrans
 }
 
 const listTransactionsByMember = `-- name: ListTransactionsByMember :many
-SELECT id, member_id, type, amount, balance_after, memo, created_by, created_at FROM v2_transactions
+SELECT id, member_id, type, amount, balance_after, memo, created_by, created_at FROM transactions
 WHERE member_id = ?
-ORDER BY created_at DESC
+ORDER BY created_at DESC, id DESC
 LIMIT 50
 `
 
@@ -169,11 +169,11 @@ SELECT
   t.created_at    AS tx_created_at,
   m.id            AS member_id,
   m.name          AS member_name
-FROM v2_transactions t
-JOIN v2_members m ON m.id = t.member_id
+FROM transactions t
+JOIN members m ON m.id = t.member_id
 WHERE t.created_at >= ?
   AND t.created_at <  ?
-ORDER BY t.created_at DESC
+ORDER BY t.created_at DESC, t.id DESC
 LIMIT 500
 `
 

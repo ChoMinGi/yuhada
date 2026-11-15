@@ -50,11 +50,12 @@ type MembersProps struct {
 
 // NewMemberProps — 신규 회원 등록 폼.
 type NewMemberProps struct {
-	Name     string
-	Phone    string
-	Card     string
-	Memo     string
-	ErrorMsg string
+	Name      string
+	Phone     string
+	Card      string
+	Memo      string
+	ErrorMsg  string
+	AmountStr string
 }
 
 // MemberTx — 회원 상세 최근 거래 한 줄. R3 LEFT JOIN 결과 소비 형태.
@@ -93,6 +94,7 @@ type MemberDetailProps struct {
 	TotalOut    string
 	Memberships []MemberMembership
 	RecentTxs   []MemberTx
+	JoinedAt    string
 }
 
 // PlanRow — 가격표 관리 화면 한 줄.
@@ -120,6 +122,7 @@ type ChargeModalProps struct {
 	MemberID   string
 	MemberName string // 확인 다이얼로그용
 	Plans      []PlanRow
+	BalanceInt int64
 }
 
 // DeductModalProps — 차감 모달.
@@ -129,6 +132,7 @@ type DeductModalProps struct {
 	MemberName   string // 확인 다이얼로그용
 	DeductAmts   []int64
 	ServiceMemos []string
+	BalanceInt   int64
 }
 
 // DeductAmountRow — 차감 금액 프리셋 설정 페이지 한 줄.
@@ -177,6 +181,8 @@ type SalesSummaryCards struct {
 	// CreditUsedPct — 잔액 적립 총액 대비 실제 소진(차감+환불) 비율 (0..100).
 	// UI 에서 카드 뒷배경 프로그레스로 시각화.
 	CreditUsedPct int
+	UnknownCredit string // 실결제액이 확인되지 않은 일반·기존 충전 적립액
+	UnknownCount  string
 }
 
 // SalesTopMember — TOP 회원 위젯 한 줄 (포맷 완료).
@@ -255,7 +261,7 @@ type SalesProps struct {
 	DormantCount  int    // 60일 이상 미방문 회원 수
 	DormantTotal  string // 미방문 회원 잔액 총합 "₩450,000"
 	Dormant       []SalesDormant
-	TopMembers   []SalesTopMember
+	TopMembers    []SalesTopMember
 	// Chart.js 초기화용 사전 인코딩 JSON. handler 에서 준비.
 	DailyLabelsJSON string // ["07-01","07-02",...]
 	DailyValuesJSON string // [0,240000,0,...]

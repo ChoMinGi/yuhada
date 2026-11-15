@@ -7,28 +7,37 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
+
+	legacyservice "github.com/mingicho/yuhada/internal/service"
 
 	v2auth "github.com/mingicho/yuhada/internal/v2/auth"
 	v2kakao "github.com/mingicho/yuhada/internal/v2/kakao"
 	v2service "github.com/mingicho/yuhada/internal/v2/service"
-	v2sms "github.com/mingicho/yuhada/internal/v2/sms"
 )
 
 // Deps — v2 핸들러 공통 의존성.
+type SMSSender interface {
+	Enabled() bool
+	Send(string, string) error
+}
+
 type Deps struct {
 	Session          *scs.SessionManager
 	Services         *v2service.Services
-	SMS              *v2sms.Client
+	SMS              SMSSender
 	AdminPIN         string          // cfg.AdminPinV2 (env: ADMIN_PIN_V2) — fallback
 	Kakao            *v2kakao.Config // v2 관리자 카카오 OAuth (선택)
 	AdminKakaoID     string          // 화이트리스트 (env: ADMIN_KAKAO_ID_V2). 미설정 시 첫 시도 화면에서 캡처.
 	AdminKakaoEmails string          // 쉼표 구분 이메일 화이트리스트. 설정되면 기존 ID보다 우선.
 	EnableDebug      bool
+	Legacy           *legacyservice.Services // Both interfaces use the same canonical ledger.
 }
 
 // PageHandlers — 페이지 + 폼 submit 핸들러 공통 컨테이너.
@@ -58,7 +67,7 @@ func NewRouter(deps *Deps) http.Handler {
 		r.Use(v2auth.RedirectIfAuthed(deps.Session, "/v2/admin"))
 		r.Get("/", h.Home)
 		r.Get("/login", h.LoginGet)
-		r.Post("/login", h.LoginPost)
+		r.With(httprate.LimitByIP(10, time.Minute)).Post("/login", h.LoginPost)
 		r.Get("/kakao/login", h.KakaoLogin)
 		r.Get("/kakao/callback", h.KakaoCallback)
 	})
@@ -70,6 +79,8 @@ func NewRouter(deps *Deps) http.Handler {
 
 		r.Get("/admin", h.Dashboard)
 		r.Get("/admin/sales", h.SalesDashboard)
+		r.Get("/admin/cards", h.CardsList)
+		r.Get("/admin/transactions", h.TransactionsPage)
 
 		// Members
 		r.Route("/admin/members", func(r chi.Router) {
@@ -80,6 +91,12 @@ func NewRouter(deps *Deps) http.Handler {
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/", h.MemberDetailGet)
 				r.Delete("/", h.MemberDelete)
+				r.Post("/card", h.CardIssue)
+				r.Post("/lost", h.CardLost)
+				r.Post("/reactivate", h.CardReactivate)
+				r.Get("/lost/modal", h.LostModal)
+				r.Get("/reactivate/modal", h.ReactivateModal)
+				r.Get("/delete/modal", h.DeleteModal)
 
 				r.Get("/memo", h.MemoView)
 				r.Get("/memo/edit", h.MemoEdit)

@@ -1,7 +1,7 @@
 // Package layout — v2 페이지 공통 HTML shell.
 //
 // v1 layout 을 참조하되 import 하지 않고 v2 안에서 재구현
-// (isolation-rules §1-2). 최상단에 TestBanner 를 무조건 노출한다.
+// 운영 원장을 사용하는 관리자 화면의 공통 shell.
 package layout
 
 import "github.com/mingicho/yuhada/internal/v2/view/component"
@@ -16,6 +16,8 @@ var AdminNavTop = []NavItem{
 	{"dashboard", "대시보드", "layout-dashboard", "/v2/admin"},
 	{"sales", "매출", "trending-up", "/v2/admin/sales"},
 	{"members", "회원 관리", "users", "/v2/admin/members"},
+	{"cards", "카드 관리", "credit-card", "/v2/admin/cards"},
+	{"transactions", "거래 내역", "receipt", "/v2/admin/transactions"},
 }
 
 // AdminNavSettings — "설정" 그룹 하위 링크. 아이콘은 표시하지 않고 서브 항목으로 렌더.
@@ -25,15 +27,14 @@ var AdminNavSettings = []NavItem{
 	{"settings.memos", "시술 메모", "pencil", "/v2/admin/settings/service-memos"},
 }
 
-// Admin — 사이드바 + 메인 컨텐츠 + TEST 배너 + 모달/토스트 mount points.
-// 페이지 최상단 32px 는 항상 TEST 배너가 차지한다.
+// Admin — 운영 원장용 사이드바 + 메인 컨텐츠 + 모달/토스트 mount points.
 templ Admin(title string, activeKey string) {
 	<!DOCTYPE html>
 	<html lang="ko" class="h-full">
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<title>{ title } · YUHADA HAIR (v2 TEST)</title>
+			<title>{ title } · YUHADA HAIR</title>
 			<link rel="stylesheet" href="/static/css/app.css"/>
 			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
 			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
@@ -49,6 +50,68 @@ templ Admin(title string, activeKey string) {
 						});
 					}
 				});
+
+				// 지갑 요청은 로그인 HTML을 성공으로 처리하지 않는다.
+				window.yhSubmitWallet = async function (endpoint, body) {
+					let response;
+					try {
+						response = await fetch(endpoint, {
+							method: 'POST',
+							credentials: 'same-origin',
+							headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+							body: body
+						});
+					} catch (_) {
+						const error = new Error('처리 결과를 확인하지 못했습니다. 거래 내역을 확인해 주세요.');
+						error.uncertain = true;
+						throw error;
+					}
+					let result;
+					try {
+						if (!(response.headers.get('Content-Type') || '').includes('application/json')) throw new Error();
+						result = await response.json();
+					} catch (_) {
+						const error = new Error('처리 결과를 확인하지 못했습니다. 거래 내역을 확인해 주세요.');
+						error.uncertain = true;
+						throw error;
+					}
+					if (response.status === 401) {
+						const next = result.redirect || response.headers.get('HX-Redirect') || '/v2/login';
+						const destination = new URL(next, window.location.origin);
+						window.location.assign(destination.origin === window.location.origin ? destination.href : '/v2/login');
+						return null;
+					}
+					if (!response.ok || result.ok !== true) {
+						throw new Error(result.error || '처리하지 못했습니다. 입력 내용을 확인해 주세요.');
+					}
+					return result;
+				};
+				window.yhRefreshMember = async function (destination) {
+					let target;
+					try { target = new URL(destination, window.location.origin); } catch (_) { target = new URL(window.location.href); }
+					if (target.origin !== window.location.origin || !target.pathname.startsWith('/v2/admin/members/')) target = new URL(window.location.href);
+					try {
+						const response = await fetch(target.href, { credentials: 'same-origin', headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' } });
+						if (!response.ok) throw new Error('refresh failed');
+						const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+						const next = doc.getElementById('member-detail-content');
+						const current = document.getElementById('member-detail-content');
+						if (!next || !current) throw new Error('member content missing');
+						const replace = function () {
+							if (window.Alpine) window.Alpine.destroyTree(current);
+							current.replaceWith(next);
+							if (window.htmx) window.htmx.process(next);
+							if (window.Alpine) window.Alpine.initTree(next);
+						};
+						if (window.Alpine) window.Alpine.mutateDom(replace); else replace();
+						window.dispatchEvent(new CustomEvent('closemodal'));
+						return true;
+					} catch (_) {
+						// 이미 저장된 작업을 재전송하지 않고 조회 화면으로 복귀한다.
+						window.location.assign(target.href);
+						return false;
+					}
+				};
 			</script>
 		</head>
 		<body
@@ -56,10 +119,9 @@ templ Admin(title string, activeKey string) {
 			x-data="{ nav: false }"
 			x-on:htmx:after-swap.window="nav = false"
 		>
-			@component.TestBanner()
 
-			<!-- Mobile top bar — md 미만에서만 표시. TEST 배너(top:0, h-8) 아래로 밀림. -->
-			<div class="md:hidden fixed top-8 left-0 right-0 h-12 z-30 flex items-center px-4 bg-sand-50/90 backdrop-blur border-b border-sand-200">
+			<!-- Mobile top bar — md 미만에서만 표시. -->
+			<div class="md:hidden fixed top-0 left-0 right-0 h-12 z-30 flex items-center px-4 bg-sand-50/90 backdrop-blur border-b border-sand-200">
 				<button
 					type="button"
 					x-on:click="nav = true"
@@ -83,8 +145,8 @@ templ Admin(title string, activeKey string) {
 				class="md:hidden fixed inset-0 z-30 bg-ink-900/40"
 			></div>
 
-			<!-- 전체 화면에서 TEST 배너 32px 만큼 위쪽 여유. -->
-			<div class="flex h-full pt-8">
+			<!-- 공통 관리자 컨텐츠 -->
+			<div class="flex h-full">
 				@adminSidebar(activeKey)
 				<main class="flex-1 overflow-y-auto pt-12 md:pt-0 yh-page-enter">
 					{ children... }
@@ -96,14 +158,14 @@ templ Admin(title string, activeKey string) {
 	</html>
 }
 
-// Bare — 사이드바 없는 풀스크린 (로그인 등). TEST 배너는 그대로 노출.
+// Bare — 사이드바 없는 풀스크린 (로그인 등).
 templ Bare(title string) {
 	<!DOCTYPE html>
 	<html lang="ko">
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<title>{ title } · YUHADA HAIR (v2 TEST)</title>
+			<title>{ title } · YUHADA HAIR</title>
 			<link rel="stylesheet" href="/static/css/app.css"/>
 			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
 			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
@@ -119,8 +181,7 @@ templ Bare(title string) {
 				});
 			</script>
 		</head>
-		<body class="bg-sand-50 text-ink-900 font-sans min-h-screen pt-8">
-			@component.TestBanner()
+		<body class="bg-sand-50 text-ink-900 font-sans min-h-screen">
 			{ children... }
 			@modalRoot()
 			@toastRoot()
@@ -131,7 +192,7 @@ templ Bare(title string) {
 templ adminSidebar(activeKey string) {
 	<aside
 		class="w-[220px] shrink-0 bg-sand-100 border-r border-sand-200 flex flex-col h-full
-		       fixed top-8 bottom-0 left-0 z-40 transform -translate-x-full transition-transform duration-200 ease-out
+		       fixed top-0 bottom-0 left-0 z-40 transform -translate-x-full transition-transform duration-200 ease-out
 		       md:relative md:top-0 md:translate-x-0 md:transition-none"
 		x-bind:class="nav && '!translate-x-0'"
 		x-on:click="$event.target.closest('a, button[type=submit]') && (nav = false)"
@@ -142,7 +203,7 @@ templ adminSidebar(activeKey string) {
 					<span class="font-display italic text-[28px] tracking-wide-serif text-ink-900">yhd</span>
 					<span class="text-[14px] text-ink-700">유하다 헤어</span>
 				</div>
-				<span class="mt-1.5 font-display text-[9px] tracking-[0.22em] uppercase text-ink-900">v2 · TEST</span>
+				<span class="mt-1.5 font-display text-[9px] tracking-[0.22em] uppercase text-ink-900">MEMBERSHIP</span>
 			</a>
 		</div>
 		<nav class="flex-1 p-3 overflow-y-auto flex flex-col gap-1">

@@ -1,14 +1,14 @@
--- Cloned from v1 internal/db/queries/v2_transactions.sql (v2-isolated dbgen).
+-- Cloned from v1 internal/db/queries/transactions.sql (v2-isolated dbgen).
 
 -- name: InsertTransaction :one
-INSERT INTO v2_transactions (id, member_id, type, amount, balance_after, memo, created_by)
+INSERT INTO transactions (id, member_id, type, amount, balance_after, memo, created_by)
 VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: ListTransactionsByMember :many
-SELECT * FROM v2_transactions
+SELECT * FROM transactions
 WHERE member_id = ?
-ORDER BY created_at DESC
+ORDER BY created_at DESC, id DESC
 LIMIT 50;
 
 -- name: ListRecentTransactions :many
@@ -21,9 +21,9 @@ SELECT
   t.created_at    AS tx_created_at,
   m.id            AS member_id,
   m.name          AS member_name
-FROM v2_transactions t
-JOIN v2_members m ON m.id = t.member_id
-ORDER BY t.created_at DESC
+FROM transactions t
+JOIN members m ON m.id = t.member_id
+ORDER BY t.created_at DESC, t.id DESC
 LIMIT 20;
 
 -- name: ListTransactionsInPeriod :many
@@ -36,12 +36,12 @@ SELECT
   t.created_at    AS tx_created_at,
   m.id            AS member_id,
   m.name          AS member_name
-FROM v2_transactions t
-JOIN v2_members m ON m.id = t.member_id
+FROM transactions t
+JOIN members m ON m.id = t.member_id
 WHERE t.created_at >= ?
   AND t.created_at <  ?
-ORDER BY t.created_at DESC
+ORDER BY t.created_at DESC, t.id DESC
 LIMIT 500;
 
 -- name: DeleteTransactionsByMember :exec
-DELETE FROM v2_transactions WHERE member_id = ?;
+DELETE FROM transactions WHERE member_id = ?;

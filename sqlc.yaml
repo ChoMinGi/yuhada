@@ -21,12 +21,11 @@ sql:
           - column: "admin_users.is_active"
             go_type: "bool"
 
-  # ───── V2 (테스트 환경, v1 DB 공존 준비) ─────
-  # isolation-rules.md §1-2: 별도 dbgen 패키지 (internal/v2/db/dbgen).
-  # 모든 테이블은 v2_ prefix 로 격리. rename 으로 struct 이름은 짧게 유지.
+  # V2 operational UI reads/writes the canonical ledger, with additive metadata.
+  # Keep existing view/service model names; sqlc model rename keys are singular.
   - engine: "sqlite"
     queries: "internal/v2/db/queries"
-    schema: "migrations-v2"
+    schema: "migrations"
     gen:
       go:
         package: "dbgen"
@@ -39,23 +38,23 @@ sql:
         emit_empty_slices: true
         emit_prepared_queries: false
         rename:
-          v2_members: "Member"
-          v2_transactions: "Transaction"
-          v2_admin_users: "AdminUser"
-          v2_kakao_verify_requests: "KakaoVerifyRequest"
-          v2_sessions: "Session"
-          v2_membership_plans: "MembershipPlan"
-          v2_memberships: "Membership"
-          v2_deduct_amount_presets: "DeductAmountPreset"
-          v2_service_memo_presets: "ServiceMemoPreset"
+          member: "V2Member"
+          transaction: "V2Transaction"
+          admin_user: "V2AdminUser"
+          kakao_verify_request: "V2KakaoVerifyRequest"
+          session: "V2Session"
+          membership_plan: "V2MembershipPlan"
+          membership: "V2Membership"
+          deduct_amount_preset: "V2DeductAmountPreset"
+          service_memo_preset: "V2ServiceMemoPreset"
         overrides:
-          - column: "v2_members.is_active"
+          - column: "members.is_active"
             go_type: "bool"
-          - column: "v2_admin_users.is_active"
+          - column: "admin_users.is_active"
             go_type: "bool"
-          - column: "v2_membership_plans.is_active"
+          - column: "membership_plans.is_active"
             go_type: "bool"
-          - column: "v2_deduct_amount_presets.is_active"
+          - column: "deduct_amount_presets.is_active"
             go_type: "bool"
-          - column: "v2_service_memo_presets.is_active"
+          - column: "service_memo_presets.is_active"
             go_type: "bool"

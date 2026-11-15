@@ -4,10 +4,12 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/mingicho/yuhada/internal/sms"
 	"github.com/mingicho/yuhada/internal/util"
 	"github.com/mingicho/yuhada/internal/v2/db/dbgen"
 	v2service "github.com/mingicho/yuhada/internal/v2/service"
@@ -51,10 +53,11 @@ func (h *PageHandlers) NewMemberPost(w http.ResponseWriter, r *http.Request) {
 	phone := r.FormValue("phone")
 	card := strings.TrimSpace(r.FormValue("card"))
 	memo := strings.TrimSpace(r.FormValue("memo"))
+	amountStr := strings.ReplaceAll(strings.TrimSpace(r.FormValue("amount")), ",", "")
 
 	rerender := func(msg string) {
 		render(w, r, http.StatusUnprocessableEntity, page.NewMember(page.NewMemberProps{
-			Name: name, Phone: phone, Card: card, Memo: memo, ErrorMsg: msg,
+			Name: name, Phone: phone, Card: card, Memo: memo, AmountStr: amountStr, ErrorMsg: msg,
 		}))
 	}
 
@@ -62,9 +65,18 @@ func (h *PageHandlers) NewMemberPost(w http.ResponseWriter, r *http.Request) {
 		rerender("이름과 전화번호는 필수입니다")
 		return
 	}
+	var initialCharge int64
+	if amountStr != "" {
+		var err error
+		initialCharge, err = strconv.ParseInt(amountStr, 10, 64)
+		if err != nil || initialCharge < 0 {
+			rerender("초기 충전 금액을 확인해 주세요")
+			return
+		}
+	}
 
 	created, err := h.Deps.Services.Member.Create(r.Context(), v2service.CreateMemberInput{
-		Name: name, Phone: phone, CardUUID: card, Memo: memo,
+		Name: name, Phone: phone, CardUUID: card, Memo: memo, InitialCharge: initialCharge, CreatedBy: h.adminID(r),
 	})
 	if err != nil {
 		switch {
@@ -79,6 +91,13 @@ func (h *PageHandlers) NewMemberPost(w http.ResponseWriter, r *http.Request) {
 			rerender("등록 중 오류가 발생했습니다")
 		}
 		return
+	}
+	if initialCharge > 0 && h.Deps.SMS != nil && h.Deps.SMS.Enabled() {
+		go func() {
+			if err := h.Deps.SMS.Send(created.Phone, sms.FirstChargeMessage(created.Name, initialCharge, created.Balance)); err != nil {
+				slog.Error("sms send failed", "member", created.ID)
+			}
+		}()
 	}
 	http.Redirect(w, r, "/v2/admin/members/"+created.ID, http.StatusSeeOther)
 }

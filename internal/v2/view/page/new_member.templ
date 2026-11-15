@@ -1,8 +1,6 @@
 package page
 
 import (
-	"fmt"
-
 	"github.com/mingicho/yuhada/internal/v2/view/component"
 	"github.com/mingicho/yuhada/internal/v2/view/layout"
 )
@@ -29,6 +27,7 @@ templ NewMember(p NewMemberProps) {
 				x-data="{
 					phone: '',
 					card: '',
+					amountStr: '',
 					formatPhone() {
 						const s = this.phone.replace(/\D/g,'').slice(0,11);
 						this.phone = s.length >= 8 ? s.slice(0,3)+'-'+s.slice(3,7)+'-'+s.slice(7)
@@ -56,7 +55,7 @@ templ NewMember(p NewMemberProps) {
 						placeholder="010-0000-0000"
 						required
 						value={ p.Phone }
-						x-init={ fmt.Sprintf("phone = '%s'", p.Phone) }
+						x-init={ "phone = " + templJSString(p.Phone) }
 						x-model="phone"
 						x-on:input="formatPhone()"
 					/>
@@ -74,7 +73,7 @@ templ NewMember(p NewMemberProps) {
 							class="flex-1 bg-transparent border-0 outline-none py-3 text-[15px] placeholder:text-ink-500"
 							placeholder="비워두면 카드 없이 등록됩니다"
 							value={ p.Card }
-							x-init={ fmt.Sprintf("card = '%s'", p.Card) }
+							x-init={ "card = " + templJSString(p.Card) }
 							x-model="card"
 						/>
 						<button
@@ -86,6 +85,23 @@ templ NewMember(p NewMemberProps) {
 							자동 생성
 						</button>
 					</div>
+				</div>
+
+				<div>
+					<label for="new-amount" class="yh-label">초기 충전 금액 <span class="text-[10px] text-ink-500 normal-case tracking-normal ml-1.5">선택</span></label>
+					<input
+						id="new-amount"
+						name="amount"
+						type="text"
+						inputmode="numeric"
+						class="yh-input tabular-nums"
+						placeholder="0"
+						value={ p.AmountStr }
+						x-init={ "amountStr = " + templJSString(p.AmountStr) }
+						x-model="amountStr"
+						x-on:input="const n = parseInt((amountStr || '').replace(/[^0-9]/g, ''), 10) || 0; amountStr = n > 0 ? n.toLocaleString('ko-KR') : ''"
+					/>
+					<p class="text-[12px] text-ink-500 mt-2">등록과 함께 잔액을 충전합니다. 비워두면 회원만 등록됩니다.</p>
 				</div>
 
 				<div>

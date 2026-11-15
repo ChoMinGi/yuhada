@@ -94,6 +94,11 @@ func (c *Client) Send(phone, msg string) error {
 
 const chargeDisclaimer = "\n\n본 정액권은 모든 시술 및 제품 구매가 가능하며 사용 기간은 지급일로부터 1년(12개월)입니다. 가족 및 지인과 함께 사용 가능하며 부득이한 경우 양도는 가능하나 환불은 불가한 점을 양해 부탁드립니다. 감사합니다:)"
 
+// TestMessage — 실제 거래를 만들지 않는 발송 확인용 메시지.
+func TestMessage() string {
+	return "[유하다 헤어] 문자 발송 테스트입니다.\n실제 충전·차감이나 잔액 변경은 없습니다."
+}
+
 // FirstChargeMessage — 최초 충전(가입) 알림 + 이용약관.
 func FirstChargeMessage(name string, amount, balance int64) string {
 	return fmt.Sprintf("[유하다 헤어] %s님, 반갑습니다.\n%s 충전이 완료되었습니다.\n잔액 %s\n\n늘 정성껏 모시겠습니다.%s",

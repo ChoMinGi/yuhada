@@ -8,6 +8,12 @@ import (
 	"database/sql"
 )
 
+type AdminSessionsV2 struct {
+	Token  string  `json:"token"`
+	Data   []byte  `json:"data"`
+	Expiry float64 `json:"expiry"`
+}
+
 type V2AdminUser struct {
 	ID          string         `json:"id"`
 	Email       string         `json:"email"`

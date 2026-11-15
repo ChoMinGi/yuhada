@@ -8,6 +8,12 @@ import (
 	"database/sql"
 )
 
+type AdminSessionsV2 struct {
+	Token  string  `json:"token"`
+	Data   []byte  `json:"data"`
+	Expiry float64 `json:"expiry"`
+}
+
 type AdminUser struct {
 	ID          string         `json:"id"`
 	Email       string         `json:"email"`
@@ -19,6 +25,15 @@ type AdminUser struct {
 	UpdatedAt   string         `json:"updatedAt"`
 	LastLoginAt sql.NullString `json:"lastLoginAt"`
 	PinHash     sql.NullString `json:"pinHash"`
+}
+
+type DeductAmountPreset struct {
+	ID           string `json:"id"`
+	Amount       int64  `json:"amount"`
+	DisplayOrder int64  `json:"displayOrder"`
+	IsActive     int64  `json:"isActive"`
+	CreatedAt    string `json:"createdAt"`
+	UpdatedAt    string `json:"updatedAt"`
 }
 
 type KakaoVerifyRequest struct {
@@ -47,6 +62,40 @@ type Member struct {
 	CreatedAt   string         `json:"createdAt"`
 	UpdatedAt   string         `json:"updatedAt"`
 	KakaoUserID sql.NullString `json:"kakaoUserId"`
+}
+
+type Membership struct {
+	ID           string         `json:"id"`
+	MemberID     string         `json:"memberId"`
+	PlanID       sql.NullString `json:"planId"`
+	PlanSnapshot string         `json:"planSnapshot"`
+	ChargeTxID   string         `json:"chargeTxId"`
+	Status       string         `json:"status"`
+	PurchasedAt  string         `json:"purchasedAt"`
+	CreatedBy    sql.NullString `json:"createdBy"`
+}
+
+type MembershipPlan struct {
+	ID            string         `json:"id"`
+	TierLabel     string         `json:"tierLabel"`
+	TierAmount    int64          `json:"tierAmount"`
+	PaymentMethod string         `json:"paymentMethod"`
+	Price         int64          `json:"price"`
+	CreditAmount  int64          `json:"creditAmount"`
+	PerkLabel     sql.NullString `json:"perkLabel"`
+	DisplayOrder  int64          `json:"displayOrder"`
+	IsActive      int64          `json:"isActive"`
+	CreatedAt     string         `json:"createdAt"`
+	UpdatedAt     string         `json:"updatedAt"`
+}
+
+type ServiceMemoPreset struct {
+	ID           string `json:"id"`
+	Label        string `json:"label"`
+	DisplayOrder int64  `json:"displayOrder"`
+	IsActive     int64  `json:"isActive"`
+	CreatedAt    string `json:"createdAt"`
+	UpdatedAt    string `json:"updatedAt"`
 }
 
 type Session struct {

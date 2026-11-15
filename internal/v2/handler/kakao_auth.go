@@ -24,6 +24,9 @@ func (h *PageHandlers) KakaoLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	state := randHex(16)
 	h.Deps.Session.Put(r.Context(), kakaoStateSessionKey, state)
+	if next := r.URL.Query().Get("next"); next != "" {
+		h.Deps.Session.Put(r.Context(), "v2_kakao_next", v2auth.SafeNext(next))
+	}
 	http.Redirect(w, r, h.Deps.Kakao.AuthorizeURL(state), http.StatusSeeOther)
 }
 
@@ -101,6 +104,10 @@ func (h *PageHandlers) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 	slog.Info("v2 kakao login ok")
 
 	next := q.Get("next")
+	if saved := h.Deps.Session.GetString(r.Context(), "v2_kakao_next"); saved != "" {
+		next = saved
+	}
+	h.Deps.Session.Remove(r.Context(), "v2_kakao_next")
 	if !safeKakaoNext(next) {
 		next = "/v2/admin"
 	}

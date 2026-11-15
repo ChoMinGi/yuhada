@@ -2,6 +2,7 @@ package page
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/mingicho/yuhada/internal/v2/view/layout"
 )
@@ -12,8 +13,8 @@ templ Login(p LoginProps) {
 		<main class="min-h-screen flex flex-col items-center justify-center">
 			<div class="w-full max-w-admin-login-card px-8">
 				<div class="flex flex-col items-start mb-12 leading-none">
-					<span class="font-display italic text-[40px] tracking-wide-serif">yhd v2</span>
-					<span class="mt-2 font-display text-[10px] tracking-[0.22em] uppercase">YUHADA HAIR · TEST</span>
+					<span class="font-display italic text-[40px] tracking-wide-serif">yhd</span>
+					<span class="mt-2 font-display text-[10px] tracking-[0.22em] uppercase">YUHADA HAIR</span>
 				</div>
 				<h1 class="yh-headline-l text-[26px] sm:text-[32px]">로그인</h1>
 				<p class="yh-body-sm text-ink-500 mb-10 mt-2">
@@ -47,7 +48,7 @@ templ loginForm(p LoginProps) {
 		action="/v2/login"
 		class="flex flex-col gap-6"
 		hx-boost="false"
-		x-data="{ pin: '' }"
+		x-data="{ pin: '', submitting: false }"
 	>
 		if p.Next != "" {
 			<input type="hidden" name="next" value={ p.Next }/>
@@ -60,14 +61,14 @@ templ loginForm(p LoginProps) {
 					name="pin"
 					type="password"
 					inputmode="numeric"
-					pattern="[0-9]{4,6}"
+					pattern="[0-9]{6}"
 					maxlength="6"
 					autocomplete="off"
 					autofocus
 					required
 					x-ref="pinInput"
 					x-model="pin"
-					x-on:input="pin = pin.replace(/\D/g,'').slice(0,6); if (pin.length >= 4) { /* enter 로 submit 허용 */ }"
+					x-on:input="pin = pin.replace(/\D/g,'').slice(0,6); if (pin.length === 6 && !submitting) { submitting = true; $nextTick(() => $el.form.requestSubmit()); }"
 					class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
 				/>
 				<div class="grid grid-cols-6 gap-3 pointer-events-none select-none">
@@ -84,7 +85,7 @@ templ loginForm(p LoginProps) {
 			}
 		</div>
 
-		<button type="submit" class="yh-btn yh-btn-primary yh-btn-lg w-full" x-bind:disabled="pin.length < 4">
+		<button type="submit" class="yh-btn yh-btn-primary yh-btn-lg w-full" x-bind:disabled="pin.length !== 6">
 			로그인
 		</button>
 	</form>
@@ -108,7 +109,7 @@ func kakaoLoginHref(next string) string {
 	if next == "" {
 		return "/v2/kakao/login"
 	}
-	return "/v2/kakao/login?next=" + next
+	return "/v2/kakao/login?next=" + url.QueryEscape(next)
 }
 
 templ pinBox(idx int) {

@@ -16,8 +16,8 @@ SELECT
   m.name,
   m.balance,
   MAX(t.created_at) AS last_tx_at
-FROM v2_members m
-LEFT JOIN v2_transactions t ON t.member_id = m.id
+FROM members m
+LEFT JOIN transactions t ON t.member_id = m.id
 WHERE m.is_active = 1 AND m.balance > 0
 GROUP BY m.id
 HAVING (MAX(t.created_at) IS NULL OR MAX(t.created_at) < ?)
@@ -34,8 +34,8 @@ type ListDormantMembersRow struct {
 	LastTxAt interface{} `json:"lastTxAt"`
 }
 
-// Active v2_members (is_active=1) with balance > 0 whose last transaction is older
-// than the cutoff, or who have no v2_transactions at all. Limit 20.
+// Active members (is_active=1) with balance > 0 whose last transaction is older
+// than the cutoff, or who have no transactions at all. Limit 20.
 func (q *Queries) ListDormantMembers(ctx context.Context, createdAt string) ([]ListDormantMembersRow, error) {
 	rows, err := q.db.QueryContext(ctx, listDormantMembers, createdAt)
 	if err != nil {
@@ -71,17 +71,17 @@ SELECT
   m.plan_snapshot AS plan_snapshot,
   m.purchased_at  AS purchased_at,
   mb.name         AS member_name
-FROM v2_memberships m
-JOIN v2_members mb ON mb.id = m.member_id
+FROM memberships m
+JOIN members mb ON mb.id = m.member_id
 WHERE m.status = 'active'
-  AND datetime(m.purchased_at, '+1 year') >= ?
-  AND datetime(m.purchased_at, '+1 year') < ?
-ORDER BY datetime(m.purchased_at, '+1 year') ASC
+  AND datetime(m.purchased_at, '+1 year') >= datetime(?1)
+  AND datetime(m.purchased_at, '+1 year') < datetime(?2)
+ORDER BY datetime(m.purchased_at, '+1 year') ASC, m.id ASC
 `
 
 type ListExpiringMembershipsParams struct {
-	PurchasedAt   string `json:"purchasedAt"`
-	PurchasedAt_2 string `json:"purchasedAt2"`
+	PurchasedAt  interface{} `json:"purchasedAt"`
+	PurchasedAt2 interface{} `json:"purchasedAt2"`
 }
 
 type ListExpiringMembershipsRow struct {
@@ -95,7 +95,7 @@ type ListExpiringMembershipsRow struct {
 // Memberships whose purchased_at + 1 year expiration falls into [?, ?).
 // Active status only. Sorted by soonest expiration first.
 func (q *Queries) ListExpiringMemberships(ctx context.Context, arg ListExpiringMembershipsParams) ([]ListExpiringMembershipsRow, error) {
-	rows, err := q.db.QueryContext(ctx, listExpiringMemberships, arg.PurchasedAt, arg.PurchasedAt_2)
+	rows, err := q.db.QueryContext(ctx, listExpiringMemberships, arg.PurchasedAt, arg.PurchasedAt2)
 	if err != nil {
 		return nil, err
 	}
@@ -131,12 +131,12 @@ SELECT
   t.member_id     AS member_id,
   mb.name         AS member_name,
   m.plan_snapshot AS plan_snapshot
-FROM v2_transactions t
-LEFT JOIN v2_memberships m ON m.charge_tx_id = t.id
-LEFT JOIN v2_members mb    ON mb.id           = t.member_id
+FROM transactions t
+LEFT JOIN memberships m ON m.charge_tx_id = t.id
+LEFT JOIN members mb    ON mb.id           = t.member_id
 WHERE t.type = 'charge'
   AND t.created_at >= ?
-ORDER BY t.created_at DESC
+ORDER BY t.created_at DESC, t.id DESC
 LIMIT 20
 `
 
@@ -190,12 +190,12 @@ SELECT
   t.member_id     AS member_id,
   mb.name         AS member_name,
   m.plan_snapshot AS plan_snapshot
-FROM v2_transactions t
-LEFT JOIN v2_memberships m ON m.charge_tx_id = t.id
-LEFT JOIN v2_members mb    ON mb.id           = t.member_id
+FROM transactions t
+LEFT JOIN memberships m ON m.charge_tx_id = t.id
+LEFT JOIN members mb    ON mb.id           = t.member_id
 WHERE t.type = 'charge'
   AND t.created_at >= ?
-ORDER BY t.created_at DESC
+ORDER BY t.created_at DESC, t.id DESC
 `
 
 type ListSalesInPeriodRow struct {
@@ -209,9 +209,9 @@ type ListSalesInPeriodRow struct {
 
 // v2 sales dashboard queries.
 // Powers /v2/admin/sales aggregations. SQL fetches rows; Go layer aggregates.
-// LEFT JOIN to v2_memberships so we capture both plan-based and generic charges
+// LEFT JOIN to memberships so we capture both plan-based and generic charges
 // (plan_snapshot IS NULL means a generic non-plan charge).
-// member_id and member_name power ERP KPIs (active / repeat / TOP v2_members).
+// member_id and member_name power ERP KPIs (active / repeat / TOP members).
 // Name is emitted as ciphertext here; service layer decrypts via crypto.Enc.Decrypt.
 func (q *Queries) ListSalesInPeriod(ctx context.Context, createdAt string) ([]ListSalesInPeriodRow, error) {
 	rows, err := q.db.QueryContext(ctx, listSalesInPeriod, createdAt)

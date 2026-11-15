@@ -11,7 +11,7 @@ import (
 )
 
 const createPlan = `-- name: CreatePlan :one
-INSERT INTO v2_membership_plans
+INSERT INTO membership_plans
   (id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
 RETURNING id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active, created_at, updated_at
@@ -57,7 +57,7 @@ func (q *Queries) CreatePlan(ctx context.Context, arg CreatePlanParams) (V2Membe
 }
 
 const deactivatePlan = `-- name: DeactivatePlan :exec
-UPDATE v2_membership_plans SET is_active = 0 WHERE id = ?
+UPDATE membership_plans SET is_active = 0 WHERE id = ?
 `
 
 func (q *Queries) DeactivatePlan(ctx context.Context, id string) error {
@@ -66,7 +66,7 @@ func (q *Queries) DeactivatePlan(ctx context.Context, id string) error {
 }
 
 const getPlan = `-- name: GetPlan :one
-SELECT id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active, created_at, updated_at FROM v2_membership_plans WHERE id = ? LIMIT 1
+SELECT id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active, created_at, updated_at FROM membership_plans WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetPlan(ctx context.Context, id string) (V2MembershipPlan, error) {
@@ -90,12 +90,12 @@ func (q *Queries) GetPlan(ctx context.Context, id string) (V2MembershipPlan, err
 
 const listActivePlans = `-- name: ListActivePlans :many
 
-SELECT id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active, created_at, updated_at FROM v2_membership_plans
+SELECT id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active, created_at, updated_at FROM membership_plans
 WHERE is_active = 1
 ORDER BY display_order ASC
 `
 
-// v2 v2_membership_plans CRUD queries.
+// v2 membership_plans CRUD queries.
 // See references/pricing-model.md for column semantics.
 // Used by charge modal (6 tier cards) and dashboard selects.
 // Only is_active=1, sorted by display_order asc (20-card, 20-cash, 30-card, ...).
@@ -135,7 +135,7 @@ func (q *Queries) ListActivePlans(ctx context.Context) ([]V2MembershipPlan, erro
 }
 
 const listAllPlans = `-- name: ListAllPlans :many
-SELECT id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active, created_at, updated_at FROM v2_membership_plans
+SELECT id, tier_label, tier_amount, payment_method, price, credit_amount, perk_label, display_order, is_active, created_at, updated_at FROM membership_plans
 ORDER BY display_order ASC
 `
 
@@ -176,7 +176,7 @@ func (q *Queries) ListAllPlans(ctx context.Context) ([]V2MembershipPlan, error) 
 }
 
 const reactivatePlan = `-- name: ReactivatePlan :exec
-UPDATE v2_membership_plans SET is_active = 1 WHERE id = ?
+UPDATE membership_plans SET is_active = 1 WHERE id = ?
 `
 
 func (q *Queries) ReactivatePlan(ctx context.Context, id string) error {
@@ -185,7 +185,7 @@ func (q *Queries) ReactivatePlan(ctx context.Context, id string) error {
 }
 
 const updatePlan = `-- name: UpdatePlan :exec
-UPDATE v2_membership_plans
+UPDATE membership_plans
    SET tier_label     = ?,
        tier_amount    = ?,
        payment_method = ?,

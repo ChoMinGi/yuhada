@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/mingicho/yuhada/internal/sms"
 	"github.com/mingicho/yuhada/internal/v2/db/dbgen"
 	v2service "github.com/mingicho/yuhada/internal/v2/service"
 	"github.com/mingicho/yuhada/internal/v2/view/page"
@@ -28,13 +30,15 @@ func (h *PageHandlers) ChargeModal(w http.ResponseWriter, r *http.Request) {
 	for i, p := range plans {
 		rows[i] = planRowFromDB(p)
 	}
-	name := ""
-	if m, gerr := h.Deps.Services.Member.Get(r.Context(), id); gerr == nil {
-		name = m.Name
+	m, err := h.Deps.Services.Member.Get(r.Context(), id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
 	}
 	render(w, r, http.StatusOK, page.ChargeModal(page.ChargeModalProps{
 		MemberID:   id,
-		MemberName: name,
+		MemberName: m.Name,
+		BalanceInt: m.Balance,
 		Plans:      rows,
 	}))
 }
@@ -48,7 +52,7 @@ func (h *PageHandlers) ChargeModal(w http.ResponseWriter, r *http.Request) {
 func (h *PageHandlers) ChargeSubmit(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad form", http.StatusBadRequest)
+		walletFailure(w, r, http.StatusBadRequest, "입력 내용을 확인해 주세요")
 		return
 	}
 	planID := strings.TrimSpace(r.FormValue("plan_id"))
@@ -63,34 +67,64 @@ func (h *PageHandlers) ChargeSubmit(w http.ResponseWriter, r *http.Request) {
 	} else {
 		v, err := strconv.ParseInt(amtStr, 10, 64)
 		if err != nil || v <= 0 {
-			http.Error(w, "plan_id 또는 amount 필수", http.StatusBadRequest)
+			walletFailure(w, r, http.StatusBadRequest, "충전할 상품 또는 금액을 입력해 주세요")
 			return
 		}
 		amount = v
 	}
 
-	// v2는 admin id를 세션에 담지 않음 (env PIN 로그인). createdBy 는 빈값.
-	createdBy := ""
+	createdBy := h.adminID(r)
+	memo := strings.TrimSpace(r.FormValue("memo"))
 
-	_, err := h.Deps.Services.Charge.Charge(r.Context(), id, planIDPtr, amount, createdBy)
+	result, err := h.Deps.Services.Charge.ChargeWithMemo(r.Context(), id, planIDPtr, amount, memo, createdBy)
 	if err != nil {
 		switch {
 		case errors.Is(err, v2service.ErrNotFound):
-			http.NotFound(w, r)
+			walletFailure(w, r, http.StatusNotFound, "회원을 찾을 수 없습니다")
 		case errors.Is(err, v2service.ErrInactive):
-			http.Error(w, "회원이 비활성 상태입니다", http.StatusConflict)
+			walletFailure(w, r, http.StatusConflict, "분실/정지된 회원입니다. 재활성화 후 이용해 주세요")
 		case errors.Is(err, v2service.ErrPlanInactive):
-			http.Error(w, "선택한 플랜이 비활성 상태입니다", http.StatusConflict)
+			walletFailure(w, r, http.StatusConflict, "선택한 상품은 현재 판매 중이 아닙니다")
 		case errors.Is(err, v2service.ErrInvalidInput):
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			walletFailure(w, r, http.StatusBadRequest, "충전 금액을 확인해 주세요")
 		default:
 			slog.Error("v2 charge", "err", err, "member", id)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			walletFailure(w, r, http.StatusInternalServerError, "충전하지 못했습니다. 다시 확인해 주세요")
 		}
 		return
 	}
+	if h.Deps.SMS != nil && h.Deps.SMS.Enabled() {
+		go func() {
+			if err := h.Deps.SMS.Send(result.Member.Phone, sms.ChargeMessage(result.Member.Name, result.Transaction.Amount, result.NewBalance)); err != nil {
+				slog.Error("sms send failed", "member", id)
+			}
+		}()
+	}
 
 	dest := "/v2/admin/members/" + id
+	walletSuccess(w, r, dest)
+}
+
+func wantsWalletJSON(r *http.Request) bool {
+	return strings.Contains(r.Header.Get("Accept"), "application/json") || r.Header.Get("X-Requested-With") == "XMLHttpRequest"
+}
+
+func walletFailure(w http.ResponseWriter, r *http.Request, status int, message string) {
+	if wantsWalletJSON(r) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(status)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": message})
+		return
+	}
+	http.Error(w, message, status)
+}
+
+func walletSuccess(w http.ResponseWriter, r *http.Request, dest string) {
+	if wantsWalletJSON(r) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "redirect": dest})
+		return
+	}
 	if isHTMX(r) {
 		hxRedirect(w, dest)
 		return

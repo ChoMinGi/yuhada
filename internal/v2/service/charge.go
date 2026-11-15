@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/mingicho/yuhada/internal/crypto"
+	legacy "github.com/mingicho/yuhada/internal/service"
 	"github.com/mingicho/yuhada/internal/util"
 	"github.com/mingicho/yuhada/internal/v2/db/dbgen"
 )
@@ -17,9 +19,10 @@ import (
 // pricing-model.md §5 트랜잭션 의미론 준수: BEGIN IMMEDIATE → plan SELECT →
 // transactions INSERT → memberships INSERT → members UPDATE balance.
 type ChargeService struct {
-	db  *sql.DB
-	q   *dbgen.Queries
-	enc *crypto.Enc
+	db     *sql.DB
+	q      *dbgen.Queries
+	enc    *crypto.Enc
+	wallet *legacy.WalletService
 }
 
 // ChargeResult — 충전 결과. MembershipID 는 plan 기반일 때만 non-empty.
@@ -37,6 +40,19 @@ type ChargeResult struct {
 //
 // amount 는 planID 있으면 무시되고 plan.credit_amount 를 사용.
 func (s *ChargeService) Charge(ctx context.Context, memberID string, planID *string, amount int64, createdBy string) (ChargeResult, error) {
+	return s.ChargeWithMemo(ctx, memberID, planID, amount, "", createdBy)
+}
+
+// ChargeWithMemo preserves the original charge memo. Plan sale, wallet change
+// and transaction row are committed atomically in the same canonical database.
+func (s *ChargeService) ChargeWithMemo(ctx context.Context, memberID string, planID *string, amount int64, memo, createdBy string) (ChargeResult, error) {
+	if planID == nil {
+		if amount <= 0 {
+			return ChargeResult{}, fmt.Errorf("%w: amount must be > 0", ErrInvalidInput)
+		}
+		result, err := s.wallet.Charge(ctx, memberID, amount, strings.TrimSpace(memo), createdBy)
+		return fromLegacyWallet(result), mapWalletError(err)
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return ChargeResult{}, fmt.Errorf("begin tx: %w", err)
@@ -65,10 +81,9 @@ func (s *ChargeService) Charge(ctx context.Context, memberID string, planID *str
 	}
 
 	var (
-		credit    int64
-		memo      string
-		snapshot  string
-		planIDDB  sql.NullString
+		credit   int64
+		snapshot string
+		planIDDB sql.NullString
 	)
 
 	if planID != nil {
@@ -83,21 +98,21 @@ func (s *ChargeService) Charge(ctx context.Context, memberID string, planID *str
 			return ChargeResult{}, ErrPlanInactive
 		}
 		credit = plan.CreditAmount
-		// memo 는 비워둔다 — tier_label + payment_method 는 memberships 뱃지가 표시.
-		// 회원 상세 최근 거래도 R3 LEFT JOIN 으로 뱃지 렌더링하므로 memo 중복 저장하지 않는다.
+		// The original customer and transaction screens also consume this ledger.
+		if strings.TrimSpace(memo) == "" {
+			memo = plan.TierLabel + " · " + plan.PaymentMethod
+		}
 		snap, merr := marshalPlanSnapshot(plan)
 		if merr != nil {
 			return ChargeResult{}, merr
 		}
 		snapshot = snap
 		planIDDB = sql.NullString{String: plan.ID, Valid: true}
-	} else {
-		if amount <= 0 {
-			return ChargeResult{}, fmt.Errorf("%w: amount must be > 0", ErrInvalidInput)
-		}
-		credit = amount
 	}
 
+	if credit <= 0 || credit > math.MaxInt64-m.Balance {
+		return ChargeResult{}, fmt.Errorf("%w: credit amount exceeds supported range", ErrInvalidInput)
+	}
 	newBalance := m.Balance + credit
 	if err := q.AddToBalance(ctx, dbgen.AddToBalanceParams{
 		Balance: credit,
@@ -155,68 +170,21 @@ func (s *ChargeService) Deduct(ctx context.Context, memberID string, amount int6
 	if amount <= 0 {
 		return ChargeResult{}, fmt.Errorf("%w: amount must be > 0", ErrInvalidInput)
 	}
+	result, err := s.wallet.Deduct(ctx, memberID, amount, strings.TrimSpace(serviceName), createdBy)
+	return fromLegacyWallet(result), mapWalletError(err)
+}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return ChargeResult{}, fmt.Errorf("begin tx: %w", err)
-	}
-	committed := false
-	defer func() {
-		if !committed {
-			_ = tx.Rollback()
+func fromLegacyWallet(result legacy.WalletResult) ChargeResult {
+	return ChargeResult{Member: dbgen.V2Member(result.Member), Transaction: dbgen.V2Transaction(result.Transaction), NewBalance: result.NewBalance}
+}
+
+func mapWalletError(err error) error {
+	for _, pair := range [][2]error{{legacy.ErrNotFound, ErrNotFound}, {legacy.ErrInsufficient, ErrInsufficient}, {legacy.ErrInactive, ErrInactive}, {legacy.ErrInvalidInput, ErrInvalidInput}} {
+		if errors.Is(err, pair[0]) {
+			return fmt.Errorf("%w: %v", pair[1], err)
 		}
-	}()
-	q := dbgen.New(tx)
-
-	m, err := q.GetMember(ctx, memberID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ChargeResult{}, ErrNotFound
 	}
-	if err != nil {
-		return ChargeResult{}, fmt.Errorf("get member: %w", err)
-	}
-	if !m.IsActive {
-		return ChargeResult{}, ErrInactive
-	}
-
-	newBalance := m.Balance - amount
-	if newBalance < 0 {
-		return ChargeResult{}, fmt.Errorf("%w: current=%d requested=%d",
-			ErrInsufficient, m.Balance, amount)
-	}
-
-	if err := q.SubFromBalance(ctx, dbgen.SubFromBalanceParams{
-		Balance: amount,
-		ID:      memberID,
-	}); err != nil {
-		return ChargeResult{}, fmt.Errorf("sub from balance: %w", err)
-	}
-
-	t, err := q.InsertTransaction(ctx, dbgen.InsertTransactionParams{
-		ID:           util.NewID(),
-		MemberID:     memberID,
-		Type:         "deduct",
-		Amount:       amount,
-		BalanceAfter: newBalance,
-		Memo:         nullStr(strings.TrimSpace(serviceName)),
-		CreatedBy:    nullStr(createdBy),
-	})
-	if err != nil {
-		return ChargeResult{}, fmt.Errorf("insert tx: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return ChargeResult{}, fmt.Errorf("commit: %w", err)
-	}
-	committed = true
-
-	m.Balance = newBalance
-	s.decryptMember(&m)
-	return ChargeResult{
-		Member:      m,
-		Transaction: t,
-		NewBalance:  newBalance,
-	}, nil
+	return err
 }
 
 // RefundMembership — R5 대응. memberships.status='refunded' 로 전이하면서

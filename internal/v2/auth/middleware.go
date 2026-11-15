@@ -1,7 +1,11 @@
 package auth
 
 import (
+	"encoding/json"
 	"net/http"
+	"net/url"
+	"path"
+	"strings"
 
 	"github.com/alexedwards/scs/v2"
 )
@@ -16,7 +20,22 @@ func RequireAdmin(sm *scs.SessionManager) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			role := sm.GetString(r.Context(), SessionKeyRole)
 			if role != RoleAdmin {
-				dest := "/v2/login?next=" + r.URL.RequestURI()
+				returnTo := SafeNext(r.URL.RequestURI())
+				if r.Method != http.MethodGet {
+					// Wallet/card writes cannot be replayed by a GET after login.
+					u, _ := url.Parse(returnTo)
+					parts := strings.Split(u.Path, "/")
+					if len(parts) >= 6 && strings.HasPrefix(u.Path, "/v2/admin/members/") {
+						returnTo = strings.Join(parts[:5], "/")
+					}
+				}
+				dest := "/v2/login?" + url.Values{"next": {returnTo}}.Encode()
+				if strings.Contains(r.Header.Get("Accept"), "application/json") || r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+					w.Header().Set("Content-Type", "application/json; charset=utf-8")
+					w.WriteHeader(http.StatusUnauthorized)
+					_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": "로그인이 필요합니다. 다시 로그인해 주세요.", "redirect": dest})
+					return
+				}
 				if r.Header.Get("HX-Request") == "true" {
 					w.Header().Set("HX-Redirect", dest)
 					w.WriteHeader(http.StatusNoContent)
@@ -28,6 +47,19 @@ func RequireAdmin(sm *scs.SessionManager) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// SafeNext keeps all post-login destinations on the v2 admin read surface.
+func SafeNext(value string) string {
+	u, err := url.Parse(value)
+	if err != nil || u.IsAbs() || u.Host != "" || strings.ContainsAny(value, "\\\r\n") ||
+		(u.Path != "/v2/admin" && !strings.HasPrefix(u.Path, "/v2/admin/")) {
+		return "/v2/admin"
+	}
+	if path.Clean(u.Path) != u.Path {
+		return "/v2/admin"
+	}
+	return u.RequestURI()
 }
 
 // RedirectIfAuthed — 이미 인증된 상태로 /v2/login 방문 시 dest 로.

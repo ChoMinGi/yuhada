@@ -150,7 +150,7 @@ func Dashboard(p DashboardProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p></div></section><!-- 최근 활동 --><section><div class=\"flex items-center justify-between mb-3 sm:mb-4\"><h2 class=\"yh-display-s\">Recent Activity</h2><a href=\"/v2/admin/members\" class=\"text-[12px] sm:text-[13px] text-ink-500 inline-flex items-center gap-1 hover:text-ink-900\">전체 보기")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p></div></section><!-- 최근 활동 --><section><div class=\"flex items-center justify-between mb-3 sm:mb-4\"><h2 class=\"yh-display-s\">Recent Activity</h2><a href=\"/v2/admin/transactions\" class=\"text-[12px] sm:text-[13px] text-ink-500 inline-flex items-center gap-1 hover:text-ink-900\">전체 보기")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

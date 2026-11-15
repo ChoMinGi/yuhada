@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/mingicho/yuhada/internal/util"
-	"github.com/mingicho/yuhada/internal/v2/db/dbgen"
 	v2service "github.com/mingicho/yuhada/internal/v2/service"
 	"github.com/mingicho/yuhada/internal/v2/view/page"
 )
@@ -22,7 +21,7 @@ import (
 func (h *PageHandlers) SalesDashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	period := r.URL.Query().Get("period")
+	period := normalizePeriod(r.URL.Query().Get("period"))
 	if !isValidPeriod(period) {
 		period = "this-month"
 	}
@@ -118,25 +117,13 @@ func (h *PageHandlers) SalesDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 사용률 계산: period 안 deduct/refund 합 / credit 총액.
-	untilForTx := untilUTC
-	if untilForTx == "" {
-		untilForTx = "9999-12-31T23:59:59.999Z"
-	}
-	txAll, err := h.Deps.Services.Queries.ListTransactionsInPeriod(ctx, dbgen.ListTransactionsInPeriodParams{
-		CreatedAt:   sinceUTC,
-		CreatedAt_2: untilForTx,
-	})
+	totals, err := h.Deps.Services.Sales.LedgerTotals(ctx, sinceUTC, untilUTC)
 	if err != nil {
-		slog.Error("v2 sales list txs (for used pct)", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("v2 sales totals", "err", err)
+		http.Error(w, "합계를 불러오지 못했습니다", 500)
 		return
 	}
-	var deducted int64
-	for _, t := range txAll {
-		if t.TxType == "deduct" || t.TxType == "refund" {
-			deducted += t.TxAmount
-		}
-	}
+	deducted := totals.Deduct
 	usedPct := 0
 	if summary.CreditTotal > 0 {
 		usedPct = int((deducted * 100) / summary.CreditTotal)
@@ -351,6 +338,16 @@ func buildPayChart(rows []v2service.PayMethodRow) ([]string, []int) {
 // 기간 계산 (KST)
 // ─────────────────────────────────────────────
 
+func normalizePeriod(p string) string {
+	switch p {
+	case "week":
+		return "this-week"
+	case "month":
+		return "this-month"
+	}
+	return p
+}
+
 func isValidPeriod(p string) bool {
 	switch p {
 	case "today", "this-week", "this-month", "last-month", "all", "custom":
@@ -433,6 +430,8 @@ func toUTCIso(t time.Time) string {
 func buildSummaryCards(s v2service.SalesSummary, usedPct int) page.SalesSummaryCards {
 	return page.SalesSummaryCards{
 		RealRevenue:   util.FormatKRW(s.RealRevenue),
+		UnknownCredit: util.FormatKRW(s.UnknownCredit),
+		UnknownCount:  fmt.Sprintf("%d", s.UnknownCount),
 		CreditTotal:   util.FormatKRW(s.CreditTotal),
 		BonusCost:     util.FormatKRW(s.BonusCost),
 		TxCount:       fmt.Sprintf("%d건", s.TxCount),
@@ -470,6 +469,9 @@ func buildTierRows(rows []v2service.TierRow) []page.SalesTierRow {
 			CountLabel:  fmt.Sprintf("%d건", r.Count),
 			TotalPrice:  util.FormatKRW(r.TotalPrice),
 			TotalCredit: util.FormatKRW(r.TotalCredit),
+		}
+		if r.IsGeneric {
+			row.TotalPrice = "미확정"
 		}
 		if !r.IsGeneric && r.TotalBonus > 0 {
 			row.TotalBonus = util.FormatKRW(r.TotalBonus)

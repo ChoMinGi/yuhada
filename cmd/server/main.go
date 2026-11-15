@@ -1,8 +1,9 @@
 // cmd/server — YUHADA HAIR 서버 엔트리포인트.
 //
 // 실행:
-//   APP_ENV=dev go run ./cmd/server
-//   또는 make dev
+//
+//	APP_ENV=dev go run ./cmd/server
+//	또는 make dev
 package main
 
 import (
@@ -27,14 +28,11 @@ import (
 	"github.com/mingicho/yuhada/internal/service"
 	"github.com/mingicho/yuhada/internal/sms"
 
-	// V2 — dev only (옵션 C 정책, isolation-rules.md §6)
+	// V2 frontend — shared canonical ledger, independent admin sessions.
 	v2auth "github.com/mingicho/yuhada/internal/v2/auth"
 	v2handler "github.com/mingicho/yuhada/internal/v2/handler"
 	v2kakao "github.com/mingicho/yuhada/internal/v2/kakao"
-	v2migrate "github.com/mingicho/yuhada/internal/v2/migrate"
-	v2seed "github.com/mingicho/yuhada/internal/v2/seed"
 	v2service "github.com/mingicho/yuhada/internal/v2/service"
-	v2sms "github.com/mingicho/yuhada/internal/v2/sms"
 )
 
 func main() {
@@ -105,65 +103,40 @@ func main() {
 	router := handler.NewRouter(deps)
 
 	// ───── V2 마운트 ─────
-	// dev: 무조건 마운트. prod: env V2_ENABLE=true 로 opt-in (시연용).
-	// v2 는 v2_ prefix 로 격리되어 v1 DB 와 같은 파일에 공존 가능 (isolation-rules §1).
+	// Both frontends use the same database handle and writer pool. No data copy,
+	// v2_* table changes, demo seed, or startup migration is performed here.
 	root := chi.NewMux()
 	root.Mount("/", router)
 
 	if !cfg.IsProd() || cfg.V2Enable {
-		if err := os.MkdirAll(filepath.Dir(cfg.DBV2Path), 0o750); err != nil {
-			logger.Error("v2 mkdir failed", "err", err)
-			os.Exit(1)
-		}
-		v2DB, err := db.Open(cfg.DBV2Path)
-		if err != nil {
-			logger.Error("v2 db open failed", "err", err, "path", cfg.DBV2Path)
-			os.Exit(1)
-		}
-		defer v2DB.Close()
-		logger.Info("v2 db opened", "path", cfg.DBV2Path, "prod_opt_in", cfg.IsProd() && cfg.V2Enable)
+		var ready int
+		err := database.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('membership_plans','memberships','deduct_amount_presets','service_memo_presets','admin_sessions_v2')`).Scan(&ready)
+		if err != nil || ready != 5 {
+			logger.Error("v2 schema unavailable; apply migrations first; v1 remains available", "err", err)
+		} else {
+			v2Session := v2auth.NewSessionManager(database, cfg.CookieSecure)
+			v2Services := v2service.New(database, enc)
+			v2Kakao := &v2kakao.Config{
+				ClientID:     cfg.KakaoClientID,
+				ClientSecret: cfg.KakaoSecret,
+				RedirectURI:  cfg.KakaoRedirectV2,
+				RequireEmail: strings.TrimSpace(cfg.AdminKakaoEmailsV2) != "",
+			}
+			v2Router := v2handler.NewRouter(&v2handler.Deps{
+				Session:      v2Session,
+				Services:     v2Services,
+				SMS:          smsClient,
+				AdminPIN:     cfg.AdminPinV2,
+				Kakao:        v2Kakao,
+				AdminKakaoID: cfg.AdminKakaoIDV2,
+				EnableDebug:  !cfg.IsProd(),
+				Legacy:       services,
 
-		// R7: 자동 마이그레이션 (goose in-process). seed 이전.
-		if err := v2migrate.Up(v2DB); err != nil {
-			logger.Error("v2 migrate failed", "err", err)
-			os.Exit(1)
+				AdminKakaoEmails: cfg.AdminKakaoEmailsV2,
+			})
+			root.Mount("/v2", v2Router)
+			logger.Info("v2 mounted at /v2 using existing members and transactions")
 		}
-		logger.Info("v2 migrate applied")
-
-		v2Session := v2auth.NewSessionManager(v2DB, cfg.CookieSecure)
-		v2Services := v2service.New(v2DB, enc)
-		v2SMS := v2sms.New()
-
-		// 시드는 실패해도 부팅 계속 (Warn 만).
-		seedCtx, seedCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		if err := v2seed.EnsureSeeded(seedCtx, v2DB, v2Services); err != nil {
-			logger.Warn("v2 seed failed", "err", err)
-		}
-		seedCancel()
-
-		v2Kakao := &v2kakao.Config{
-			ClientID:     cfg.KakaoClientID,
-			ClientSecret: cfg.KakaoSecret,
-			RedirectURI:  cfg.KakaoRedirectV2,
-			RequireEmail: strings.TrimSpace(cfg.AdminKakaoEmailsV2) != "",
-		}
-		v2Router := v2handler.NewRouter(&v2handler.Deps{
-			Session:      v2Session,
-			Services:     v2Services,
-			SMS:          v2SMS,
-			AdminPIN:     cfg.AdminPinV2,
-			Kakao:        v2Kakao,
-			AdminKakaoID: cfg.AdminKakaoIDV2,
-			EnableDebug:  true,
-
-			AdminKakaoEmails: cfg.AdminKakaoEmailsV2,
-		})
-		root.Mount("/v2", v2Router)
-		mode := "dev"
-		if cfg.IsProd() {
-			mode = "prod (V2_ENABLE=true opt-in — 시연 모드)"
-		}
-		logger.Info("v2 mounted at /v2", "mode", mode)
 	} else {
 		logger.Info("v2 mount skipped (prod default — V2_ENABLE 미설정)")
 	}

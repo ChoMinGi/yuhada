@@ -19,9 +19,9 @@ templ Sales(p SalesProps) {
 	@layout.Admin("매출", "sales") {
 		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
 			<header class="mb-6 sm:mb-8">
-				<p class="yh-eyebrow mb-2 sm:mb-3">V2 · TEST</p>
+				<p class="yh-eyebrow mb-2 sm:mb-3">MEMBERSHIP</p>
 				<h1 class="yh-headline-l text-[26px] sm:text-[32px]">매출 대시보드</h1>
-				<p class="yh-body-sm mt-2 text-ink-500">{ p.PeriodLabel } 기준. 정액권 판매 + 일반 충전.</p>
+				<p class="yh-body-sm mt-2 text-ink-500">{ p.PeriodLabel } 기준. 확인된 정액권 판매와 잔액 충전 내역.</p>
 			</header>
 
 			<!-- 기간 필터 (dashboard 와 동일 스타일 + '기간 지정' 토글) -->
@@ -82,13 +82,19 @@ templ Sales(p SalesProps) {
 
 			<!-- KPI 5장 (핵심만): 판매 금액/적립/보너스 강조 3장 + 판매 건수/활성 회원 -->
 			<section class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-				@salesSummaryCard("판매 금액", p.SummaryCards.RealRevenue, "손님이 실제 낸 돈", true)
+				@salesSummaryCard("확인된 판매 금액", p.SummaryCards.RealRevenue, "정액권 판매 기록 기준", true)
 				@salesUsageCard(p.SummaryCards.CreditTotal, p.SummaryCards.CreditUsedPct)
 				@salesSummaryCard("보너스 비용", p.SummaryCards.BonusCost, "적립 − 판매", false)
 			</section>
 			<section class="grid grid-cols-2 gap-3 sm:gap-4 mb-8">
-				@salesSummaryCard("판매 건수", p.SummaryCards.TxCount, "정액권 + 일반", false)
+				@salesSummaryCard("충전 건수", p.SummaryCards.TxCount, "정액권 + 일반 충전", false)
 				@salesSummaryCard("활성 회원", p.SummaryCards.ActiveMembers, "이 기간 구매한 사람", false)
+			</section>
+
+			<section class="yh-card p-4 sm:p-5 mb-8">
+				<p class="yh-eyebrow-xs text-ink-500 mb-2">실결제액 미확정 충전</p>
+				<p class="yh-num text-[20px] sm:text-[24px]">{ p.SummaryCards.UnknownCredit } <span class="text-[13px] text-ink-500">· { p.SummaryCards.UnknownCount }건</span></p>
+				<p class="text-[12px] text-ink-500 mt-2">일반·기존 충전의 적립액입니다. 실제 받은 금액을 확인할 수 없어 판매 금액에 포함하지 않습니다.</p>
 			</section>
 
 			<!-- 차트 영역: 라인 (2열) + 등급 도넛 (1열) -->
@@ -438,7 +444,7 @@ templ salesTierRow(row SalesTierRow) {
 		</div>
 		<div class="grid grid-cols-3 gap-2 text-right">
 			<div>
-				<p class="text-[10px] tracking-brand uppercase text-ink-500">실제</p>
+				<p class="text-[10px] tracking-brand uppercase text-ink-500">판매 금액</p>
 				<p class="yh-num text-[14px] sm:text-[15px] text-ink-900">{ row.TotalPrice }</p>
 			</div>
 			<div>
@@ -488,7 +494,7 @@ templ salesRecentRow(r SalesRecentRow) {
 			<p class="text-[14px] font-medium text-ink-900 truncate">{ r.MemberName }</p>
 			<p class="text-[11px] text-ink-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
 				if r.IsGeneric {
-					<span>일반 충전</span>
+					<span>일반 충전 · 실결제액 미확정</span>
 				} else {
 					<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700">
 						{ r.TierLabel }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"crypto/subtle"
 	"net/http"
 	"strings"
 
@@ -19,7 +20,7 @@ func (h *PageHandlers) Home(w http.ResponseWriter, r *http.Request) {
 
 // LoginGet — /v2/login.
 func (h *PageHandlers) LoginGet(w http.ResponseWriter, r *http.Request) {
-	next := r.URL.Query().Get("next")
+	next := v2auth.SafeNext(r.URL.Query().Get("next"))
 	render(w, r, http.StatusOK, page.Login(page.LoginProps{
 		Next:         next,
 		KakaoEnabled: h.Deps.Kakao != nil && h.Deps.Kakao.Enabled(),
@@ -34,12 +35,19 @@ func (h *PageHandlers) LoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pin := strings.TrimSpace(r.FormValue("pin"))
-	next := strings.TrimSpace(r.FormValue("next"))
-	if next == "" {
-		next = "/v2/admin"
+	next := v2auth.SafeNext(strings.TrimSpace(r.FormValue("next")))
+	adminID := ""
+	valid := false
+	if h.Deps.Legacy != nil {
+		admin, err := h.Deps.Legacy.Admin.VerifyPIN(r.Context(), pin)
+		valid = err == nil
+		adminID = admin.ID
+	} else if len(pin) == 6 && len(h.Deps.AdminPIN) == 6 {
+		// Standalone fixtures; production always verifies the existing admin hash.
+		valid = subtle.ConstantTimeCompare([]byte(pin), []byte(h.Deps.AdminPIN)) == 1
 	}
 
-	if pin == "" || pin != h.Deps.AdminPIN {
+	if !valid {
 		render(w, r, http.StatusUnauthorized, page.Login(page.LoginProps{
 			ErrorMsg:     "PIN이 올바르지 않습니다",
 			Next:         next,
@@ -54,7 +62,20 @@ func (h *PageHandlers) LoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Deps.Session.Put(r.Context(), v2auth.SessionKeyRole, v2auth.RoleAdmin)
+	if adminID != "" {
+		h.Deps.Session.Put(r.Context(), v2auth.SessionKeyAdminID, adminID)
+	}
 	http.Redirect(w, r, next, http.StatusSeeOther)
+}
+
+func (h *PageHandlers) adminID(r *http.Request) string {
+	if id := h.Deps.Session.GetString(r.Context(), v2auth.SessionKeyAdminID); id != "" {
+		return id
+	}
+	if id := h.Deps.Session.GetString(r.Context(), "v2_kakao_id"); id != "" {
+		return "kakao:" + id
+	}
+	return "v2-admin"
 }
 
 // LogoutPost — /v2/logout.

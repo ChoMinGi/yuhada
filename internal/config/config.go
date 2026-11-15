@@ -28,13 +28,12 @@ type Config struct {
 	AdminBootPW     string // 비밀번호 fallback (옵션)
 	AdminBootPIN    string // 6자리 PIN — 메인 로그인 수단
 	CookieSecure    bool
-	// V2: 별도 SQLite 파일 경로 (isolation-rules.md §1-1)
-	// v1 DB 와 같은 파일로 지정하면 v2_ prefix 테이블로 공존 가능.
+	// Deprecated: retained for old environment files. Both frontends use DBPath.
 	DBV2Path        string
-	// V2: 전용 PIN — env ADMIN_PIN_V2, 기본값 "0000"
+	// Standalone test PIN. Production verifies the existing administrator PIN hash.
 	AdminPinV2      string
 	// V2: prod 에서도 마운트할지 여부 (dev 는 항상 마운트).
-	// prod 시연 필요 시 env V2_ENABLE=true 로 opt-in.
+	// prod 에서 새 관리자 화면 활성화 시 V2_ENABLE=true.
 	V2Enable        bool
 	// V2 카카오 로그인 (선택). KakaoClientID/Secret 는 v1 과 공유, redirect 만 별도.
 	KakaoRedirectV2 string
@@ -64,9 +63,9 @@ func Load() (Config, error) {
 		AdminBootEmail: env("ADMIN_BOOTSTRAP_EMAIL", ""),
 		AdminBootPW:    env("ADMIN_BOOTSTRAP_PW", ""),
 		AdminBootPIN:   env("ADMIN_BOOTSTRAP_PIN", ""),
-		// V2 추가 (isolation-rules.md §1-1, §1-5)
+		// Legacy v2 environment compatibility; production uses DBPath and the existing PIN hash.
 		DBV2Path:   env("DB_V2_PATH", "./var/yuhada-v2.db"),
-		AdminPinV2: env("ADMIN_PIN_V2", "0000"),
+		AdminPinV2: env("ADMIN_PIN_V2", ""),
 	}
 	cfg.V2Enable, _ = strconv.ParseBool(env("V2_ENABLE", "false"))
 	cfg.KakaoRedirectV2 = env("KAKAO_REDIRECT_V2", "")

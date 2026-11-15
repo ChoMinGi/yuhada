@@ -12,7 +12,7 @@ import (
 
 const createMembership = `-- name: CreateMembership :one
 
-INSERT INTO v2_memberships
+INSERT INTO memberships
   (id, member_id, plan_id, plan_snapshot, charge_tx_id, status, created_by)
 VALUES (?, ?, ?, ?, ?, 'active', ?)
 RETURNING id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by
@@ -27,7 +27,7 @@ type CreateMembershipParams struct {
 	CreatedBy    sql.NullString `json:"createdBy"`
 }
 
-// v2 v2_memberships queries.
+// v2 memberships queries.
 // plan_snapshot is a JSON blob written by the service layer at charge time
 // so historical rows survive plan edits/deletion (see pricing-model.md section 4).
 func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipParams) (V2Membership, error) {
@@ -54,7 +54,7 @@ func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipPara
 }
 
 const getMembership = `-- name: GetMembership :one
-SELECT id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by FROM v2_memberships WHERE id = ? LIMIT 1
+SELECT id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by FROM memberships WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetMembership(ctx context.Context, id string) (V2Membership, error) {
@@ -88,12 +88,12 @@ SELECT
   m.plan_snapshot AS plan_snapshot,
   m.status        AS membership_status,
   m.purchased_at  AS purchased_at
-FROM v2_transactions t
-LEFT JOIN v2_memberships m ON m.charge_tx_id = t.id
+FROM transactions t
+LEFT JOIN memberships m ON m.charge_tx_id = t.id
 WHERE t.member_id = ?
   AND t.type      = 'charge'
-ORDER BY t.created_at DESC
-LIMIT 20
+ORDER BY t.created_at DESC, t.id DESC
+LIMIT 50
 `
 
 type ListChargeHistoryWithPlanRow struct {
@@ -112,8 +112,8 @@ type ListChargeHistoryWithPlanRow struct {
 	PurchasedAt      sql.NullString `json:"purchasedAt"`
 }
 
-// R3: v2_transactions LEFT JOIN v2_memberships convention (pricing-model.md section 8).
-// Used by the recent-v2_transactions section on member detail so the UI can
+// R3: transactions LEFT JOIN memberships convention (pricing-model.md section 8).
+// Used by the recent-transactions section on member detail so the UI can
 // render a plan tier badge when plan_snapshot IS NOT NULL, and fall back
 // to a plain "generic charge" line when it is NULL.
 func (q *Queries) ListChargeHistoryWithPlan(ctx context.Context, memberID string) ([]ListChargeHistoryWithPlanRow, error) {
@@ -153,10 +153,86 @@ func (q *Queries) ListChargeHistoryWithPlan(ctx context.Context, memberID string
 	return items, nil
 }
 
+const listMemberHistoryWithPlan = `-- name: ListMemberHistoryWithPlan :many
+SELECT
+  t.id            AS tx_id,
+  t.member_id     AS tx_member_id,
+  t.type          AS tx_type,
+  t.amount        AS tx_amount,
+  t.balance_after AS tx_balance_after,
+  t.memo          AS tx_memo,
+  t.created_by    AS tx_created_by,
+  t.created_at    AS tx_created_at,
+  m.id            AS membership_id,
+  m.plan_id       AS plan_id,
+  m.plan_snapshot AS plan_snapshot,
+  m.status        AS membership_status,
+  m.purchased_at  AS purchased_at
+FROM transactions t
+LEFT JOIN memberships m ON m.charge_tx_id = t.id
+WHERE t.member_id = ?
+ORDER BY t.created_at DESC, t.id DESC
+LIMIT 50
+`
+
+type ListMemberHistoryWithPlanRow struct {
+	TxID             string         `json:"txId"`
+	TxMemberID       string         `json:"txMemberId"`
+	TxType           string         `json:"txType"`
+	TxAmount         int64          `json:"txAmount"`
+	TxBalanceAfter   int64          `json:"txBalanceAfter"`
+	TxMemo           sql.NullString `json:"txMemo"`
+	TxCreatedBy      sql.NullString `json:"txCreatedBy"`
+	TxCreatedAt      string         `json:"txCreatedAt"`
+	MembershipID     sql.NullString `json:"membershipId"`
+	PlanID           sql.NullString `json:"planId"`
+	PlanSnapshot     sql.NullString `json:"planSnapshot"`
+	MembershipStatus sql.NullString `json:"membershipStatus"`
+	PurchasedAt      sql.NullString `json:"purchasedAt"`
+}
+
+// Latest canonical history across all transaction types, with optional sale metadata.
+func (q *Queries) ListMemberHistoryWithPlan(ctx context.Context, memberID string) ([]ListMemberHistoryWithPlanRow, error) {
+	rows, err := q.db.QueryContext(ctx, listMemberHistoryWithPlan, memberID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMemberHistoryWithPlanRow{}
+	for rows.Next() {
+		var i ListMemberHistoryWithPlanRow
+		if err := rows.Scan(
+			&i.TxID,
+			&i.TxMemberID,
+			&i.TxType,
+			&i.TxAmount,
+			&i.TxBalanceAfter,
+			&i.TxMemo,
+			&i.TxCreatedBy,
+			&i.TxCreatedAt,
+			&i.MembershipID,
+			&i.PlanID,
+			&i.PlanSnapshot,
+			&i.MembershipStatus,
+			&i.PurchasedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMembershipsByMember = `-- name: ListMembershipsByMember :many
-SELECT id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by FROM v2_memberships
+SELECT id, member_id, plan_id, plan_snapshot, charge_tx_id, status, purchased_at, created_by FROM memberships
 WHERE member_id = ?
-ORDER BY purchased_at DESC
+ORDER BY purchased_at DESC, id DESC
 `
 
 // Powers the MEMBERSHIPS section on the member detail screen.
@@ -193,12 +269,32 @@ func (q *Queries) ListMembershipsByMember(ctx context.Context, memberID string) 
 	return items, nil
 }
 
+const sumMemberTotals = `-- name: SumMemberTotals :one
+SELECT
+  CAST(COALESCE(SUM(CASE WHEN type = 'charge' THEN amount ELSE 0 END), 0) AS INTEGER) AS total_in,
+  CAST(COALESCE(SUM(CASE WHEN type IN ('deduct', 'refund') THEN amount ELSE 0 END), 0) AS INTEGER) AS total_out
+FROM transactions WHERE member_id = ?
+`
+
+type SumMemberTotalsRow struct {
+	TotalIn  int64 `json:"totalIn"`
+	TotalOut int64 `json:"totalOut"`
+}
+
+// Lifetime totals are independent of the visible history LIMIT.
+func (q *Queries) SumMemberTotals(ctx context.Context, memberID string) (SumMemberTotalsRow, error) {
+	row := q.db.QueryRowContext(ctx, sumMemberTotals, memberID)
+	var i SumMemberTotalsRow
+	err := row.Scan(&i.TotalIn, &i.TotalOut)
+	return i, err
+}
+
 const sumMembershipRevenueSince = `-- name: SumMembershipRevenueSince :one
 SELECT
   COALESCE(SUM(CAST(json_extract(plan_snapshot, '$.price') AS INTEGER)), 0) AS revenue,
   COALESCE(SUM(CAST(json_extract(plan_snapshot, '$.credit_amount') AS INTEGER)), 0) AS liability,
   COUNT(*) AS sold
-FROM v2_memberships
+FROM memberships
 WHERE purchased_at >= ?
   AND status = 'active'
 `
@@ -210,7 +306,7 @@ type SumMembershipRevenueSinceRow struct {
 }
 
 // Revenue stats for tax reporting: revenue = SUM(price),
-// liability = SUM(credit_amount), across active v2_memberships since ?.
+// liability = SUM(credit_amount), across active memberships since ?.
 func (q *Queries) SumMembershipRevenueSince(ctx context.Context, purchasedAt string) (SumMembershipRevenueSinceRow, error) {
 	row := q.db.QueryRowContext(ctx, sumMembershipRevenueSince, purchasedAt)
 	var i SumMembershipRevenueSinceRow
@@ -219,7 +315,7 @@ func (q *Queries) SumMembershipRevenueSince(ctx context.Context, purchasedAt str
 }
 
 const updateMembershipStatus = `-- name: UpdateMembershipStatus :exec
-UPDATE v2_memberships SET status = ? WHERE id = ?
+UPDATE memberships SET status = ? WHERE id = ?
 `
 
 type UpdateMembershipStatusParams struct {
@@ -228,8 +324,8 @@ type UpdateMembershipStatusParams struct {
 }
 
 // Refund/expire/transfer transitions (R5).
-// The service layer MUST wrap this together with the v2_transactions
-// and v2_members.balance updates in a single BEGIN IMMEDIATE tx.
+// The service layer MUST wrap this together with the transactions
+// and members.balance updates in a single BEGIN IMMEDIATE tx.
 func (q *Queries) UpdateMembershipStatus(ctx context.Context, arg UpdateMembershipStatusParams) error {
 	_, err := q.db.ExecContext(ctx, updateMembershipStatus, arg.Status, arg.ID)
 	return err

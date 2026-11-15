@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/mingicho/yuhada/internal/v2/view/layout"
 )
@@ -48,7 +49,7 @@ func Login(p LoginProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main class=\"min-h-screen flex flex-col items-center justify-center\"><div class=\"w-full max-w-admin-login-card px-8\"><div class=\"flex flex-col items-start mb-12 leading-none\"><span class=\"font-display italic text-[40px] tracking-wide-serif\">yhd v2</span> <span class=\"mt-2 font-display text-[10px] tracking-[0.22em] uppercase\">YUHADA HAIR · TEST</span></div><h1 class=\"yh-headline-l text-[26px] sm:text-[32px]\">로그인</h1><p class=\"yh-body-sm text-ink-500 mb-10 mt-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main class=\"min-h-screen flex flex-col items-center justify-center\"><div class=\"w-full max-w-admin-login-card px-8\"><div class=\"flex flex-col items-start mb-12 leading-none\"><span class=\"font-display italic text-[40px] tracking-wide-serif\">yhd</span> <span class=\"mt-2 font-display text-[10px] tracking-[0.22em] uppercase\">YUHADA HAIR</span></div><h1 class=\"yh-headline-l text-[26px] sm:text-[32px]\">로그인</h1><p class=\"yh-body-sm text-ink-500 mb-10 mt-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -118,7 +119,7 @@ func loginForm(p LoginProps) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<form method=\"POST\" action=\"/v2/login\" class=\"flex flex-col gap-6\" hx-boost=\"false\" x-data=\"{ pin: '' }\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<form method=\"POST\" action=\"/v2/login\" class=\"flex flex-col gap-6\" hx-boost=\"false\" x-data=\"{ pin: '', submitting: false }\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -130,7 +131,7 @@ func loginForm(p LoginProps) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(p.Next)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 53, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 54, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -141,7 +142,7 @@ func loginForm(p LoginProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div><label class=\"yh-label\" for=\"pin\">PIN</label><div class=\"relative\" x-on:click=\"$refs.pinInput.focus()\"><input id=\"pin\" name=\"pin\" type=\"password\" inputmode=\"numeric\" pattern=\"[0-9]{4,6}\" maxlength=\"6\" autocomplete=\"off\" autofocus required x-ref=\"pinInput\" x-model=\"pin\" x-on:input=\"pin = pin.replace(/\\D/g,'').slice(0,6); if (pin.length >= 4) { /* enter 로 submit 허용 */ }\" class=\"absolute inset-0 w-full h-full opacity-0 cursor-pointer\"><div class=\"grid grid-cols-6 gap-3 pointer-events-none select-none\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div><label class=\"yh-label\" for=\"pin\">PIN</label><div class=\"relative\" x-on:click=\"$refs.pinInput.focus()\"><input id=\"pin\" name=\"pin\" type=\"password\" inputmode=\"numeric\" pattern=\"[0-9]{6}\" maxlength=\"6\" autocomplete=\"off\" autofocus required x-ref=\"pinInput\" x-model=\"pin\" x-on:input=\"pin = pin.replace(/\\D/g,'').slice(0,6); if (pin.length === 6 && !submitting) { submitting = true; $nextTick(() => $el.form.requestSubmit()); }\" class=\"absolute inset-0 w-full h-full opacity-0 cursor-pointer\"><div class=\"grid grid-cols-6 gap-3 pointer-events-none select-none\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -159,14 +160,14 @@ func loginForm(p LoginProps) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(p.ErrorMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 83, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 84, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><button type=\"submit\" class=\"yh-btn yh-btn-primary yh-btn-lg w-full\" x-bind:disabled=\"pin.length < 4\">로그인</button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><button type=\"submit\" class=\"yh-btn yh-btn-primary yh-btn-lg w-full\" x-bind:disabled=\"pin.length !== 6\">로그인</button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -203,7 +204,7 @@ func kakaoButton(next string) templ.Component {
 		var templ_7745c5c3_Var7 templ.SafeURL
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(kakaoLoginHref(next)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 96, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 97, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -222,7 +223,7 @@ func kakaoLoginHref(next string) string {
 	if next == "" {
 		return "/v2/kakao/login"
 	}
-	return "/v2/kakao/login?next=" + next
+	return "/v2/kakao/login?next=" + url.QueryEscape(next)
 }
 
 func pinBox(idx int) templ.Component {
@@ -253,7 +254,7 @@ func pinBox(idx int) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(pinBoxBorder(idx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 117, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 118, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -266,7 +267,7 @@ func pinBox(idx int) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("pin.length > %d", idx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 120, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/login.templ`, Line: 121, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {

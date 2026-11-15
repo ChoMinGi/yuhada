@@ -1,9 +1,5 @@
-// Package seed — v2 첫 부팅 시 더미 회원 보강.
-//
-// plans 6종은 마이그레이션 00002_seed_plans.sql 에서 이미 idempotent 하게 채워짐.
-// 여기서는 매장에서 실제 사용하기 전 테스트용으로 회원 몇 명만 넣는다.
-//
-// idempotent 보장: INSERT OR IGNORE 사용. 매 부팅마다 호출되어도 안전.
+// Package seed contains the deprecated isolated demo-database seeder.
+// It must never seed a database containing the operational canonical ledger.
 package seed
 
 import (
@@ -12,45 +8,51 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/mingicho/yuhada/internal/crypto"
 	"github.com/mingicho/yuhada/internal/util"
 	"github.com/mingicho/yuhada/internal/v2/service"
 )
 
-// EnsureSeeded — 더미 회원이 없으면 삽입. v2 서비스의 crypto 를 그대로 사용해서
-// v1 과 동일한 암호화 정책 적용.
+// EnsureSeeded inserts test-only members into an isolated legacy v2 database.
+// Deprecated: the shared-ledger application must not call demo seeding.
 func EnsureSeeded(ctx context.Context, database *sql.DB, s *service.Services) error {
-	// 회원 수 확인 (이미 있으면 스킵).
+	if database == nil {
+		return fmt.Errorf("v2 seed: database is required")
+	}
+	var canonical int
+	if err := database.QueryRowContext(ctx, `SELECT COUNT(*) FROM sqlite_master WHERE type IN ('table','view') AND lower(name) IN ('members','transactions')`).Scan(&canonical); err != nil {
+		return fmt.Errorf("v2 seed: inspect schema: %w", err)
+	}
+	if canonical > 0 {
+		return fmt.Errorf("v2 seed: refusing demo seeding on a canonical ledger database")
+	}
+	tx, err := database.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("v2 seed: begin: %w", err)
+	}
+	defer tx.Rollback()
 	var count int64
-	if err := database.QueryRowContext(ctx, `SELECT COUNT(*) FROM v2_members`).Scan(&count); err != nil {
-		return fmt.Errorf("count members: %w", err)
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM v2_members`).Scan(&count); err != nil {
+		return fmt.Errorf("v2 seed: count demo members: %w", err)
 	}
 	if count > 0 {
-		slog.Info("v2 seed skipped", "existing_members", count)
+		slog.Info("v2 demo seed skipped", "existing_members", count)
 		return nil
 	}
-
-	dummies := []service.CreateMemberInput{
-		{Name: "테스트1", Phone: "01000000001", Memo: "v2 시드 회원 (자동 생성)"},
-		{Name: "테스트2", Phone: "01000000002", Memo: "v2 시드 회원 (자동 생성)"},
-		{Name: "테스트3", Phone: "01000000003", Memo: "v2 시드 회원 (자동 생성)"},
+	var enc *crypto.Enc
+	if s != nil {
+		enc = s.Enc
 	}
-
-	inserted := 0
+	dummies := []struct{ name, phone string }{{"테스트1", "01000000001"}, {"테스트2", "01000000002"}, {"테스트3", "01000000003"}}
 	for _, in := range dummies {
-		if _, err := s.Member.Create(ctx, in); err != nil {
-			// 중복이면 무시하고 계속.
-			slog.Warn("v2 seed member create failed", "phone_tail", tail4(in.Phone), "err", err)
-			continue
+		// Deliberately target only demo tables: MemberService now writes canonical members.
+		if _, err := tx.ExecContext(ctx, `INSERT INTO v2_members (id,name,phone,balance,memo) VALUES (?,?,?,0,?)`, util.NewID(), enc.Encrypt(in.name), enc.EncryptDeterministic(in.phone), enc.Encrypt("v2 시드 회원 (자동 생성)")); err != nil {
+			return fmt.Errorf("v2 seed: insert demo member: %w", err)
 		}
-		inserted++
 	}
-	slog.Info("v2 seed done", "members_inserted", inserted, "seed_id", util.NewID()[:8])
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("v2 seed: commit: %w", err)
+	}
+	slog.Info("v2 demo seed done", "members_inserted", len(dummies))
 	return nil
-}
-
-func tail4(s string) string {
-	if len(s) <= 4 {
-		return s
-	}
-	return s[len(s)-4:]
 }

@@ -9,7 +9,12 @@ import (
 // 배치 순서: 헤더 → BALANCE → MEMBERSHIPS (신규) → CARD → MEMO → 최근 거래.
 templ MemberDetail(p MemberDetailProps) {
 	@layout.Admin(p.Name, "members") {
-		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+		@MemberDetailContent(p)
+	}
+}
+
+templ MemberDetailContent(p MemberDetailProps) {
+		<div id="member-detail-content" class="px-4 py-5 sm:px-8 sm:py-10 max-w-3xl mx-auto">
 			<a href="/v2/admin/members" class="yh-eyebrow-xs inline-flex items-center gap-1.5 mb-6">
 				@component.Icon("chevron-left", 12)
 				회원 관리
@@ -25,6 +30,9 @@ templ MemberDetail(p MemberDetailProps) {
 					</p>
 					<h1 class="yh-headline-l text-[26px] sm:text-[32px] leading-tight">{ p.Name }</h1>
 					<p class="text-[16px] sm:text-[17px] text-ink-700 tabular-nums mt-3">{ p.Phone }</p>
+					if p.JoinedAt != "" {
+						<p class="text-[13px] text-ink-500 mt-1">가입 { p.JoinedAt }</p>
+					}
 				</div>
 				<div class="shrink-0 sm:w-[180px]">
 					if p.Active {
@@ -40,6 +48,9 @@ templ MemberDetail(p MemberDetailProps) {
 								hx-target="#modal-root"
 							>차감</button>
 						</div>
+						<button class="yh-btn yh-btn-ghost text-danger w-full mt-2" hx-get={ "/v2/admin/members/" + p.ID + "/lost/modal" } hx-target="#modal-root">분실 신고</button>
+					} else {
+						<button class="yh-btn yh-btn-ghost w-full" hx-get={ "/v2/admin/members/" + p.ID + "/reactivate/modal" } hx-target="#modal-root">재활성화</button>
 					}
 				</div>
 			</header>
@@ -47,6 +58,8 @@ templ MemberDetail(p MemberDetailProps) {
 			@memberBalanceCard(p)
 
 			<div class="mt-8 sm:mt-10 grid gap-6 sm:gap-8">
+				@memberMembershipsSection(p)
+				@MemberCardRow(p)
 				@MemberMemoRow(p)
 			</div>
 
@@ -60,15 +73,14 @@ templ MemberDetail(p MemberDetailProps) {
 			<footer class="flex justify-center">
 				<button
 					class="yh-eyebrow-xs text-danger inline-flex items-center gap-1.5 hover:opacity-80 py-2 px-4"
-					hx-delete={ "/v2/admin/members/" + p.ID }
-					hx-confirm="정말 이 회원을 삭제하시겠습니까? 거래 내역도 함께 삭제됩니다."
+					hx-get={ "/v2/admin/members/" + p.ID + "/delete/modal" }
+					hx-target="#modal-root"
 				>
 					@component.Icon("trash-2", 12)
 					회원 삭제
 				</button>
 			</footer>
 		</div>
-	}
 }
 
 templ memberBalanceCard(p MemberDetailProps) {
@@ -131,8 +143,8 @@ templ memberMembershipsSection(p MemberDetailProps) {
 	</section>
 }
 
-templ memberCardRow(p MemberDetailProps) {
-	<div class="flex items-center justify-between gap-4 py-5 border-b border-sand-200">
+templ MemberCardRow(p MemberDetailProps) {
+	<div id="member-card-row" class="flex items-center justify-between gap-4 py-5 border-b border-sand-200">
 		<div>
 			<p class="yh-eyebrow-xs mb-2">카드</p>
 			if p.Card != "" {
@@ -144,11 +156,16 @@ templ memberCardRow(p MemberDetailProps) {
 		if p.Card != "" {
 			<button
 				x-data="{ copied:false }"
-				x-on:click={ "navigator.clipboard.writeText('" + p.Card + "'); copied=true; setTimeout(()=>copied=false, 1500)" }
+				x-on:click={ "navigator.clipboard.writeText(" + templJSString(p.Card) + "); copied=true; setTimeout(()=>copied=false, 1500)" }
 				class="yh-eyebrow-xs inline-flex items-center gap-1.5"
 			>
 				<span x-show="!copied">복사</span>
 				<span x-show="copied" x-cloak class="text-success">복사됨</span>
+			</button>
+		} else if p.Active {
+			<button class="yh-btn yh-btn-secondary yh-btn-sm" hx-post={ "/v2/admin/members/" + p.ID + "/card" } hx-target="#member-card-row" hx-swap="outerHTML">
+				@component.Icon("plus", 12)
+				카드 발급
 			</button>
 		}
 	</div>

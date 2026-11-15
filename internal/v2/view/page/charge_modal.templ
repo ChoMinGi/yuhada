@@ -1,6 +1,7 @@
 package page
 
 import (
+	"strconv"
 	"github.com/mingicho/yuhada/internal/util"
 	"github.com/mingicho/yuhada/internal/v2/view/component"
 )
@@ -87,13 +88,28 @@ templ ChargeModal(p ChargeModalProps) {
 								x-on:input="other = parseInt((otherStr||'').replace(/[^0-9]/g,''))||0; otherStr = other>0 ? other.toLocaleString('ko-KR') : ''"
 								class="yh-num flex-1 bg-transparent border-0 outline-none text-[26px] text-ink-900 p-0"
 							/>
-							<button
-								type="button"
-								x-on:click="pendOther()"
-								x-bind:disabled="other <= 0"
-								class="yh-btn yh-btn-primary yh-btn-sm shrink-0 self-center"
-							>다음</button>
 						</div>
+
+						<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+							for _, amount := range []int64{50000, 100000, 200000, 500000} {
+								<button type="button" x-on:click={ "other = " + strconv.FormatInt(amount, 10) + "; otherStr = other.toLocaleString('ko-KR')" } class="h-11 border border-sand-300 rounded text-[11px] tracking-brand uppercase tabular-nums">{ util.FormatKRW(amount) }</button>
+							}
+						</div>
+						<label class="yh-label mt-5" for="charge-memo">메모</label>
+						<input id="charge-memo" type="text" maxlength="50" x-model="memo" placeholder="예: 현금, 계좌이체" class="yh-input"/>
+						<div class="flex flex-wrap gap-1.5 mt-3">
+							for _, preset := range []string{"현금", "계좌이체", "카드"} {
+								<button type="button" x-on:click={ "memo = " + templJSString(preset) } class="px-2.5 h-7 border border-sand-300 rounded-sm text-[11px] tracking-brand uppercase">{ preset }</button>
+							}
+						</div>
+						<div class="mt-5 pt-4 border-t border-sand-200 text-[13px]">
+							<p class="flex justify-between"><span>현재 잔액</span><span x-text="'₩' + balance.toLocaleString('ko-KR')"></span></p>
+							<p class="flex justify-between mt-2"><span>충전 후 잔액</span><span class="yh-num" x-text="'₩' + (balance + other).toLocaleString('ko-KR')"></span></p>
+						</div>
+						<p x-show="error" x-cloak x-text="error" role="alert" class="text-[13px] text-danger mt-4"></p>
+						<button type="button" x-on:click="pendOther()" x-bind:disabled="other <= 0 || submitting" class="yh-btn yh-btn-primary w-full mt-5">
+							<span x-show="!submitting">충전하기</span><span x-show="submitting" x-cloak>처리 중...</span>
+						</button>
 					</div>
 				</section>
 			</div>
@@ -124,9 +140,15 @@ templ ChargeModal(p ChargeModalProps) {
 							받는 돈 <span x-text="pending && pending.priceStr"></span>
 						</p>
 					</div>
+					<p x-show="pending && pending.type === 'other' && memo" x-text="memo" class="text-[13px] text-ink-700"></p>
 					<p class="text-[13px] text-ink-500 mt-1">위 금액을 충전하시겠습니까?</p>
+					<div class="w-full border-t border-sand-200 pt-4 mt-2 text-[13px]">
+						<p class="flex justify-between"><span>현재 잔액</span><span x-text="'₩' + balance.toLocaleString('ko-KR')"></span></p>
+						<p class="flex justify-between mt-2"><span>충전 후 잔액</span><span class="yh-num" x-text="'₩' + (balance + (pending ? pending.amount : 0)).toLocaleString('ko-KR')"></span></p>
+					</div>
 				</div>
 
+				<p x-show="error" x-cloak x-text="error" role="alert" class="text-[13px] text-danger mt-4"></p>
 				<div class="flex gap-3 mt-6">
 					<button
 						type="button"
@@ -156,8 +178,10 @@ templ chargePlanCard(plan PlanRow) {
 		data-plan-id={ plan.ID }
 		data-label={ plan.TierLabel + " · " + payMethodLabel(plan.PaymentMethod) }
 		data-credit={ util.FormatKRW(plan.CreditAmount) }
+		data-amount={ strconv.FormatInt(plan.CreditAmount, 10) }
 		data-price={ util.FormatKRW(plan.Price) }
 		x-on:click="pendPlan($el)"
+		x-bind:disabled="submitting"
 		class={ "yh-card p-3 sm:p-4 text-left flex flex-col gap-1 sm:gap-1.5 border-2 border-transparent hover:border-ink-900 transition",
 			templ.KV("col-span-2 sm:col-span-1", plan.TierAmount == 500000) }
 	>
@@ -169,14 +193,17 @@ templ chargePlanCard(plan PlanRow) {
 
 // chargeModalAlpine — Alpine.js 상태 객체 (JSON 리터럴).
 // step: grid | confirm.  pending: 선택된 상품 or 기타 금액.
-// submit(): fetch 후 모달 닫고 페이지 새로고침.
+// submit(): 명시적 JSON 성공 확인 후 회원 상세 영역 갱신.
 func chargeModalAlpine(p ChargeModalProps) string {
 	return `{
 		shown: false,
 		step: 'grid',
 		submitting: false,
-		other: 0,
-		otherStr: '',
+		other: 100000,
+		otherStr: '100,000',
+		memo: '',
+		error: '',
+		balance: ` + strconv.FormatInt(p.BalanceInt, 10) + `,
 		memberID: '` + p.MemberID + `',
 		memberName: ` + templJSString(p.MemberName) + `,
 		pending: null,
@@ -184,6 +211,7 @@ func chargeModalAlpine(p ChargeModalProps) string {
 			this.pending = {
 				type: 'plan',
 				planId: el.dataset.planId,
+				amount: Number(el.dataset.amount),
 				label:  el.dataset.label,
 				amountStr: '+' + el.dataset.credit,
 				priceStr:  el.dataset.price,
@@ -191,13 +219,9 @@ func chargeModalAlpine(p ChargeModalProps) string {
 			this.step = 'confirm';
 		},
 		pendOther() {
-			if (this.other <= 0) return;
-			this.pending = {
-				type: 'other',
-				amount: this.other,
-				amountStr: '+₩' + this.other.toLocaleString('ko-KR'),
-			};
-			this.step = 'confirm';
+			if (this.other <= 0 || this.submitting) return;
+			this.pending = { type: 'other', amount: this.other, amountStr: '+₩' + this.other.toLocaleString('ko-KR') };
+			this.submit();
 		},
 		cancel() { this.step = 'grid'; },
 		async submit() {
@@ -208,20 +232,21 @@ func chargeModalAlpine(p ChargeModalProps) string {
 			this.submitting = true;
 			const body = new URLSearchParams();
 			if (this.pending.type === 'plan') body.append('plan_id', this.pending.planId);
-			else body.append('amount', String(this.pending.amount));
+			else { body.append('amount', String(this.pending.amount)); body.append('memo', this.memo || ''); }
+			this.error = '';
 			try {
-				const res = await fetch('/v2/admin/members/' + this.memberID + '/charge', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-					body
-				});
-				if (!res.ok) throw new Error('충전 실패: ' + res.status);
-				window.dispatchEvent(new CustomEvent('closemodal'));
-				setTimeout(() => window.location.reload(), 220);
+				const result = await window.yhSubmitWallet('/v2/admin/members/' + this.memberID + '/charge', body);
+				if (!result) return;
+				if (await window.yhRefreshMember(result.redirect || ('/v2/admin/members/' + this.memberID))) window.__v2ChargeInFlight = false;
 			} catch (e) {
+				if (e.uncertain) {
+					alert(e.message);
+					window.location.assign('/v2/admin/members/' + this.memberID);
+					return;
+				}
 				this.submitting = false;
 				window.__v2ChargeInFlight = false;
-				alert(e.message || '충전 실패');
+				this.error = e.message || '충전하지 못했습니다.';
 			}
 		}
 	}`

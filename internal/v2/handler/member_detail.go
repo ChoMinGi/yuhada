@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 )
 
 // MemberDetailGet — GET /v2/admin/members/{id}.
-// R3 준수: 최근 거래는 ListChargeHistoryWithPlan 로 LEFT JOIN 소비.
+// 모든 거래를 한 번만 조회하고 상품 스냅샷은 LEFT JOIN으로 표시한다.
 func (h *PageHandlers) MemberDetailGet(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	m, err := h.Deps.Services.Member.Get(r.Context(), id)
@@ -39,22 +38,17 @@ func (h *PageHandlers) MemberDetailGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	chargeRows, err := h.Deps.Services.Membership.ListChargeHistoryWithPlan(r.Context(), id)
+	history, err := h.Deps.Services.Queries.ListMemberHistoryWithPlan(r.Context(), id)
 	if err != nil {
-		slog.Error("v2 list charge history", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "거래 내역을 불러오지 못했습니다", http.StatusInternalServerError)
 		return
 	}
-
-	// 차감 이력도 표시하기 위해 transactions 직접 조회 (LEFT JOIN 은 charge 만).
-	deducts, err := h.Deps.Services.Queries.ListTransactionsByMember(r.Context(), id)
+	totals, err := h.Deps.Services.Queries.SumMemberTotals(r.Context(), id)
 	if err != nil {
-		slog.Error("v2 list txs", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "거래 합계를 불러오지 못했습니다", http.StatusInternalServerError)
 		return
 	}
-
-	pm := buildMemberDetail(m, memberships, chargeRows, deducts)
+	pm := buildMemberDetail(m, memberships, history, totals.TotalIn, totals.TotalOut)
 	render(w, r, http.StatusOK, page.MemberDetail(pm))
 }
 
@@ -112,16 +106,16 @@ func (h *PageHandlers) loadMemberDetail(w http.ResponseWriter, r *http.Request) 
 		}
 		return page.MemberDetailProps{}, false
 	}
-	return buildMemberDetail(m, nil, nil, nil), true
+	return buildMemberDetail(m, nil, nil, 0, 0), true
 }
 
 // buildMemberDetail — dbgen 결과를 view prop 으로 매핑.
-// 정액권 뱃지: chargeRows 의 PlanSnapshot 이 유효하면 json.Unmarshal 로 파싱.
+// 정액권 뱃지는 저장된 구매 시점 스냅샷을 사용한다.
 func buildMemberDetail(
 	m dbgen.V2Member,
 	memberships []dbgen.V2Membership,
-	chargeRows []dbgen.ListChargeHistoryWithPlanRow,
-	deducts []dbgen.V2Transaction,
+	history []dbgen.ListMemberHistoryWithPlanRow,
+	totalIn, totalOut int64,
 ) page.MemberDetailProps {
 	memo := ""
 	if m.Memo.Valid {
@@ -147,70 +141,22 @@ func buildMemberDetail(
 		})
 	}
 
-	// 최근 거래 (charge LEFT JOIN memberships + deduct/refund).
-	//
-	// v2 상세 페이지는 charge 는 R3 LEFT JOIN 결과로,
-	// deduct/refund 는 transactions 직접 조회로 합쳐서 표시한다.
-	// 두 소스를 병합한 뒤 원본 created_at (ISO8601 UTC 사전순 = 시간순) 으로
-	// 최신순 정렬해서 사장님이 시간 흐름대로 보게 한다.
-	type txWithRaw struct {
-		tx  page.MemberTx
-		raw string
-	}
-	var (
-		totalIn, totalOut int64
-		buf               []txWithRaw
-	)
-	for _, row := range chargeRows {
+	txs := make([]page.MemberTx, 0, len(history))
+	for _, row := range history {
 		snap := chargeSnapshot{}
 		if row.PlanSnapshot.Valid {
 			snap = decodeSnapshot(row.PlanSnapshot.String)
 		}
-		buf = append(buf, txWithRaw{
-			tx: page.MemberTx{
-				Type:      row.TxType,
-				Amount:    "+" + util.FormatKRW(row.TxAmount),
-				Memo:      nullStrVal(row.TxMemo),
-				At:        formatKST(row.TxCreatedAt),
-				TierLabel: snap.TierLabel,
-				PayMethod: snap.PaymentMethod,
-				PerkLabel: snap.PerkLabel,
-			},
-			raw: row.TxCreatedAt,
-		})
-		totalIn += row.TxAmount
-	}
-	for _, t := range deducts {
-		if t.Type == "charge" {
-			// charge 는 chargeRows 로 이미 포함됨.
-			continue
-		}
 		sign := "-"
-		if t.Type == "refund" {
-			// refund 는 잔액 차감이지만 label 은 별도 태그.
-			sign = "-"
-			totalOut += t.Amount
-		} else {
-			totalOut += t.Amount
+		if row.TxType == "charge" {
+			sign = "+"
 		}
-		buf = append(buf, txWithRaw{
-			tx: page.MemberTx{
-				Type:   t.Type,
-				Amount: sign + util.FormatKRW(t.Amount),
-				Memo:   nullStrVal(t.Memo),
-				At:     formatKST(t.CreatedAt),
-			},
-			raw: t.CreatedAt,
-		})
-	}
-	sort.SliceStable(buf, func(i, j int) bool { return buf[i].raw > buf[j].raw })
-	txs := make([]page.MemberTx, len(buf))
-	for i, r := range buf {
-		txs[i] = r.tx
+		txs = append(txs, page.MemberTx{Type: row.TxType, Amount: sign + util.FormatKRW(row.TxAmount), Memo: nullStrVal(row.TxMemo), At: formatKST(row.TxCreatedAt), TierLabel: snap.TierLabel, PayMethod: snap.PaymentMethod, PerkLabel: snap.PerkLabel})
 	}
 
 	return page.MemberDetailProps{
 		ID:          m.ID,
+		JoinedAt:    joinedDate(m.CreatedAt),
 		Name:        m.Name,
 		Phone:       util.FormatPhone(m.Phone),
 		Card:        card,

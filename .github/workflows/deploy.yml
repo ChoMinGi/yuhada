@@ -23,11 +23,16 @@ jobs:
 
       - name: Install Tailwind CSS
         run: |
-          curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 -o /usr/local/bin/tailwindcss
+          curl -fsSL https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.15/tailwindcss-linux-x64 -o /usr/local/bin/tailwindcss
           chmod +x /usr/local/bin/tailwindcss
 
       - name: Build CSS
         run: tailwindcss -i ./tailwind/input.css -o ./static/css/app.css --minify
+
+      - name: Validate ledger and frontend compatibility
+        run: |
+          go test ./...
+          go vet ./...
 
       - name: Build binary
         run: |
@@ -57,9 +62,8 @@ jobs:
             set -e
             cd /opt/yuhada
             # Run migrations
-            if command -v goose &>/dev/null; then
-              goose -dir migrations sqlite3 var/yuhada.db up
-            fi
+            command -v goose >/dev/null
+            goose -dir migrations sqlite3 var/yuhada.db up
             # Atomic swap
             mv yuhada.new yuhada
             chmod +x yuhada

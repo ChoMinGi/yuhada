@@ -30,13 +30,14 @@ const (
 	SortBalanceAsc  SortKey = "balance_asc"
 )
 
-// CreateMemberInput — 신규 회원 등록. v2는 초기 충전 로직을 여기서 다루지 않음
-// (핸들러에서 별도로 charge 호출).
+// CreateMemberInput — 신규 회원과 선택한 최초 충전을 함께 기록한다.
 type CreateMemberInput struct {
-	Name     string
-	Phone    string
-	CardUUID string
-	Memo     string
+	Name          string
+	Phone         string
+	CardUUID      string
+	Memo          string
+	InitialCharge int64
+	CreatedBy     string
 }
 
 // Create — 회원 insert. PII 는 v1 crypto 로 암호화.
@@ -48,6 +49,9 @@ func (s *MemberService) Create(ctx context.Context, in CreateMemberInput) (dbgen
 	if strings.TrimSpace(in.Name) == "" {
 		return dbgen.V2Member{}, fmt.Errorf("%w: name required", ErrInvalidInput)
 	}
+	if in.InitialCharge < 0 {
+		return dbgen.V2Member{}, fmt.Errorf("%w: initial charge must not be negative", ErrInvalidInput)
+	}
 
 	params := dbgen.CreateMemberParams{
 		ID:       util.NewID(),
@@ -57,9 +61,28 @@ func (s *MemberService) Create(ctx context.Context, in CreateMemberInput) (dbgen
 		Balance:  0,
 		Memo:     encryptNullStr(s.enc, in.Memo),
 	}
-	m, err := s.q.CreateMember(ctx, params)
+	// Registration and its optional first charge succeed together.
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return dbgen.V2Member{}, err
+	}
+	defer tx.Rollback()
+	q := dbgen.New(tx)
+	m, err := q.CreateMember(ctx, params)
 	if err != nil {
 		return dbgen.V2Member{}, mapInsertErr(err)
+	}
+	if in.InitialCharge > 0 {
+		if err := q.AddToBalance(ctx, dbgen.AddToBalanceParams{ID: m.ID, Balance: in.InitialCharge}); err != nil {
+			return dbgen.V2Member{}, err
+		}
+		if _, err := q.InsertTransaction(ctx, dbgen.InsertTransactionParams{ID: util.NewID(), MemberID: m.ID, Type: "charge", Amount: in.InitialCharge, BalanceAfter: in.InitialCharge, Memo: nullStr("최초 충전"), CreatedBy: nullStr(in.CreatedBy)}); err != nil {
+			return dbgen.V2Member{}, err
+		}
+		m.Balance = in.InitialCharge
+	}
+	if err := tx.Commit(); err != nil {
+		return dbgen.V2Member{}, err
 	}
 	s.decryptMember(&m)
 	return m, nil
@@ -129,7 +152,7 @@ func (s *MemberService) Delete(ctx context.Context, id string) error {
 	}()
 
 	// memberships 먼저 (charge_tx_id → transactions FK).
-	if _, err := tx.ExecContext(ctx, `DELETE FROM v2_memberships WHERE member_id = ?`, id); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM memberships WHERE member_id = ?`, id); err != nil {
 		return fmt.Errorf("delete memberships: %w", err)
 	}
 	q := dbgen.New(tx)

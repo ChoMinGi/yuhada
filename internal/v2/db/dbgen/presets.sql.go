@@ -10,7 +10,7 @@ import (
 )
 
 const createDeductPreset = `-- name: CreateDeductPreset :one
-INSERT INTO v2_deduct_amount_presets
+INSERT INTO deduct_amount_presets
   (id, amount, display_order, is_active)
 VALUES (?, ?, ?, 1)
 RETURNING id, amount, display_order, is_active, created_at, updated_at
@@ -37,7 +37,7 @@ func (q *Queries) CreateDeductPreset(ctx context.Context, arg CreateDeductPreset
 }
 
 const createServiceMemoPreset = `-- name: CreateServiceMemoPreset :one
-INSERT INTO v2_service_memo_presets
+INSERT INTO service_memo_presets
   (id, label, display_order, is_active)
 VALUES (?, ?, ?, 1)
 RETURNING id, label, display_order, is_active, created_at, updated_at
@@ -64,7 +64,7 @@ func (q *Queries) CreateServiceMemoPreset(ctx context.Context, arg CreateService
 }
 
 const deactivateDeductPreset = `-- name: DeactivateDeductPreset :exec
-UPDATE v2_deduct_amount_presets SET is_active = 0 WHERE id = ?
+UPDATE deduct_amount_presets SET is_active = 0 WHERE id = ?
 `
 
 func (q *Queries) DeactivateDeductPreset(ctx context.Context, id string) error {
@@ -73,7 +73,7 @@ func (q *Queries) DeactivateDeductPreset(ctx context.Context, id string) error {
 }
 
 const deactivateServiceMemoPreset = `-- name: DeactivateServiceMemoPreset :exec
-UPDATE v2_service_memo_presets SET is_active = 0 WHERE id = ?
+UPDATE service_memo_presets SET is_active = 0 WHERE id = ?
 `
 
 func (q *Queries) DeactivateServiceMemoPreset(ctx context.Context, id string) error {
@@ -82,7 +82,7 @@ func (q *Queries) DeactivateServiceMemoPreset(ctx context.Context, id string) er
 }
 
 const deleteDeductPreset = `-- name: DeleteDeductPreset :exec
-DELETE FROM v2_deduct_amount_presets WHERE id = ?
+DELETE FROM deduct_amount_presets WHERE id = ?
 `
 
 // Hard delete. No foreign key references from other tables (only used as UI preset).
@@ -92,7 +92,7 @@ func (q *Queries) DeleteDeductPreset(ctx context.Context, id string) error {
 }
 
 const deleteServiceMemoPreset = `-- name: DeleteServiceMemoPreset :exec
-DELETE FROM v2_service_memo_presets WHERE id = ?
+DELETE FROM service_memo_presets WHERE id = ?
 `
 
 // Hard delete. No foreign key references (only used as UI preset).
@@ -104,7 +104,7 @@ func (q *Queries) DeleteServiceMemoPreset(ctx context.Context, id string) error 
 const listActiveDeductPresets = `-- name: ListActiveDeductPresets :many
 
 
-SELECT id, amount, display_order, is_active, created_at, updated_at FROM v2_deduct_amount_presets
+SELECT id, amount, display_order, is_active, created_at, updated_at FROM deduct_amount_presets
 WHERE is_active = 1
 ORDER BY display_order ASC
 `
@@ -113,7 +113,7 @@ ORDER BY display_order ASC
 // Two tables share the same shape (list/create/update/deactivate/reactivate).
 // ASCII-only SQL comments to sidestep the sqlc parser bug reported in Phase 2.
 // ==============================================================
-// v2_deduct_amount_presets
+// deduct_amount_presets
 // ==============================================================
 // Consumed by the deduct modal to render shortcut amount buttons.
 func (q *Queries) ListActiveDeductPresets(ctx context.Context) ([]V2DeductAmountPreset, error) {
@@ -148,13 +148,13 @@ func (q *Queries) ListActiveDeductPresets(ctx context.Context) ([]V2DeductAmount
 
 const listActiveServiceMemoPresets = `-- name: ListActiveServiceMemoPresets :many
 
-SELECT id, label, display_order, is_active, created_at, updated_at FROM v2_service_memo_presets
+SELECT id, label, display_order, is_active, created_at, updated_at FROM service_memo_presets
 WHERE is_active = 1
 ORDER BY display_order ASC
 `
 
 // ==============================================================
-// v2_service_memo_presets
+// service_memo_presets
 // ==============================================================
 // Consumed by the deduct modal to render service tag buttons.
 func (q *Queries) ListActiveServiceMemoPresets(ctx context.Context) ([]V2ServiceMemoPreset, error) {
@@ -188,7 +188,7 @@ func (q *Queries) ListActiveServiceMemoPresets(ctx context.Context) ([]V2Service
 }
 
 const listAllDeductPresets = `-- name: ListAllDeductPresets :many
-SELECT id, amount, display_order, is_active, created_at, updated_at FROM v2_deduct_amount_presets
+SELECT id, amount, display_order, is_active, created_at, updated_at FROM deduct_amount_presets
 ORDER BY display_order ASC
 `
 
@@ -224,7 +224,7 @@ func (q *Queries) ListAllDeductPresets(ctx context.Context) ([]V2DeductAmountPre
 }
 
 const listAllServiceMemoPresets = `-- name: ListAllServiceMemoPresets :many
-SELECT id, label, display_order, is_active, created_at, updated_at FROM v2_service_memo_presets
+SELECT id, label, display_order, is_active, created_at, updated_at FROM service_memo_presets
 ORDER BY display_order ASC
 `
 
@@ -260,7 +260,7 @@ func (q *Queries) ListAllServiceMemoPresets(ctx context.Context) ([]V2ServiceMem
 }
 
 const reactivateDeductPreset = `-- name: ReactivateDeductPreset :exec
-UPDATE v2_deduct_amount_presets SET is_active = 1 WHERE id = ?
+UPDATE deduct_amount_presets SET is_active = 1 WHERE id = ?
 `
 
 func (q *Queries) ReactivateDeductPreset(ctx context.Context, id string) error {
@@ -269,7 +269,7 @@ func (q *Queries) ReactivateDeductPreset(ctx context.Context, id string) error {
 }
 
 const reactivateServiceMemoPreset = `-- name: ReactivateServiceMemoPreset :exec
-UPDATE v2_service_memo_presets SET is_active = 1 WHERE id = ?
+UPDATE service_memo_presets SET is_active = 1 WHERE id = ?
 `
 
 func (q *Queries) ReactivateServiceMemoPreset(ctx context.Context, id string) error {
@@ -278,7 +278,7 @@ func (q *Queries) ReactivateServiceMemoPreset(ctx context.Context, id string) er
 }
 
 const updateDeductPreset = `-- name: UpdateDeductPreset :exec
-UPDATE v2_deduct_amount_presets
+UPDATE deduct_amount_presets
    SET amount        = ?,
        display_order = ?
  WHERE id = ?
@@ -296,7 +296,7 @@ func (q *Queries) UpdateDeductPreset(ctx context.Context, arg UpdateDeductPreset
 }
 
 const updateDeductPresetOrder = `-- name: UpdateDeductPresetOrder :exec
-UPDATE v2_deduct_amount_presets SET display_order = ? WHERE id = ?
+UPDATE deduct_amount_presets SET display_order = ? WHERE id = ?
 `
 
 type UpdateDeductPresetOrderParams struct {
@@ -311,7 +311,7 @@ func (q *Queries) UpdateDeductPresetOrder(ctx context.Context, arg UpdateDeductP
 }
 
 const updateServiceMemoPreset = `-- name: UpdateServiceMemoPreset :exec
-UPDATE v2_service_memo_presets
+UPDATE service_memo_presets
    SET label         = ?,
        display_order = ?
  WHERE id = ?
@@ -329,7 +329,7 @@ func (q *Queries) UpdateServiceMemoPreset(ctx context.Context, arg UpdateService
 }
 
 const updateServiceMemoPresetOrder = `-- name: UpdateServiceMemoPresetOrder :exec
-UPDATE v2_service_memo_presets SET display_order = ? WHERE id = ?
+UPDATE service_memo_presets SET display_order = ? WHERE id = ?
 `
 
 type UpdateServiceMemoPresetOrderParams struct {

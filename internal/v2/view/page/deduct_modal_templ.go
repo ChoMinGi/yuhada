@@ -16,7 +16,7 @@ import (
 )
 
 // DeductModal — GET /v2/admin/members/{id}/deduct/modal partial.
-// "차감하기" 클릭 시 즉시 실행이 아니라 확인 화면으로 슬라이드 전환.
+// 기존 차감 흐름: 금액·메모·차감 후 잔액 확인 후 한 번 제출.
 func DeductModal(p DeductModalProps) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -51,7 +51,7 @@ func DeductModal(p DeductModalProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" x-init=\"$nextTick(() => shown = true)\" x-show=\"shown\" x-transition:enter=\"transition ease-out duration-250\" x-transition:enter-start=\"opacity-0 scale-95\" x-transition:enter-end=\"opacity-100 scale-100\"><header class=\"p-8 pb-0 flex items-start justify-between gap-6\"><div><p class=\"yh-eyebrow mb-2\">차감</p><h2 class=\"yh-headline-m\" x-text=\"step === 'confirm' ? '확인' : '차감'\"></h2><p class=\"yh-body-sm text-ink-500 mt-1\" x-show=\"step === 'confirm'\" x-cloak>이대로 진행할까요?</p></div><button class=\"p-1.5 text-ink-500\" x-on:click=\"$dispatch('closemodal')\" aria-label=\"닫기\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" x-init=\"$nextTick(() => shown = true)\" x-show=\"shown\" x-transition:enter=\"transition ease-out duration-250\" x-transition:enter-start=\"opacity-0 scale-95\" x-transition:enter-end=\"opacity-100 scale-100\"><header class=\"p-8 pb-0 flex items-start justify-between gap-6\"><div><p class=\"yh-eyebrow mb-2\">차감</p><h2 class=\"yh-headline-m\">차감</h2></div><button class=\"p-1.5 text-ink-500\" x-on:click=\"$dispatch('closemodal')\" aria-label=\"닫기\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -76,7 +76,7 @@ func DeductModal(p DeductModalProps) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("setAmount(%d)", n))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 63, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 62, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -89,7 +89,7 @@ func DeductModal(p DeductModalProps) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("amount === %d ? 'bg-ink-900 text-sand-50 border-ink-900' : 'bg-transparent text-ink-900 border-sand-300 hover:border-ink-900'", n))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 64, Col: 166}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 63, Col: 166}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -102,7 +102,7 @@ func DeductModal(p DeductModalProps) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(util.FormatKRW(n))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 67, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 66, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -135,7 +135,7 @@ func DeductModal(p DeductModalProps) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("service = %q", preset))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 88, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 87, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -148,7 +148,7 @@ func DeductModal(p DeductModalProps) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("service === %q ? 'bg-ink-900 text-sand-50 border-ink-900' : 'bg-transparent text-ink-700 border-sand-300 hover:border-ink-900'", preset))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 89, Col: 173}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 88, Col: 173}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -161,7 +161,7 @@ func DeductModal(p DeductModalProps) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(preset)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 92, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/deduct_modal.templ`, Line: 91, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -177,7 +177,7 @@ func DeductModal(p DeductModalProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><div class=\"flex gap-3 mt-8\"><button type=\"button\" class=\"yh-btn yh-btn-ghost flex-1\" x-on:click=\"$dispatch('closemodal')\">취소</button> <button type=\"button\" class=\"yh-btn yh-btn-primary flex-1\" x-on:click=\"goConfirm()\" x-bind:disabled=\"amount <= 0\">다음</button></div></div><!-- STEP 2: 확인 화면 --><div x-show=\"step === 'confirm'\" x-cloak x-transition:enter=\"transition ease-out duration-300\" x-transition:enter-start=\"opacity-0 translate-x-8\" x-transition:enter-end=\"opacity-100 translate-x-0\" x-transition:leave=\"transition ease-in duration-200\" x-transition:leave-start=\"opacity-100 translate-x-0\" x-transition:leave-end=\"opacity-0 translate-x-8\"><div class=\"yh-card p-6 sm:p-8 flex flex-col items-center text-center gap-3\"><p class=\"yh-eyebrow-xs text-ink-500\">CONFIRM</p><p class=\"text-[15px] sm:text-[16px] text-ink-900\"><span class=\"font-semibold\" x-text=\"memberName\"></span>님</p><div><p x-show=\"service\" class=\"mb-1\" x-cloak><span class=\"inline-flex items-center px-2 py-0.5 rounded-sm bg-sand-100 text-[11px] tracking-brand uppercase text-ink-700\" x-text=\"service\"></span></p><p class=\"yh-num text-[32px] sm:text-[38px] text-ink-900 whitespace-nowrap\" x-text=\"'−₩' + (amount||0).toLocaleString('ko-KR')\"></p></div><p class=\"text-[13px] text-ink-500 mt-1\">위 금액을 차감하시겠습니까?</p></div><div class=\"flex gap-3 mt-6\"><button type=\"button\" x-on:click=\"cancel()\" class=\"yh-btn yh-btn-ghost flex-1\" x-bind:disabled=\"submitting\">취소</button> <button type=\"button\" x-on:click=\"submit()\" class=\"yh-btn yh-btn-primary flex-1\" x-bind:disabled=\"submitting\"><span x-show=\"!submitting\">차감 확정</span> <span x-show=\"submitting\" x-cloak>처리 중...</span></button></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><div class=\"mt-7 py-4 border-t border-sand-200 text-[13px]\"><p class=\"flex justify-between\"><span>현재 잔액</span><span x-text=\"'₩' + balance.toLocaleString('ko-KR')\"></span></p><p class=\"flex justify-between mt-2\"><span>차감 후 잔액</span><span class=\"yh-num\" x-bind:class=\"insufficient ? 'text-danger' : 'text-ink-900'\" x-text=\"'₩' + (balance - amount).toLocaleString('ko-KR')\"></span></p><p x-show=\"insufficient\" x-cloak class=\"text-danger mt-3\" role=\"alert\" x-text=\"'잔액 부족 — 최대 ₩' + balance.toLocaleString('ko-KR') + '까지 차감할 수 있습니다.'\"></p></div><p x-show=\"error\" x-cloak x-text=\"error\" role=\"alert\" class=\"text-[13px] text-danger mt-4\"></p><div class=\"flex gap-3 mt-8\"><button type=\"button\" class=\"yh-btn yh-btn-ghost flex-1\" x-on:click=\"$dispatch('closemodal')\">취소</button> <button type=\"button\" class=\"yh-btn yh-btn-primary flex-1\" x-on:click=\"submit()\" x-bind:disabled=\"amount <= 0 || insufficient || submitting\"><span x-show=\"!submitting\">차감하기</span><span x-show=\"submitting\" x-cloak>처리 중...</span></button></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -186,44 +186,43 @@ func DeductModal(p DeductModalProps) templ.Component {
 }
 
 // deductModalAlpine — Alpine 상태 (JSON 리터럴).
-// step: form | confirm.  submit(): fetch → 모달 닫고 페이지 새로고침.
+// submit(): JSON 성공 확인 후 회원 상세 영역 갱신.
 func deductModalAlpine(p DeductModalProps) string {
 	return `{
 		shown: false,
 		step: 'form',
 		submitting: false,
-		amount: 0,
-		amountStr: '',
+		amount: 50000,
+		amountStr: '50,000',
+		balance: ` + fmt.Sprintf("%d", p.BalanceInt) + `,
+		error: '',
+		get insufficient() { return this.amount > this.balance; },
 		service: '',
 		memberID: '` + p.MemberID + `',
 		memberName: ` + templJSString(p.MemberName) + `,
 		setAmount(n) { this.amount = n; this.amountStr = n.toLocaleString('ko-KR'); },
-		goConfirm() {
-			if (this.amount <= 0) return;
-			this.step = 'confirm';
-		},
-		cancel() { this.step = 'form'; },
 		async submit() {
-			if (this.submitting || this.amount <= 0) return;
+			if (this.submitting || this.amount <= 0 || this.insufficient) return;
 			if (window.__v2DeductInFlight) return;
 			window.__v2DeductInFlight = true;
 			this.submitting = true;
 			const body = new URLSearchParams();
 			body.append('amount', String(this.amount));
 			body.append('service_name', this.service || '');
+			this.error = '';
 			try {
-				const res = await fetch('/v2/admin/members/' + this.memberID + '/deduct', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-					body
-				});
-				if (!res.ok) throw new Error('차감 실패: ' + res.status);
-				window.dispatchEvent(new CustomEvent('closemodal'));
-				setTimeout(() => window.location.reload(), 220);
+				const result = await window.yhSubmitWallet('/v2/admin/members/' + this.memberID + '/deduct', body);
+				if (!result) return;
+				if (await window.yhRefreshMember(result.redirect || ('/v2/admin/members/' + this.memberID))) window.__v2DeductInFlight = false;
 			} catch (e) {
+				if (e.uncertain) {
+					alert(e.message);
+					window.location.assign('/v2/admin/members/' + this.memberID);
+					return;
+				}
 				this.submitting = false;
 				window.__v2DeductInFlight = false;
-				alert(e.message || '차감 실패');
+				this.error = e.message || '차감하지 못했습니다.';
 			}
 		}
 	}`

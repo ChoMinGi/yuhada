@@ -14,7 +14,7 @@ import (
 // SalesService — /v2/admin/sales 매출 대시보드 집계.
 // SQL 은 row fetch 만 담당하고 aggregate 는 여기서 수행.
 //
-// 격리(isolation-rules §1-2): v1 service 미참조. crypto 만 화이트리스트.
+// Canonical ledger credit without a sale snapshot has no recorded payment amount.
 type SalesService struct {
 	db  *sql.DB
 	q   *dbgen.Queries
@@ -28,15 +28,17 @@ type SalesService struct {
 // SalesSummary — 상단 요약 카드 8개용 집계 (ERP 스타일).
 // 4장 기본 + 4장 확장. 모두 fetchRange 한 번의 결과에서 도출.
 type SalesSummary struct {
-	// RealRevenue — 세금 신고 매출 = 정액권 price 합 + 일반충전 amount 합.
-	RealRevenue int64
+	// RealRevenue is the recorded payment price from plan snapshots only.
+	RealRevenue   int64
+	UnknownCredit int64
+	UnknownCount  int
 	// CreditTotal — 손님 잔액에 적립된 총액(부채) = 정액권 credit + 일반충전 amount.
 	CreditTotal int64
 	// BonusCost — 정액권 (credit − price) 합. 일반충전은 0.
 	BonusCost int64
 	// TxCount — 기간 내 charge 트랜잭션 건수 (정액권 + 일반).
 	TxCount int
-	// AvgTicket — 평균 객단가 = RealRevenue / TxCount. TxCount=0 이면 0.
+	// AvgTicket is recorded plan payment revenue divided by plan sale count.
 	AvgTicket int64
 	// ActiveMembers — 기간 내 충전 트랜잭션이 있는 unique member_id 수.
 	ActiveMembers int
@@ -105,8 +107,9 @@ func (s *SalesService) SalesSummary(ctx context.Context, since, until string) (S
 			out.BonusCost += snap.CreditAmount - snap.Price
 			planCount++
 		} else {
-			// 일반 충전: price ≡ credit ≡ amount, 보너스 0.
-			out.RealRevenue += r.TxAmount
+			// Original and generic credit does not record a paid price.
+			out.UnknownCredit += r.TxAmount
+			out.UnknownCount++
 			out.CreditTotal += r.TxAmount
 		}
 		if r.MemberID != "" {
@@ -114,7 +117,9 @@ func (s *SalesService) SalesSummary(ctx context.Context, since, until string) (S
 		}
 	}
 	if out.TxCount > 0 {
-		out.AvgTicket = out.RealRevenue / int64(out.TxCount)
+		if planCount > 0 {
+			out.AvgTicket = out.RealRevenue / int64(planCount)
+		}
 		out.PlanShareBP = planCount * 10000 / out.TxCount
 	}
 	out.ActiveMembers = len(perMember)
@@ -127,7 +132,7 @@ func (s *SalesService) SalesSummary(ctx context.Context, since, until string) (S
 }
 
 // TopMember — 기간 내 판매 금액 상위 회원 한 명.
-// TotalPrice 는 정액권=price, 일반충전=amount 합.
+// TotalPrice includes only explicitly recorded plan payment prices.
 type TopMember struct {
 	MemberID   string
 	Name       string // 복호화 완료. 이름이 비어 있으면 "(삭제된 회원)".
@@ -157,7 +162,7 @@ func (s *SalesService) TopMembers(ctx context.Context, since, until string, limi
 			snap := parseSnapshot(r.PlanSnapshot.String)
 			price = snap.Price
 		} else {
-			price = r.TxAmount
+			continue
 		}
 		b := buckets[r.MemberID]
 		if b == nil {
@@ -221,7 +226,6 @@ func (s *SalesService) SalesByTier(ctx context.Context, since, until string) ([]
 	for _, r := range rows {
 		if !r.PlanSnapshot.Valid {
 			generic.Count++
-			generic.TotalPrice += r.TxAmount
 			generic.TotalCredit += r.TxAmount
 			continue
 		}
@@ -277,8 +281,8 @@ type ExpiringMembership struct {
 // 이번 달 시작/끝 UTC 를 인자로 받아 SQL에서 datetime(purchased_at, '+1 year') 비교.
 func (s *SalesService) ExpiringMemberships(ctx context.Context, sinceUTC, untilUTC string) ([]ExpiringMembership, error) {
 	rows, err := s.q.ListExpiringMemberships(ctx, dbgen.ListExpiringMembershipsParams{
-		PurchasedAt:   sinceUTC,
-		PurchasedAt_2: untilUTC,
+		PurchasedAt:  sinceUTC,
+		PurchasedAt2: untilUTC,
 	})
 	if err != nil {
 		return nil, err
@@ -381,7 +385,7 @@ func (s *SalesService) SalesByPayMethod(ctx context.Context, since, until string
 // RecentSales — 최근 판매 이력 (최대 limit 건).
 // 회원 이름은 여기서 복호화. until 이 지정되면 그 이전만.
 func (s *SalesService) RecentSales(ctx context.Context, since, until string, limit int) ([]RecentSale, error) {
-	rows, err := s.q.ListRecentSales(ctx, since)
+	rows, err := s.fetchRange(ctx, since, until)
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +462,7 @@ func (s *SalesService) DailyRevenue(ctx context.Context, since, until string) ([
 			snap := parseSnapshot(r.PlanSnapshot.String)
 			price = snap.Price
 		} else {
-			price = r.TxAmount
+			continue
 		}
 		agg[day] += price
 	}
@@ -541,4 +545,16 @@ func payMethodRank(pm string) int {
 	default:
 		return 2
 	}
+}
+
+// LedgerTotals includes every matching ledger row, independent of history display limits.
+type LedgerTotals struct{ Charge, Deduct int64 }
+
+func (s *SalesService) LedgerTotals(ctx context.Context, since, until string) (LedgerTotals, error) {
+	var out LedgerTotals
+	if until == "" {
+		until = "9999-12-31T23:59:59.999Z"
+	}
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN type='charge' THEN amount ELSE 0 END),0), COALESCE(SUM(CASE WHEN type IN ('deduct','refund') THEN amount ELSE 0 END),0) FROM transactions WHERE created_at >= ? AND created_at < ?`, since, until).Scan(&out.Charge, &out.Deduct)
+	return out, err
 }
