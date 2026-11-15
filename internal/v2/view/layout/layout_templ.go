@@ -17,6 +17,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import "github.com/mingicho/yuhada/internal/v2/view/component"
+import "github.com/mingicho/yuhada/internal/ui"
 
 // NavItem — 사이드바 항목.
 type NavItem struct {
@@ -68,13 +69,21 @@ func Admin(title string, activeKey string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 37, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 38, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " · YUHADA HAIR</title><link rel=\"stylesheet\" href=\"/static/css/app.css\"><script src=\"https://unpkg.com/htmx.org@2.0.3\" defer></script><script src=\"https://unpkg.com/alpinejs@3.14.1\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js\" defer></script><script>\n\t\t\t\t// Alpine 3.14는 MutationObserver로 새 DOM을 자동 init.\n\t\t\t\t// 이미 초기화된 노드(_x_dataStack)는 skip해서 이중 리스너를 방지한다.\n\t\t\t\tdocument.addEventListener('htmx:afterSwap', function (e) {\n\t\t\t\t\tif (window.Alpine && e.detail && e.detail.elt) {\n\t\t\t\t\t\tArray.prototype.forEach.call(e.detail.elt.children, function (c) {\n\t\t\t\t\t\t\tif (!c._x_dataStack) window.Alpine.initTree(c);\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// 지갑 요청은 로그인 HTML을 성공으로 처리하지 않는다.\n\t\t\t\twindow.yhSubmitWallet = async function (endpoint, body) {\n\t\t\t\t\tlet response;\n\t\t\t\t\ttry {\n\t\t\t\t\t\tresponse = await fetch(endpoint, {\n\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\tcredentials: 'same-origin',\n\t\t\t\t\t\t\theaders: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },\n\t\t\t\t\t\t\tbody: body\n\t\t\t\t\t\t});\n\t\t\t\t\t} catch (_) {\n\t\t\t\t\t\tconst error = new Error('처리 결과를 확인하지 못했습니다. 거래 내역을 확인해 주세요.');\n\t\t\t\t\t\terror.uncertain = true;\n\t\t\t\t\t\tthrow error;\n\t\t\t\t\t}\n\t\t\t\t\tlet result;\n\t\t\t\t\ttry {\n\t\t\t\t\t\tif (!(response.headers.get('Content-Type') || '').includes('application/json')) throw new Error();\n\t\t\t\t\t\tresult = await response.json();\n\t\t\t\t\t} catch (_) {\n\t\t\t\t\t\tconst error = new Error('처리 결과를 확인하지 못했습니다. 거래 내역을 확인해 주세요.');\n\t\t\t\t\t\terror.uncertain = true;\n\t\t\t\t\t\tthrow error;\n\t\t\t\t\t}\n\t\t\t\t\tif (response.status === 401) {\n\t\t\t\t\t\tconst next = result.redirect || response.headers.get('HX-Redirect') || '/v2/login';\n\t\t\t\t\t\tconst destination = new URL(next, window.location.origin);\n\t\t\t\t\t\twindow.location.assign(destination.origin === window.location.origin ? destination.href : '/v2/login');\n\t\t\t\t\t\treturn null;\n\t\t\t\t\t}\n\t\t\t\t\tif (!response.ok || result.ok !== true) {\n\t\t\t\t\t\tthrow new Error(result.error || '처리하지 못했습니다. 입력 내용을 확인해 주세요.');\n\t\t\t\t\t}\n\t\t\t\t\treturn result;\n\t\t\t\t};\n\t\t\t\twindow.yhRefreshMember = async function (destination) {\n\t\t\t\t\tlet target;\n\t\t\t\t\ttry { target = new URL(destination, window.location.origin); } catch (_) { target = new URL(window.location.href); }\n\t\t\t\t\tif (target.origin !== window.location.origin || !target.pathname.startsWith('/v2/admin/members/')) target = new URL(window.location.href);\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst response = await fetch(target.href, { credentials: 'same-origin', headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' } });\n\t\t\t\t\t\tif (!response.ok) throw new Error('refresh failed');\n\t\t\t\t\t\tconst doc = new DOMParser().parseFromString(await response.text(), 'text/html');\n\t\t\t\t\t\tconst next = doc.getElementById('member-detail-content');\n\t\t\t\t\t\tconst current = document.getElementById('member-detail-content');\n\t\t\t\t\t\tif (!next || !current) throw new Error('member content missing');\n\t\t\t\t\t\tconst replace = function () {\n\t\t\t\t\t\t\tif (window.Alpine) window.Alpine.destroyTree(current);\n\t\t\t\t\t\t\tcurrent.replaceWith(next);\n\t\t\t\t\t\t\tif (window.htmx) window.htmx.process(next);\n\t\t\t\t\t\t\tif (window.Alpine) window.Alpine.initTree(next);\n\t\t\t\t\t\t};\n\t\t\t\t\t\tif (window.Alpine) window.Alpine.mutateDom(replace); else replace();\n\t\t\t\t\t\twindow.dispatchEvent(new CustomEvent('closemodal'));\n\t\t\t\t\t\treturn true;\n\t\t\t\t\t} catch (_) {\n\t\t\t\t\t\t// 이미 저장된 작업을 재전송하지 않고 조회 화면으로 복귀한다.\n\t\t\t\t\t\twindow.location.assign(target.href);\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t</script></head><body class=\"h-full overflow-hidden bg-sand-50 text-ink-900 font-sans\" x-data=\"{ nav: false }\" x-on:htmx:after-swap.window=\"nav = false\"><!-- Mobile top bar — md 미만에서만 표시. --><div class=\"md:hidden fixed top-0 left-0 right-0 h-12 z-30 flex items-center px-4 bg-sand-50/90 backdrop-blur border-b border-sand-200\"><button type=\"button\" x-on:click=\"nav = true\" class=\"p-2 -ml-2 text-ink-900\" aria-label=\"메뉴 열기\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " · YUHADA HAIR</title>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ui.PWAHead().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<link rel=\"stylesheet\" href=\"/static/css/app.css\"><script src=\"https://unpkg.com/htmx.org@2.0.3\" defer></script><script src=\"https://unpkg.com/alpinejs@3.14.1\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js\" defer></script><script>\n\t\t\t\t// Alpine 3.14는 MutationObserver로 새 DOM을 자동 init.\n\t\t\t\t// 이미 초기화된 노드(_x_dataStack)는 skip해서 이중 리스너를 방지한다.\n\t\t\t\tdocument.addEventListener('htmx:afterSwap', function (e) {\n\t\t\t\t\tif (window.Alpine && e.detail && e.detail.elt) {\n\t\t\t\t\t\tArray.prototype.forEach.call(e.detail.elt.children, function (c) {\n\t\t\t\t\t\t\tif (!c._x_dataStack) window.Alpine.initTree(c);\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\t// 지갑 요청은 로그인 HTML을 성공으로 처리하지 않는다.\n\t\t\t\twindow.yhSubmitWallet = async function (endpoint, body) {\n\t\t\t\t\tlet response;\n\t\t\t\t\ttry {\n\t\t\t\t\t\tresponse = await fetch(endpoint, {\n\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\tcredentials: 'same-origin',\n\t\t\t\t\t\t\theaders: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },\n\t\t\t\t\t\t\tbody: body\n\t\t\t\t\t\t});\n\t\t\t\t\t} catch (_) {\n\t\t\t\t\t\tconst error = new Error('처리 결과를 확인하지 못했습니다. 거래 내역을 확인해 주세요.');\n\t\t\t\t\t\terror.uncertain = true;\n\t\t\t\t\t\tthrow error;\n\t\t\t\t\t}\n\t\t\t\t\tlet result;\n\t\t\t\t\ttry {\n\t\t\t\t\t\tif (!(response.headers.get('Content-Type') || '').includes('application/json')) throw new Error();\n\t\t\t\t\t\tresult = await response.json();\n\t\t\t\t\t} catch (_) {\n\t\t\t\t\t\tconst error = new Error('처리 결과를 확인하지 못했습니다. 거래 내역을 확인해 주세요.');\n\t\t\t\t\t\terror.uncertain = true;\n\t\t\t\t\t\tthrow error;\n\t\t\t\t\t}\n\t\t\t\t\tif (response.status === 401) {\n\t\t\t\t\t\tconst next = result.redirect || response.headers.get('HX-Redirect') || '/v2/login';\n\t\t\t\t\t\tconst destination = new URL(next, window.location.origin);\n\t\t\t\t\t\twindow.location.assign(destination.origin === window.location.origin ? destination.href : '/v2/login');\n\t\t\t\t\t\treturn null;\n\t\t\t\t\t}\n\t\t\t\t\tif (!response.ok || result.ok !== true) {\n\t\t\t\t\t\tthrow new Error(result.error || '처리하지 못했습니다. 입력 내용을 확인해 주세요.');\n\t\t\t\t\t}\n\t\t\t\t\treturn result;\n\t\t\t\t};\n\t\t\t\twindow.yhRefreshMember = async function (destination) {\n\t\t\t\t\tlet target;\n\t\t\t\t\ttry { target = new URL(destination, window.location.origin); } catch (_) { target = new URL(window.location.href); }\n\t\t\t\t\tif (target.origin !== window.location.origin || !target.pathname.startsWith('/v2/admin/members/')) target = new URL(window.location.href);\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst response = await fetch(target.href, { credentials: 'same-origin', headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' } });\n\t\t\t\t\t\tif (!response.ok) throw new Error('refresh failed');\n\t\t\t\t\t\tconst doc = new DOMParser().parseFromString(await response.text(), 'text/html');\n\t\t\t\t\t\tconst next = doc.getElementById('member-detail-content');\n\t\t\t\t\t\tconst current = document.getElementById('member-detail-content');\n\t\t\t\t\t\tif (!next || !current) throw new Error('member content missing');\n\t\t\t\t\t\tconst replace = function () {\n\t\t\t\t\t\t\tif (window.Alpine) window.Alpine.destroyTree(current);\n\t\t\t\t\t\t\tcurrent.replaceWith(next);\n\t\t\t\t\t\t\tif (window.htmx) window.htmx.process(next);\n\t\t\t\t\t\t\tif (window.Alpine) window.Alpine.initTree(next);\n\t\t\t\t\t\t};\n\t\t\t\t\t\tif (window.Alpine) window.Alpine.mutateDom(replace); else replace();\n\t\t\t\t\t\twindow.dispatchEvent(new CustomEvent('closemodal'));\n\t\t\t\t\t\treturn true;\n\t\t\t\t\t} catch (_) {\n\t\t\t\t\t\t// 이미 저장된 작업을 재전송하지 않고 조회 화면으로 복귀한다.\n\t\t\t\t\t\twindow.location.assign(target.href);\n\t\t\t\t\t\treturn false;\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t</script></head><body class=\"h-full overflow-hidden bg-sand-50 text-ink-900 font-sans\" x-data=\"{ nav: false }\" x-on:htmx:after-swap.window=\"nav = false\"><!-- Mobile top bar — md 미만에서만 표시. --><div class=\"md:hidden fixed top-0 left-0 right-0 h-12 z-30 flex items-center px-4 bg-sand-50/90 backdrop-blur border-b border-sand-200\"><button type=\"button\" x-on:click=\"nav = true\" class=\"p-2 -ml-2 text-ink-900\" aria-label=\"메뉴 열기\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -82,7 +91,7 @@ func Admin(title string, activeKey string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</button> <a href=\"/v2/admin\" class=\"ml-2 leading-none flex items-baseline gap-2\"><span class=\"font-display italic text-[18px] tracking-wide-serif text-ink-900\">yhd</span> <span class=\"text-[13px] text-ink-700\">유하다 헤어</span></a></div><!-- 모바일 드로어 backdrop --><div x-show=\"nav\" x-cloak x-on:click=\"nav = false\" x-transition.opacity.duration.150ms class=\"md:hidden fixed inset-0 z-30 bg-ink-900/40\"></div><!-- 공통 관리자 컨텐츠 --><div class=\"flex h-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</button> <a href=\"/v2/admin\" class=\"ml-2 leading-none flex items-baseline gap-2\"><span class=\"font-display italic text-[18px] tracking-wide-serif text-ink-900\">yhd</span> <span class=\"text-[13px] text-ink-700\">유하다 헤어</span></a></div><!-- 모바일 드로어 backdrop --><div x-show=\"nav\" x-cloak x-on:click=\"nav = false\" x-transition.opacity.duration.150ms class=\"md:hidden fixed inset-0 z-30 bg-ink-900/40\"></div><!-- 공통 관리자 컨텐츠 --><div class=\"flex h-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -90,7 +99,7 @@ func Admin(title string, activeKey string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<main class=\"flex-1 overflow-y-auto pt-12 md:pt-0 yh-page-enter\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<main class=\"flex-1 overflow-y-auto pt-12 md:pt-0 yh-page-enter\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -98,7 +107,7 @@ func Admin(title string, activeKey string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</main></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</main></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -110,7 +119,7 @@ func Admin(title string, activeKey string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -140,20 +149,28 @@ func Bare(title string) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 168, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 170, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " · YUHADA HAIR</title><link rel=\"stylesheet\" href=\"/static/css/app.css\"><script src=\"https://unpkg.com/htmx.org@2.0.3\" defer></script><script src=\"https://unpkg.com/alpinejs@3.14.1\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js\" defer></script><script>\n\t\t\t\tdocument.addEventListener('htmx:afterSwap', function (e) {\n\t\t\t\t\tif (window.Alpine && e.detail && e.detail.elt) {\n\t\t\t\t\t\tArray.prototype.forEach.call(e.detail.elt.children, function (c) {\n\t\t\t\t\t\t\tif (!c._x_dataStack) window.Alpine.initTree(c);\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t</script></head><body class=\"bg-sand-50 text-ink-900 font-sans min-h-screen\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " · YUHADA HAIR</title>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ui.PWAHead().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<link rel=\"stylesheet\" href=\"/static/css/app.css\"><script src=\"https://unpkg.com/htmx.org@2.0.3\" defer></script><script src=\"https://unpkg.com/alpinejs@3.14.1\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js\" defer></script><script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js\" defer></script><script>\n\t\t\t\tdocument.addEventListener('htmx:afterSwap', function (e) {\n\t\t\t\t\tif (window.Alpine && e.detail && e.detail.elt) {\n\t\t\t\t\t\tArray.prototype.forEach.call(e.detail.elt.children, function (c) {\n\t\t\t\t\t\t\tif (!c._x_dataStack) window.Alpine.initTree(c);\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t</script></head><body class=\"bg-sand-50 text-ink-900 font-sans min-h-screen\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,7 +186,7 @@ func Bare(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -198,7 +215,7 @@ func adminSidebar(activeKey string) templ.Component {
 			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<aside class=\"w-[220px] shrink-0 bg-sand-100 border-r border-sand-200 flex flex-col h-full fixed top-0 bottom-0 left-0 z-40 transform -translate-x-full transition-transform duration-200 ease-out md:relative md:top-0 md:translate-x-0 md:transition-none\" x-bind:class=\"nav && '!translate-x-0'\" x-on:click=\"$event.target.closest('a, button[type=submit]') && (nav = false)\"><div class=\"p-8 border-b border-sand-200\"><a href=\"/v2/admin\" class=\"flex flex-col items-start leading-none\"><div class=\"flex items-baseline gap-2\"><span class=\"font-display italic text-[28px] tracking-wide-serif text-ink-900\">yhd</span> <span class=\"text-[14px] text-ink-700\">유하다 헤어</span></div><span class=\"mt-1.5 font-display text-[9px] tracking-[0.22em] uppercase text-ink-900\">MEMBERSHIP</span></a></div><nav class=\"flex-1 p-3 overflow-y-auto flex flex-col gap-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<aside class=\"w-[220px] shrink-0 bg-sand-100 border-r border-sand-200 flex flex-col h-full fixed top-0 bottom-0 left-0 z-40 transform -translate-x-full transition-transform duration-200 ease-out md:relative md:top-0 md:translate-x-0 md:transition-none\" x-bind:class=\"nav && '!translate-x-0'\" x-on:click=\"$event.target.closest('a, button[type=submit]') && (nav = false)\"><div class=\"p-8 border-b border-sand-200\"><a href=\"/v2/admin\" class=\"flex flex-col items-start leading-none\"><div class=\"flex items-baseline gap-2\"><span class=\"font-display italic text-[28px] tracking-wide-serif text-ink-900\">yhd</span> <span class=\"text-[14px] text-ink-700\">유하다 헤어</span></div><span class=\"mt-1.5 font-display text-[9px] tracking-[0.22em] uppercase text-ink-900\">MEMBERSHIP</span></a></div><nav class=\"flex-1 p-3 overflow-y-auto flex flex-col gap-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -210,20 +227,20 @@ func adminSidebar(activeKey string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 templ.SafeURL
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(it.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 212, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 215, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -236,7 +253,7 @@ func adminSidebar(activeKey string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -244,25 +261,25 @@ func adminSidebar(activeKey string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span class=\"flex-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span class=\"flex-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(it.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 218, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 221, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span></a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"yh-eyebrow-xs text-ink-500 px-4 mt-8 mb-3 text-[12px]\">설정</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"yh-eyebrow-xs text-ink-500 px-4 mt-8 mb-3 text-[12px]\">설정</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -274,20 +291,20 @@ func adminSidebar(activeKey string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 templ.SafeURL
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(it.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 224, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 227, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -300,7 +317,7 @@ func adminSidebar(activeKey string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -308,25 +325,25 @@ func adminSidebar(activeKey string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span class=\"flex-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span class=\"flex-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(it.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 230, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 233, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span></a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</span></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</nav><form method=\"POST\" action=\"/v2/logout\" class=\"p-3 border-t border-sand-200\" hx-boost=\"false\"><button class=\"w-full flex items-center gap-3 px-4 py-3 text-[15px] text-ink-700 hover:bg-sand-200/60 rounded transition\" type=\"submit\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</nav><form method=\"POST\" action=\"/v2/logout\" class=\"p-3 border-t border-sand-200\" hx-boost=\"false\"><button class=\"w-full flex items-center gap-3 px-4 py-3 text-[15px] text-ink-700 hover:bg-sand-200/60 rounded transition\" type=\"submit\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -334,7 +351,7 @@ func adminSidebar(activeKey string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span class=\"flex-1 text-left\">로그아웃</span></button></form></aside>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<span class=\"flex-1 text-left\">로그아웃</span></button></form></aside>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -364,7 +381,7 @@ func modalRoot() templ.Component {
 			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div id=\"modal-root\" x-data=\"{ open:false, show(){this.open=true}, hide(){this.open=false} }\" x-on:openmodal.window=\"show()\" x-on:closemodal.window=\"hide()\" x-on:keydown.escape.window=\"hide()\" x-show=\"open\" x-cloak x-transition:enter=\"transition ease-out duration-200\" x-transition:enter-start=\"opacity-0\" x-transition:enter-end=\"opacity-100\" x-transition:leave=\"transition ease-in duration-150\" x-transition:leave-start=\"opacity-100\" x-transition:leave-end=\"opacity-0\" class=\"fixed inset-0 z-50 flex items-center justify-center p-6\" style=\"background: rgba(26,22,20,0.55)\" x-on:click.self=\"hide()\" hx-on::after-swap=\"if (this.children.length > 0) window.dispatchEvent(new CustomEvent('openmodal'))\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"modal-root\" x-data=\"{ open:false, show(){this.open=true}, hide(){this.open=false} }\" x-on:openmodal.window=\"show()\" x-on:closemodal.window=\"hide()\" x-on:keydown.escape.window=\"hide()\" x-show=\"open\" x-cloak x-transition:enter=\"transition ease-out duration-200\" x-transition:enter-start=\"opacity-0\" x-transition:enter-end=\"opacity-100\" x-transition:leave=\"transition ease-in duration-150\" x-transition:leave-start=\"opacity-100\" x-transition:leave-end=\"opacity-0\" class=\"fixed inset-0 z-50 flex items-center justify-center p-6\" style=\"background: rgba(26,22,20,0.55)\" x-on:click.self=\"hide()\" hx-on::after-swap=\"if (this.children.length > 0) window.dispatchEvent(new CustomEvent('openmodal'))\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -393,7 +410,7 @@ func toastRoot() templ.Component {
 			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div id=\"toast-root\" class=\"fixed bottom-8 left-1/2 -translate-x-1/2 z-40\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div id=\"toast-root\" class=\"fixed bottom-8 left-1/2 -translate-x-1/2 z-40\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -245,6 +245,7 @@ type SalesDormant struct {
 
 // SalesProps — /v2/admin/sales 페이지 전체.
 type SalesProps struct {
+	Insights     SalesInsightsProps
 	Period       string // today | this-week | this-month | last-month | all | custom
 	PeriodLabel  string // 화면 상단 표시용 ("이번 달", "6월 1일 – 6월 30일" 등)
 	PeriodFrom   string // YYYY-MM-DD (input[type=date] 초기값)
@@ -267,3 +268,28 @@ type SalesProps struct {
 	TierChartJSON   string // {labels:[...], values:[...]}
 	PayChartJSON    string // {labels:["카드","현금"], values:[3,4]}
 }
+
+// SalesInsightsProps separates selected-period activity from current wallet stock.
+type SalesInsightsProps struct {
+	UsageTotal, VisitorCount, VisitCount            string
+	FirstCount, RepeatCount                         int
+	FirstAmount, RepeatAmount                       string
+	RechargePercent, FirstPercent                   int
+	CurrentBalance                                  string
+	CurrentMemberCount                              int
+	BalanceBuckets                                  []SalesBalanceBucket
+	LowBalanceCount                                 int
+	LowBalance                                      []SalesBalanceMember
+	TrendLabelsJSON, TrendSalesJSON, TrendUsageJSON string
+	TrendGranularity                                string
+	TrendRows                                       []SalesTrendRow
+}
+
+type SalesBalanceBucket struct {
+	Label   string
+	Count   int
+	Amount  string
+	Percent int
+}
+type SalesBalanceMember struct{ MemberID, Name, Balance, LastVisit string }
+type SalesTrendRow struct{ Label, Sales, Usage string }

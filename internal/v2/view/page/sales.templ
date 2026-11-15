@@ -7,23 +7,15 @@ import (
 	"github.com/mingicho/yuhada/internal/v2/view/layout"
 )
 
-// Sales — /v2/admin/sales. ERP 스타일 매출 대시보드.
-// 레이아웃:
-//   1. 페이지 헤더 + 기간 필터
-//   2. KPI 카드 8장 (매출/부채/보너스/건수 · 객단가/활성/정액권 비율/재구매)
-//   3. 차트 영역 (라인 col-span-2 + 등급 도넛 col-span-1)
-//   4. TOP 회원 + 최근 판매 (2열)
-//   5. 등급별 판매 상세 리스트
-//   6. 결제수단 비율 프로그레스
+// Sales — 선택 기간의 성과와 현재 고객 잔액을 구분하는 운영 대시보드.
 templ Sales(p SalesProps) {
 	@layout.Admin("매출", "sales") {
-		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
+		<div id="sales-dashboard" class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
 			<header class="mb-6 sm:mb-8">
 				<p class="yh-eyebrow mb-2 sm:mb-3">MEMBERSHIP</p>
 				<h1 class="yh-headline-l text-[26px] sm:text-[32px]">매출 대시보드</h1>
-				<p class="yh-body-sm mt-2 text-ink-500">{ p.PeriodLabel } 기준. 모든 충전을 판매 금액에 포함합니다.</p>
+				<p class="yh-body-sm mt-2 text-ink-500">판매 흐름과 시술 사용을 비교하고, 잔액을 살펴보세요.</p>
 			</header>
-
 			<!-- 기간 필터 (dashboard 와 동일 스타일 + '기간 지정' 토글) -->
 			<div x-data={ salesFilterAlpine(p.Period) }>
 				<nav class="inline-flex flex-wrap bg-sand-100 rounded-md p-1 mb-3 gap-y-1" aria-label="기간 필터">
@@ -80,227 +72,242 @@ templ Sales(p SalesProps) {
 				<div x-show="!showCustom" class="mb-8 sm:mb-10"></div>
 			</div>
 
-			<!-- KPI 5장 (핵심만): 판매 금액/적립/보너스 강조 3장 + 판매 건수/활성 회원 -->
-			<section class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-				@salesSummaryCard("판매 금액", p.SummaryCards.RealRevenue, "전체 충전 포함 · 정액권 보너스 제외", true)
-				@salesUsageCard(p.SummaryCards.CreditTotal, p.SummaryCards.CreditUsedPct)
-				@salesSummaryCard("보너스 비용", p.SummaryCards.BonusCost, "적립 − 판매", false)
-			</section>
-			<section class="grid grid-cols-2 gap-3 sm:gap-4 mb-8">
-				@salesSummaryCard("충전 건수", p.SummaryCards.TxCount, "정액권 + 일반 충전", false)
-				@salesSummaryCard("활성 회원", p.SummaryCards.ActiveMembers, "이 기간 구매한 사람", false)
-			</section>
 
-			<!-- 차트 영역: 라인 (2열) + 등급 도넛 (1열) -->
-			<section class="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
-				<div class="yh-card p-4 sm:p-5 lg:col-span-2">
-					<h2 class="yh-eyebrow mb-3">일자별 판매 금액</h2>
-					<div class="relative" style="height: 240px">
-						<canvas id="sales-daily-chart" data-labels={ p.DailyLabelsJSON } data-values={ p.DailyValuesJSON }></canvas>
+			<section aria-labelledby="sales-period-heading" class="mb-8 sm:mb-10">
+				<div class="flex items-end justify-between gap-4 mb-4">
+					<div>
+						<p class="yh-eyebrow-xs text-ink-500 mb-2">선택한 기간</p>
+						<h2 id="sales-period-heading" class="yh-headline-s">{ p.PeriodLabel }</h2>
 					</div>
 				</div>
-				<div class="yh-card p-4 sm:p-5">
-					<h2 class="yh-eyebrow mb-3">등급별 판매 비율</h2>
-					if len(p.TierRows) > 0 {
-						<div class="relative" style="height: 240px">
-							<canvas id="sales-tier-chart" data-chart={ p.TierChartJSON }></canvas>
+				<div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-4">
+					@salesSummaryCard("판매 금액", p.SummaryCards.RealRevenue, p.SummaryCards.TxCount + " 충전 · 정액권 보너스 제외", true)
+					@salesSummaryCard("시술 사용액", p.Insights.UsageTotal, "시술 차감액 · 결제 매출 아님", false)
+					@salesSummaryCard("시술 고객", p.Insights.VisitorCount, "중복 제외 · 차감 " + p.Insights.VisitCount, false)
+					@salesSummaryCard("재충전 비중", salesRechargeDisplay(p.Insights), strconv.Itoa(p.Insights.RepeatCount) + "건 / 전체 " + strconv.Itoa(p.Insights.FirstCount + p.Insights.RepeatCount) + "건", false)
+				</div>
+
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+					<div class="yh-card p-4 sm:p-6 lg:col-span-2">
+						<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+							<div>
+								<h3 class="yh-eyebrow">판매와 시술 사용</h3>
+								<p class="text-[12px] text-ink-500 mt-2">선택한 기간 전체 · { p.Insights.TrendGranularity } 합계</p>
+							</div>
+							<span class="text-[11px] text-ink-500">금액 단위: 만원</span>
 						</div>
-					} else {
-						<div class="flex items-center justify-center h-[240px]">
-							<p class="text-[13px] text-ink-500">판매 없음</p>
+						<div class="relative" style="height:280px">
+							<canvas id="sales-comparison-chart" data-labels={ p.Insights.TrendLabelsJSON } data-sales={ p.Insights.TrendSalesJSON } data-usage={ p.Insights.TrendUsageJSON } role="img" aria-label="선택 기간의 판매 금액과 시술 사용액 비교. 아래 기간별 수치에서 같은 값을 확인할 수 있습니다."></canvas>
 						</div>
-					}
+						<p id="sales-chart-status" class="text-[12px] text-ink-500 mt-3" role="status">그래프를 불러오는 중입니다. 아래 기간별 수치에서도 확인할 수 있습니다.</p>
+						<p class="text-[12px] text-ink-500 mt-3">시술 사용액은 고객 잔액에서 차감한 금액이며, 새로 받은 결제 금액이 아닙니다.</p>
+						@salesTrendTable(p.Insights)
+					</div>
+					@salesRechargeCard(p.Insights)
 				</div>
 			</section>
 
-			<!-- 하단 2열: TOP 회원 + 최근 판매 이력 -->
-			<section class="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
-				@salesTopMembersCard(p.TopMembers)
-				@salesRecentCard(p.RecentSales)
+			<section aria-labelledby="sales-current-heading" class="mb-8 sm:mb-10 pt-8 border-t border-sand-300">
+				<div class="mb-4">
+					<p class="yh-eyebrow-xs text-ink-500 mb-2">현재 기준 · 기간 필터와 무관</p>
+					<h2 id="sales-current-heading" class="yh-headline-s">고객 잔액 관리</h2>
+				</div>
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+					@salesBalanceCard(p.Insights)
+					@salesLowBalanceCard(p.Insights)
+				</div>
 			</section>
 
-			<!-- Chart.js 초기화 -->
+			<section aria-labelledby="sales-history-heading">
+				<div class="mb-4">
+					<p class="yh-eyebrow-xs text-ink-500 mb-2">선택한 기간 · { p.PeriodLabel }</p>
+					<h2 id="sales-history-heading" class="yh-headline-s">판매 상세</h2>
+				</div>
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+					@salesTopMembersCard(p.TopMembers)
+					@salesRecentCard(p.RecentSales)
+				</div>
+				if salesHasPlanRows(p.TierRows) {
+					<details class="yh-card mt-4">
+						<summary class="p-4 sm:p-5 cursor-pointer text-[13px] text-ink-700">정액권 상품별 판매 보기</summary>
+						<div class="divide-y divide-sand-200">
+							for _, row := range p.TierRows {
+								if !row.IsGeneric {
+									@salesTierRow(row)
+								}
+							}
+						</div>
+					</details>
+				}
+			</section>
+
 			<script>
-				(function initSalesCharts() {
-					if (typeof Chart === 'undefined') { setTimeout(initSalesCharts, 60); return; }
-					const kFmt = (n) => (n||0).toLocaleString('ko-KR');
-					const wonFmt = (n) => '₩' + kFmt(n);
-					const palette = ['#1A1614','#8B6F4E','#6B8E5A','#B05A4D','#D4A24C','#B89472','#4A3F38'];
-					Chart.defaults.font.family = "'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,sans-serif";
-					Chart.defaults.color = '#4A3F38';
-					Chart.defaults.borderColor = '#E8D5BC';
-
-					// 일자별 라인 차트
-					const dailyEl = document.getElementById('sales-daily-chart');
-					if (dailyEl) {
-						const labels = JSON.parse(dailyEl.dataset.labels || '[]');
-						const values = JSON.parse(dailyEl.dataset.values || '[]');
-						new Chart(dailyEl, {
-							type: 'line',
-							data: {
-								labels: labels,
-								datasets: [{
-									label: '판매 금액',
-									data: values,
-									borderColor: '#1A1614',
-									backgroundColor: 'rgba(26,22,20,0.06)',
-									fill: true,
-									tension: 0.25,
-									pointRadius: 3,
-									pointHoverRadius: 5,
-									borderWidth: 2,
-								}]
-							},
-							options: {
-								responsive: true,
-								maintainAspectRatio: false,
-								plugins: {
-									legend: { display: false },
-									tooltip: { callbacks: { label: (ctx) => ' ' + wonFmt(ctx.parsed.y) } }
-								},
-								scales: {
-									y: { beginAtZero: true, ticks: { callback: (v) => v >= 10000 ? (v/10000)+'만' : kFmt(v) } },
-									x: { grid: { display: false } }
-								}
-							}
-						});
+				(function () {
+					if (window.__yhSalesChartDispose) window.__yhSalesChartDispose();
+					const host = document.getElementById('sales-dashboard');
+					const canvas = document.getElementById('sales-comparison-chart');
+					if (!host || !canvas) return;
+					let chart = null, timer = null, attempts = 0, disposed = false;
+					const status = document.getElementById('sales-chart-status');
+					function dispose() {
+						disposed = true;
+						if (timer) clearTimeout(timer);
+						if (chart) { chart.destroy(); chart = null; }
+						document.removeEventListener('htmx:beforeCleanupElement', onCleanup);
+						document.removeEventListener('htmx:afterSettle', init);
 					}
-
-					// 등급별 도넛
-					const tierEl = document.getElementById('sales-tier-chart');
-					if (tierEl) {
-						const d = JSON.parse(tierEl.dataset.chart || '{"labels":[],"values":[]}');
-						new Chart(tierEl, {
-							type: 'doughnut',
-							data: {
-								labels: d.labels,
-								datasets: [{ data: d.values, backgroundColor: palette, borderWidth: 2, borderColor: '#FAF5EC' }]
-							},
-							options: {
-								responsive: true,
-								maintainAspectRatio: false,
-								cutout: '55%',
-								plugins: {
-									legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 8 } },
-									tooltip: { callbacks: { label: (ctx) => ' ' + ctx.label + ': ' + ctx.parsed + '건' } }
-								}
-							}
-						});
+					function onCleanup(event) {
+						const element = event.detail && event.detail.elt;
+						if (element && (element === host || element.contains(host))) dispose();
 					}
-
-					// 결제수단 도넛
-					const payEl = document.getElementById('sales-pay-chart');
-					if (payEl) {
-						const d = JSON.parse(payEl.dataset.chart || '{"labels":[],"values":[]}');
-						new Chart(payEl, {
-							type: 'doughnut',
-							data: {
-								labels: d.labels,
-								datasets: [{ data: d.values, backgroundColor: ['#1A1614','#6B8E5A'], borderWidth: 2, borderColor: '#FAF5EC' }]
-							},
-							options: {
-								responsive: true,
-								maintainAspectRatio: false,
-								cutout: '55%',
-								plugins: {
-									legend: { position: 'right', labels: { boxWidth: 12, font: { size: 12 } } },
-									tooltip: { callbacks: { label: (ctx) => ' ' + ctx.label + ': ' + ctx.parsed + '건' } }
+					function init() {
+						if (disposed || chart || !host.isConnected) return;
+						if (timer) { clearTimeout(timer); timer = null; }
+						if (typeof window.Chart === 'undefined') {
+							if (++attempts <= 60) timer = setTimeout(init, 100);
+							else if (status) status.textContent = '그래프를 불러오지 못했습니다. 아래 기간별 수치에서 확인해 주세요.';
+							return;
+						}
+						try {
+							const labels = JSON.parse(canvas.dataset.labels || '[]');
+							const sales = JSON.parse(canvas.dataset.sales || '[]');
+							const usage = JSON.parse(canvas.dataset.usage || '[]');
+							if (!Array.isArray(labels) || !Array.isArray(sales) || !Array.isArray(usage)) throw new Error('Invalid chart data');
+							const existing = window.Chart.getChart ? window.Chart.getChart(canvas) : null;
+							if (existing) existing.destroy();
+							chart = new window.Chart(canvas, {
+								type: 'bar',
+								data: { labels: labels, datasets: [
+									{ label: '판매 금액', data: sales, backgroundColor: '#1A1614', borderRadius: 3, maxBarThickness: 24 },
+									{ label: '시술 사용액', data: usage, backgroundColor: '#B89472', borderRadius: 3, maxBarThickness: 24 }
+								] },
+								options: {
+									responsive: true, maintainAspectRatio: false,
+									interaction: { mode: 'index', intersect: false },
+									plugins: {
+										legend: { position: 'bottom', labels: { color: '#4A3F38', boxWidth: 12, padding: 16, font: { family: "'Pretendard Variable','Pretendard',sans-serif", size: 12 } } },
+										tooltip: { callbacks: { label: function (item) { return item.dataset.label + ': ₩' + Number(item.parsed.y || 0).toLocaleString('ko-KR'); } } }
+									},
+									scales: {
+										y: { beginAtZero: true, grid: { color: '#E8D5BC' }, ticks: { color: '#4A3F38', callback: function (value) { return (Number(value) / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 1 }); } } },
+										x: { grid: { display: false }, ticks: { color: '#4A3F38', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }
+									}
 								}
-							}
-						});
+							});
+							if (status) status.hidden = true;
+						} catch (_) {
+							if (status) status.textContent = '그래프를 표시하지 못했습니다. 아래 기간별 수치에서 확인해 주세요.';
+						}
 					}
+					window.__yhSalesChartDispose = dispose;
+					document.addEventListener('htmx:beforeCleanupElement', onCleanup);
+					document.addEventListener('htmx:afterSettle', init);
+					init();
 				})();
 			</script>
-
-			<!-- 관리 알림: 만료 예정 · 미방문 회원 (기간 필터 무관, 항상 오늘 기준) -->
-			<section class="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
-				<!-- 이번 달 만료 예정 -->
-				<div class="yh-card overflow-hidden">
-					<div class="p-5 border-b border-sand-200 flex items-center justify-between">
-						<div>
-							<h2 class="yh-eyebrow">이번 달 만료 예정</h2>
-							<p class="yh-num text-[22px] sm:text-[24px] text-ink-900 mt-1">{ p.ExpiringTotal }</p>
-							<p class="text-[11px] text-ink-500 mt-1">{ strconv.Itoa(p.ExpiringCount) }건 · 가입 1년 경과 예정</p>
-						</div>
-					</div>
-					if len(p.Expiring) == 0 {
-						<div class="p-8 text-center">
-							<p class="text-[13px] text-ink-500">이번 달 만료 예정 없음</p>
-						</div>
-					} else {
-						<ul class="divide-y divide-sand-200">
-							for _, e := range p.Expiring {
-								<li class="flex items-center gap-3 px-5 py-3">
-									<a href={ templ.SafeURL("/v2/admin/members/" + e.MemberID) } class="flex-1 min-w-0">
-										<p class="text-[14px] font-medium text-ink-900 truncate">{ e.MemberName }</p>
-										<p class="text-[11px] text-ink-500 mt-0.5 flex items-center gap-1 flex-wrap">
-											<span class="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700">
-												{ e.TierLabel }
-												if e.PayMethod != "" {
-													<span class="ml-1">· { payMethodLabel(e.PayMethod) }</span>
-												}
-											</span>
-											<span class="text-danger">· { e.ExpiresAt } 만료</span>
-										</p>
-									</a>
-									<p class="yh-num text-[14px] text-ink-900 shrink-0 tabular-nums">{ e.CreditAmount }</p>
-								</li>
-							}
-						</ul>
-					}
-				</div>
-
-				<!-- 60일 이상 미방문 -->
-				<div class="yh-card overflow-hidden">
-					<div class="p-5 border-b border-sand-200 flex items-center justify-between">
-						<div>
-							<h2 class="yh-eyebrow">60일 이상 미방문</h2>
-							<p class="yh-num text-[22px] sm:text-[24px] text-ink-900 mt-1">{ strconv.Itoa(p.DormantCount) }명</p>
-							<p class="text-[11px] text-ink-500 mt-1">잔액 합계 { p.DormantTotal }</p>
-						</div>
-					</div>
-					if len(p.Dormant) == 0 {
-						<div class="p-8 text-center">
-							<p class="text-[13px] text-ink-500">최근 60일 안에 다들 방문했어요</p>
-						</div>
-					} else {
-						<ul class="divide-y divide-sand-200">
-							for _, d := range p.Dormant {
-								<li class="flex items-center gap-3 px-5 py-3">
-									<a href={ templ.SafeURL("/v2/admin/members/" + d.MemberID) } class="flex-1 min-w-0">
-										<p class="text-[14px] font-medium text-ink-900 truncate">{ d.Name }</p>
-										<p class="text-[11px] text-ink-500 mt-0.5">마지막 방문 { d.LastAt }</p>
-									</a>
-									<p class="yh-num text-[14px] text-ink-900 shrink-0 tabular-nums">{ d.Balance }</p>
-								</li>
-							}
-						</ul>
-					}
-				</div>
-			</section>
-
-			<!-- 결제수단 비율 + 도넛 (일반 충전은 결제수단 미상) -->
-			if len(p.PayRows) > 0 {
-				<section>
-					<div class="flex items-center justify-between mb-3">
-						<h2 class="yh-eyebrow">결제수단 비율 <span class="text-ink-500 normal-case tracking-normal text-[11px]">일반 충전은 미상</span></h2>
-					</div>
-					<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-						<div class="yh-card p-5 sm:p-6 space-y-4 lg:col-span-2">
-							for _, row := range p.PayRows {
-								@salesPayRow(row)
-							}
-						</div>
-						<div class="yh-card p-4 sm:p-5">
-							<div class="relative" style="height: 200px">
-								<canvas id="sales-pay-chart" data-chart={ p.PayChartJSON }></canvas>
-							</div>
-						</div>
-					</div>
-				</section>
-			}
 		</div>
 	}
+}
+
+templ salesRechargeCard(p SalesInsightsProps) {
+	<div class="yh-card p-4 sm:p-6">
+		<h3 class="yh-eyebrow">첫 충전과 재충전</h3>
+		<p class="text-[12px] text-ink-500 mt-2">고객 수가 아닌 충전 건수 기준</p>
+		if p.FirstCount + p.RepeatCount > 0 {
+			<div class="flex h-5 rounded overflow-hidden bg-sand-200 mt-6" role="img" aria-label={ "첫 충전 " + strconv.Itoa(p.FirstCount) + "건, 재충전 " + strconv.Itoa(p.RepeatCount) + "건" }>
+				<div class="bg-sand-300 h-full" style={ "width:" + strconv.Itoa(p.FirstPercent) + "%" }></div>
+				<div class="bg-ink-900 h-full" style={ "width:" + strconv.Itoa(p.RechargePercent) + "%" }></div>
+			</div>
+		} else {
+			<p class="text-[13px] text-ink-500 py-6">이 기간의 충전 기록이 없습니다.</p>
+		}
+		<dl class="mt-5 divide-y divide-sand-200">
+			<div class="py-4">
+				<dt class="text-[13px] text-ink-700 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-sand-300"></span>첫 충전</dt>
+				<dd class="mt-2 flex items-baseline justify-between gap-2"><span class="yh-num text-[22px]">{ strconv.Itoa(p.FirstCount) }<span class="text-[12px] text-ink-500 ml-1">건</span></span><span class="text-[13px] tabular-nums">{ p.FirstAmount }</span></dd>
+			</div>
+			<div class="py-4">
+				<dt class="text-[13px] text-ink-700 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-ink-900"></span>재충전</dt>
+				<dd class="mt-2 flex items-baseline justify-between gap-2"><span class="yh-num text-[22px]">{ strconv.Itoa(p.RepeatCount) }<span class="text-[12px] text-ink-500 ml-1">건</span></span><span class="text-[13px] tabular-nums">{ p.RepeatAmount }</span></dd>
+			</div>
+		</dl>
+		<p class="text-[11px] text-ink-500 mt-3">전체 거래 이력에서 첫 충전 이후의 충전을 재충전으로 봅니다. 고객 이탈률을 뜻하지 않습니다.</p>
+	</div>
+}
+
+templ salesBalanceCard(p SalesInsightsProps) {
+	<div class="yh-card p-4 sm:p-6">
+		<h3 class="yh-eyebrow">현재 고객 잔액</h3>
+		<p class="yh-num text-[28px] sm:text-[32px] mt-4">{ p.CurrentBalance }</p>
+		<p class="text-[12px] text-ink-500 mt-2">고객 { strconv.Itoa(p.CurrentMemberCount) }명 기준 · 기간 내 충전 합계가 아닙니다.</p>
+		<div class="mt-6 space-y-5">
+			for _, bucket := range p.BalanceBuckets {
+				<div>
+					<div class="flex flex-wrap justify-between gap-2 text-[12px] mb-2">
+						<span class="text-ink-700">{ bucket.Label }</span>
+						<span class="tabular-nums text-ink-700">{ strconv.Itoa(bucket.Count) }명 · { bucket.Amount }</span>
+					</div>
+					<div class="h-2.5 rounded-full bg-sand-100 overflow-hidden" aria-hidden="true"><div class="h-full rounded-full bg-ink-700" style={ "width:" + strconv.Itoa(bucket.Percent) + "%" }></div></div>
+				</div>
+			}
+		</div>
+		<p class="text-[11px] text-ink-500 mt-5">막대는 잔액 구간별 고객 수 비중입니다.</p>
+	</div>
+}
+
+templ salesLowBalanceCard(p SalesInsightsProps) {
+	<div class="yh-card overflow-hidden">
+		<div class="p-4 sm:p-6 border-b border-sand-200">
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<h3 class="yh-eyebrow">재충전 안내 후보</h3>
+				<span class="text-[12px] text-ink-500">{ strconv.Itoa(p.LowBalanceCount) }명</span>
+			</div>
+			<p class="text-[12px] text-ink-500 mt-2">잔액 5만원 이하 · 최근 60일 안에 시술한 고객</p>
+		</div>
+		if len(p.LowBalance) == 0 {
+			<p class="text-[13px] text-ink-500 p-6">현재 조건에 해당하는 고객이 없습니다.</p>
+		} else {
+			<ul class="divide-y divide-sand-200">
+				for _, member := range p.LowBalance {
+					<li>
+						<a href={ templ.SafeURL("/v2/admin/members/" + member.MemberID) } class="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-sand-100 transition">
+							<div class="flex-1 min-w-0"><p class="text-[14px] text-ink-900 truncate">{ member.Name }</p><p class="text-[11px] text-ink-500 mt-1">최근 시술 { member.LastVisit }</p></div>
+							<p class="yh-num text-[16px] shrink-0">{ member.Balance }</p>
+							@component.Icon("chevron-right", 14)
+						</a>
+					</li>
+				}
+			</ul>
+			<p class="text-[11px] text-ink-500 px-4 sm:px-6 py-4 border-t border-sand-200">잔액이 적은 순으로 최대 5명 표시 · 고객을 눌러 이력을 확인하세요.</p>
+		}
+	</div>
+}
+
+templ salesTrendTable(p SalesInsightsProps) {
+	<details class="mt-4 border-t border-sand-200 pt-4">
+		<summary class="text-[12px] text-ink-700 cursor-pointer">기간별 수치 보기</summary>
+		<div class="overflow-x-auto mt-3">
+			<table class="w-full text-[12px] text-right tabular-nums">
+				<caption class="text-left text-[11px] text-ink-500 mb-2">그래프와 같은 수치 · 원</caption>
+				<thead><tr class="border-b border-sand-200"><th scope="col" class="text-left py-2 font-medium">기간</th><th scope="col" class="py-2 font-medium">판매 금액</th><th scope="col" class="py-2 font-medium">시술 사용액</th></tr></thead>
+				<tbody>
+					for _, row := range p.TrendRows {
+						<tr class="border-b border-sand-100"><th scope="row" class="text-left py-2 font-normal whitespace-nowrap">{ row.Label }</th><td class="py-2 pl-3 whitespace-nowrap">{ row.Sales }</td><td class="py-2 pl-3 whitespace-nowrap">{ row.Usage }</td></tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</details>
+}
+
+func salesRechargeDisplay(p SalesInsightsProps) string {
+	if p.FirstCount + p.RepeatCount == 0 { return "—" }
+	return strconv.Itoa(p.RechargePercent) + "%"
+}
+
+func salesHasPlanRows(rows []SalesTierRow) bool {
+	for _, row := range rows { if !row.IsGeneric { return true } }
+	return false
 }
 
 // salesFilterAlpine — '기간 지정' 토글 상태.
@@ -346,26 +353,6 @@ templ salesSummaryCard(label, value, sub string, primary bool) {
 					templ.KV("text-ink-500", !primary) }
 			>{ sub }</p>
 		}
-	</div>
-}
-
-// salesUsageCard — 잔액 적립 총액 카드 + 사용률 프로그레스 (하단 두꺼운 바 + 반사각 배경).
-templ salesUsageCard(value string, usedPct int) {
-	<div class="yh-card p-4 sm:p-5 relative overflow-hidden">
-		<!-- 반사각 배경 (좌에서 우로 사용률만큼 채움) -->
-		<div
-			class="absolute inset-y-0 left-0 bg-sand-200 transition-all duration-300"
-			style={ "width:" + strconv.Itoa(usedPct) + "%" }
-			aria-hidden="true"
-		></div>
-		<!-- 텍스트 -->
-		<div class="relative">
-			<p class="yh-eyebrow-xs mb-2 text-ink-500">잔액 적립 총액</p>
-			<p class="yh-num text-[20px] sm:text-[24px] text-ink-900">{ value }</p>
-			<p class="text-[11px] mt-1 text-ink-500">
-				손님이 앞으로 쓸 돈 · <span class="tabular-nums font-medium text-ink-900">{ strconv.Itoa(usedPct) }%</span> 소진
-			</p>
-		</div>
 	</div>
 }
 
@@ -457,25 +444,6 @@ templ salesTierRow(row SalesTierRow) {
 	</div>
 }
 
-// salesPayRow — 결제수단 한 줄 (프로그레스 바).
-templ salesPayRow(row SalesPayMethodRow) {
-	<div class="flex items-center gap-3 sm:gap-4">
-		<p class="w-12 shrink-0 text-[13px] sm:text-[14px] text-ink-900">{ salesPayMethodLabel(row.PayMethod) }</p>
-		<p class="w-14 shrink-0 text-[12px] text-ink-500 tabular-nums">{ row.CountLabel }</p>
-		<p class="yh-num text-[14px] sm:text-[15px] text-ink-900 w-28 shrink-0 tabular-nums">{ row.TotalPrice }</p>
-		<div class="flex-1 min-w-0 h-2 rounded-full bg-sand-200 overflow-hidden">
-			<div
-				class={ "h-full",
-					templ.KV("bg-ink-900", row.PayMethod == "card"),
-					templ.KV("bg-success", row.PayMethod == "cash"),
-					templ.KV("bg-ink-500", row.PayMethod == "unknown") }
-				style={ "width:" + strconv.Itoa(row.Percent) + "%" }
-			></div>
-		</div>
-		<p class="w-10 shrink-0 text-right text-[12px] text-ink-500 tabular-nums">{ strconv.Itoa(row.Percent) }%</p>
-	</div>
-}
-
 // salesRecentRow — 최근 판매 이력 한 줄.
 templ salesRecentRow(r SalesRecentRow) {
 	<li class="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 hover:bg-sand-50 transition">
@@ -512,11 +480,4 @@ templ salesRecentRow(r SalesRecentRow) {
 			}
 		</div>
 	</li>
-}
-
-func salesPayMethodLabel(method string) string {
-	if method == "card" || method == "cash" {
-		return payMethodLabel(method)
-	}
-	return "미상"
 }

@@ -33,6 +33,7 @@ jobs:
         run: |
           go test ./...
           go vet ./...
+          node scripts/test-pwa-worker.cjs
 
       - name: Build binary
         run: |

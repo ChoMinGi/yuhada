@@ -1,0 +1,16 @@
+package ui
+
+// PWAHead is shared by both administrator shells and public/login pages.
+templ PWAHead() {
+	<meta name="theme-color" content="#F0E4D0"/>
+	<meta name="application-name" content="유하다 헤어"/>
+	<meta name="apple-mobile-web-app-title" content="유하다 헤어"/>
+	<meta name="apple-mobile-web-app-capable" content="yes"/>
+	<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+	<link rel="manifest" href="/manifest.webmanifest"/>
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+	<link rel="icon" href="/static/icons/favicon-32.png" type="image/png" sizes="32x32"/>
+	<link rel="icon" href="/static/icons/favicon-16.png" type="image/png" sizes="16x16"/>
+	<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" sizes="180x180"/>
+	<script src="/static/pwa/register.js" defer></script>
+}

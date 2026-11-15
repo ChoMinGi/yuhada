@@ -94,59 +94,26 @@ func (h *PageHandlers) SalesDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 관리 알림 (기간 필터와 무관, 항상 오늘 기준):
-	//   - 이번 달(KST) 만료 예정 정액권
-	//   - 60일 이상 미방문 회원
-	nowKST := time.Now().In(kstLocSales())
-	monthStartKST := time.Date(nowKST.Year(), nowKST.Month(), 1, 0, 0, 0, 0, kstLocSales())
-	monthEndKST := monthStartKST.AddDate(0, 1, 0)
-	expSinceUTC := monthStartKST.UTC().Format("2006-01-02T15:04:05.000Z")
-	expUntilUTC := monthEndKST.UTC().Format("2006-01-02T15:04:05.000Z")
-	expiring, err := h.Deps.Services.Sales.ExpiringMemberships(ctx, expSinceUTC, expUntilUTC)
+	now := time.Now()
+	insights, err := h.Deps.Services.Sales.Insights(ctx, sinceUTC, untilUTC, now)
 	if err != nil {
-		slog.Error("v2 sales expiring", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("v2 sales insights", "err", err)
+		http.Error(w, "현황을 불러오지 못했습니다", http.StatusInternalServerError)
 		return
-	}
-	dormantCutoff := time.Now().UTC().AddDate(0, 0, -60).Format("2006-01-02T15:04:05.000Z")
-	dormant, err := h.Deps.Services.Sales.DormantMembers(ctx, dormantCutoff)
-	if err != nil {
-		slog.Error("v2 sales dormant", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// 사용률 계산: period 안 deduct/refund 합 / credit 총액.
-	totals, err := h.Deps.Services.Sales.LedgerTotals(ctx, sinceUTC, untilUTC)
-	if err != nil {
-		slog.Error("v2 sales totals", "err", err)
-		http.Error(w, "합계를 불러오지 못했습니다", 500)
-		return
-	}
-	deducted := totals.Deduct
-	usedPct := 0
-	if summary.CreditTotal > 0 {
-		usedPct = int((deducted * 100) / summary.CreditTotal)
-		if usedPct > 100 {
-			usedPct = 100
-		}
 	}
 
 	// 그래프용 데이터 JSON 인코딩 (Chart.js 초기화 스크립트에 임베드).
-	dailyLabels, dailyValues := buildDailyChart(daily, sinceUTC, untilUTC)
+	dailyLabels, dailyValues, usageValues, granularity, trendRows := buildSalesTrend(daily, insights.DailyUsage, sinceUTC, untilUTC, period, now)
 	tierLabels, tierValues := buildTierChart(tierRows)
 	payLabels, payValues := buildPayChart(payRows)
-
-	// 만료 예정 총액/개수, 미방문 총액/카운트 계산 + 리스트 변환
-	expiringRows, expiringTotal := buildExpiringRows(expiring)
-	dormantRows, dormantTotal := buildDormantRows(dormant)
 
 	render(w, r, http.StatusOK, page.Sales(page.SalesProps{
 		Period:          period,
 		PeriodLabel:     label,
 		PeriodFrom:      periodFrom,
 		PeriodTo:        periodTo,
-		SummaryCards:    buildSummaryCards(summary, usedPct),
+		SummaryCards:    buildSummaryCards(summary, 0),
+		Insights:        buildSalesInsights(insights, dailyLabels, dailyValues, usageValues, granularity, trendRows),
 		TierRows:        buildTierRows(tierRows),
 		PayRows:         buildPayRows(payRows),
 		RecentSales:     buildRecentRows(recent),
@@ -155,12 +122,6 @@ func (h *PageHandlers) SalesDashboard(w http.ResponseWriter, r *http.Request) {
 		DailyValuesJSON: mustJSON(dailyValues),
 		TierChartJSON:   mustJSON(map[string]any{"labels": tierLabels, "values": tierValues}),
 		PayChartJSON:    mustJSON(map[string]any{"labels": payLabels, "values": payValues}),
-		ExpiringTotal:   util.FormatKRW(expiringTotal),
-		ExpiringCount:   len(expiringRows),
-		Expiring:        expiringRows,
-		DormantCount:    len(dormantRows),
-		DormantTotal:    util.FormatKRW(dormantTotal),
-		Dormant:         dormantRows,
 	}))
 }
 

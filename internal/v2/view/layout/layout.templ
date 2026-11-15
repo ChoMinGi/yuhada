@@ -5,6 +5,7 @@
 package layout
 
 import "github.com/mingicho/yuhada/internal/v2/view/component"
+import "github.com/mingicho/yuhada/internal/ui"
 
 // NavItem — 사이드바 항목.
 type NavItem struct {
@@ -35,6 +36,7 @@ templ Admin(title string, activeKey string) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title } · YUHADA HAIR</title>
+			@ui.PWAHead()
 			<link rel="stylesheet" href="/static/css/app.css"/>
 			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
 			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
@@ -166,6 +168,7 @@ templ Bare(title string) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title } · YUHADA HAIR</title>
+			@ui.PWAHead()
 			<link rel="stylesheet" href="/static/css/app.css"/>
 			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
 			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>

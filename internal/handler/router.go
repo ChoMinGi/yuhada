@@ -38,6 +38,7 @@ func NewRouter(deps *Deps) http.Handler {
 
 	// 정적 파일 (CSS, fonts, icons 등)
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	registerPWARoutes(r)
 
 	// 헬스체크
 	r.Get("/healthz", healthz)

@@ -27,7 +27,7 @@ func TestSalesDashboardDisplaysGenericAndInitialSalesWithPlanPrice(t *testing.T)
 	if w.Code != 200 {
 		t.Fatalf("sales response %d", w.Code)
 	}
-	for _, text := range []string{"판매 금액", "₩320,000", "₩360,000", "₩40,000", "+₩200,000", "적립 ₩240,000", "일반 충전 · 결제수단 미상", "₩120,000"} {
+	for _, text := range []string{"판매 금액", "₩320,000", "₩360,000", "₩40,000", "+₩200,000", "적립 ₩240,000", "일반 충전 · 결제수단 미상", "첫 충전", "재충전"} {
 		if !strings.Contains(body, text) {
 			t.Fatalf("sales dashboard missing %q", text)
 		}
