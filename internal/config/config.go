@@ -39,6 +39,8 @@ type Config struct {
 	// V2 카카오 로그인 (선택). KakaoClientID/Secret 는 v1 과 공유, redirect 만 별도.
 	KakaoRedirectV2 string
 	AdminKakaoIDV2  string
+	// V2 이메일 화이트리스트 (쉼표 구분). 설정 시 ID 화이트리스트보다 우선한다.
+	AdminKakaoEmailsV2 string
 }
 
 // IsProd — 프로덕션 환경 여부.
@@ -69,6 +71,7 @@ func Load() (Config, error) {
 	cfg.V2Enable, _ = strconv.ParseBool(env("V2_ENABLE", "false"))
 	cfg.KakaoRedirectV2 = env("KAKAO_REDIRECT_V2", "")
 	cfg.AdminKakaoIDV2 = env("ADMIN_KAKAO_ID_V2", "")
+	cfg.AdminKakaoEmailsV2 = env("ADMIN_KAKAO_EMAILS_V2", "")
 
 	cfg.CookieSecure, _ = strconv.ParseBool(env("COOKIE_SECURE", "false"))
 

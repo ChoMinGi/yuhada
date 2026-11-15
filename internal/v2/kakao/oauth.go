@@ -26,6 +26,8 @@ type Config struct {
 	ClientID     string
 	ClientSecret string // optional (앱 설정에 따라)
 	RedirectURI  string
+	RequireEmail bool         // 이메일 화이트리스트 사용 시 account_email 동의 요청.
+	HTTPClient   *http.Client // nil이면 기본 타임아웃 클라이언트 사용.
 }
 
 // Enabled — 최소 필수 필드 채워졌으면 true.
@@ -33,9 +35,18 @@ func (c Config) Enabled() bool {
 	return c.ClientID != "" && c.RedirectURI != ""
 }
 
-// UserInfo — kapi /v2/user/me 응답 중 id 만 사용.
+// UserInfo — 관리자 인증에 필요한 카카오 사용자 정보.
 type UserInfo struct {
-	ID int64 `json:"id"`
+	ID           int64       `json:"id"`
+	KakaoAccount AccountInfo `json:"kakao_account"`
+}
+
+// AccountInfo — bool 포인터로 누락과 명시 false를 구분한다.
+type AccountInfo struct {
+	Email               string `json:"email"`
+	EmailNeedsAgreement *bool  `json:"email_needs_agreement"`
+	IsEmailValid        *bool  `json:"is_email_valid"`
+	IsEmailVerified     *bool  `json:"is_email_verified"`
 }
 
 // AuthorizeURL — 카카오 로그인 페이지 URL. state 로 CSRF 방지.
@@ -45,7 +56,17 @@ func (c Config) AuthorizeURL(state string) string {
 	v.Set("redirect_uri", c.RedirectURI)
 	v.Set("response_type", "code")
 	v.Set("state", state)
+	if c.RequireEmail {
+		v.Set("scope", "account_email")
+	}
 	return authorizeURL + "?" + v.Encode()
+}
+
+func (c Config) client() *http.Client {
+	if c.HTTPClient != nil {
+		return c.HTTPClient
+	}
+	return &http.Client{Timeout: 10 * time.Second}
 }
 
 // ExchangeCode — authorization code → access_token.
@@ -63,15 +84,17 @@ func (c Config) ExchangeCode(ctx context.Context, code string) (string, error) {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := c.client().Do(req)
 	if err != nil {
 		return "", fmt.Errorf("kakao token request: %w", err)
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return "", fmt.Errorf("kakao token read failed")
+	}
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("kakao token http %d: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("kakao token http %d", resp.StatusCode)
 	}
 	var t struct {
 		AccessToken string `json:"access_token"`
@@ -80,7 +103,7 @@ func (c Config) ExchangeCode(ctx context.Context, code string) (string, error) {
 		return "", fmt.Errorf("kakao token parse: %w", err)
 	}
 	if t.AccessToken == "" {
-		return "", fmt.Errorf("kakao token empty (body=%s)", string(body))
+		return "", fmt.Errorf("kakao token empty")
 	}
 	return t.AccessToken, nil
 }
@@ -92,22 +115,24 @@ func (c Config) FetchUser(ctx context.Context, accessToken string) (UserInfo, er
 		return UserInfo{}, err
 	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := c.client().Do(req)
 	if err != nil {
 		return UserInfo{}, fmt.Errorf("kakao user request: %w", err)
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return UserInfo{}, fmt.Errorf("kakao user read failed")
+	}
 	if resp.StatusCode != 200 {
-		return UserInfo{}, fmt.Errorf("kakao user http %d: %s", resp.StatusCode, string(body))
+		return UserInfo{}, fmt.Errorf("kakao user http %d", resp.StatusCode)
 	}
 	var u UserInfo
 	if err := json.Unmarshal(body, &u); err != nil {
 		return UserInfo{}, fmt.Errorf("kakao user parse: %w", err)
 	}
 	if u.ID == 0 {
-		return UserInfo{}, fmt.Errorf("kakao user id missing (body=%s)", string(body))
+		return UserInfo{}, fmt.Errorf("kakao user id missing")
 	}
 	return u, nil
 }

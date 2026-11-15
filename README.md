@@ -103,6 +103,32 @@ make dev            # templ generate + CSS build + go run
 
 `http://localhost:8080` 으로 접속. PIN은 `.env`의 `ADMIN_BOOTSTRAP_PIN` 참고.
 
+## v2 카카오 관리자 이메일 화이트리스트
+
+`/v2/login`에서 카카오로 로그인할 관리자는 서버 환경변수로 관리합니다.
+
+```dotenv
+KAKAO_REDIRECT_V2=https://yuhadahair.cafe24.com/v2/kakao/callback
+ADMIN_KAKAO_EMAILS_V2=owner@example.com,manager@example.com
+```
+
+카카오디벨로퍼스에서 같은 REST API 키의 리다이렉트 URI를 등록하고,
+**카카오 로그인 → 동의항목 → 카카오계정(이메일)** 사용 설정을 켜야 합니다.
+`KAKAO_CLIENT_ID`는 REST API 키이며, Client Secret이 활성화되어 있으면
+`KAKAO_CLIENT_SECRET`도 설정합니다. 환경변수를 변경한 뒤에는 서비스를 재시작합니다.
+
+이메일 목록을 설정하면 카카오 인증 시 `account_email` 동의를 요청하며,
+카카오가 유효하고 인증된 것으로 확인한 대표 이메일만 목록과 비교합니다.
+주소 앞뒤 공백과 대소문자는 무시하지만, 별칭·부분 문자열·도메인 단위로는 허용하지 않습니다.
+이메일 미제공, 미동의, 미인증, 유효하지 않은 이메일, 미등록 주소는 로그인할 수 없습니다.
+이메일은 DB나 세션에 저장하지 않습니다.
+
+이메일 목록이 설정된 환경에서는 `ADMIN_KAKAO_ID_V2`로 우회할 수 없습니다.
+이메일 목록이 비어 있을 때만 기존 ID 화이트리스트를 사용하며,
+두 설정 모두 없으면 관리자 권한을 부여하지 않습니다. PIN 로그인은 기존대로 유지됩니다.
+
+공식 응답 필드: [카카오 사용자 정보 조회](https://developers.kakao.com/docs/ko/kakaologin/rest-api#req-user-info).
+
 ## 테스트
 
 ```bash

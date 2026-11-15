@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -144,6 +145,7 @@ func main() {
 			ClientID:     cfg.KakaoClientID,
 			ClientSecret: cfg.KakaoSecret,
 			RedirectURI:  cfg.KakaoRedirectV2,
+			RequireEmail: strings.TrimSpace(cfg.AdminKakaoEmailsV2) != "",
 		}
 		v2Router := v2handler.NewRouter(&v2handler.Deps{
 			Session:      v2Session,
@@ -153,6 +155,8 @@ func main() {
 			Kakao:        v2Kakao,
 			AdminKakaoID: cfg.AdminKakaoIDV2,
 			EnableDebug:  true,
+
+			AdminKakaoEmails: cfg.AdminKakaoEmailsV2,
 		})
 		root.Mount("/v2", v2Router)
 		mode := "dev"
