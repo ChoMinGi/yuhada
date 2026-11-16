@@ -14,11 +14,12 @@ import (
 
 // Deps — 핸들러 공통 의존성.
 type Deps struct {
-	Session      *scs.SessionManager
-	Services     *service.Services
-	SMS          *sms.Client
-	EnableDebug  bool // dev에서만 /debug/* 노출
-	KakaoSession *scs.SessionManager
+	Session             *scs.SessionManager
+	Services            *service.Services
+	SMS                 *sms.Client
+	EnableDebug         bool // dev에서만 /debug/* 노출
+	KakaoSession        *scs.SessionManager
+	RedirectLegacyAdmin bool // Enabled only while the v2 administrator UI is mounted.
 }
 
 // NewRouter — chi 라우터 구성.
@@ -31,6 +32,9 @@ func NewRouter(deps *Deps) http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Compress(5))
+	if deps.RedirectLegacyAdmin {
+		r.Use(legacyAdminRedirect)
+	}
 	r.Use(deps.Session.LoadAndSave)
 	if deps.KakaoSession != nil {
 		r.Use(deps.KakaoSession.LoadAndSave)

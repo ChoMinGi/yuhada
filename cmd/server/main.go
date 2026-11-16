@@ -100,11 +100,12 @@ func main() {
 		RedirectURI: cfg.KakaoRedirectV2, RequireEmail: strings.TrimSpace(cfg.AdminKakaoEmailsV2) != "",
 	}
 	deps := &handler.Deps{
-		Session:      session,
-		Services:     services,
-		SMS:          smsClient,
-		EnableDebug:  !cfg.IsProd(),
-		KakaoSession: v2Session,
+		Session:             session,
+		Services:            services,
+		SMS:                 smsClient,
+		EnableDebug:         !cfg.IsProd(),
+		KakaoSession:        v2Session,
+		RedirectLegacyAdmin: v2Session != nil && (!cfg.IsProd() || cfg.V2Enable),
 	}
 	router := handler.NewRouter(deps)
 
