@@ -49,20 +49,28 @@ func Sales(p SalesProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"sales-dashboard\" class=\"px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto\"><header class=\"mb-6 sm:mb-8\"><p class=\"yh-eyebrow mb-2 sm:mb-3\">MEMBERSHIP</p><h1 class=\"yh-headline-l text-[26px] sm:text-[32px]\">매출 대시보드</h1><p class=\"yh-body-sm mt-2 text-ink-500\">판매 흐름과 시술 사용을 비교하고, 잔액을 살펴보세요.</p><a href=\"/v2/admin/retention\" class=\"inline-flex items-center gap-2 mt-3 text-[13px] text-ink-700 underline underline-offset-4\">고객 재방문·유지율 보기 @component.Icon(\"chevron-right\", 14)</a></header><!-- 기간 필터 (dashboard 와 동일 스타일 + '기간 지정' 토글) --><div x-data=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"sales-dashboard\" class=\"px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto\"><header class=\"mb-6 sm:mb-8\"><p class=\"yh-eyebrow mb-2 sm:mb-3\">MEMBERSHIP</p><h1 class=\"yh-headline-l text-[26px] sm:text-[32px]\">매출 대시보드</h1><p class=\"yh-body-sm mt-2 text-ink-500\">판매 흐름과 시술 사용을 비교하고, 잔액을 살펴보세요.</p><a href=\"/v2/admin/retention\" class=\"inline-flex items-center gap-2 mt-3 text-[13px] text-ink-700 underline underline-offset-4\"><span>고객 재방문·유지율 보기</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = component.Icon("chevron-right", 14).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</a></header><!-- 기간 필터 (dashboard 와 동일 스타일 + '기간 지정' 토글) --><div x-data=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(salesFilterAlpine(p.Period))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 21, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 24, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><nav class=\"inline-flex flex-wrap bg-sand-100 rounded-md p-1 mb-3 gap-y-1\" aria-label=\"기간 필터\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><nav class=\"inline-flex flex-wrap bg-sand-100 rounded-md p-1 mb-3 gap-y-1\" aria-label=\"기간 필터\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -82,7 +90,7 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<button type=\"button\" x-on:click=\"showCustom = !showCustom\" x-bind:class=\"showCustom ? 'bg-ink-900 text-sand-50' : 'text-ink-700 hover:bg-sand-200/60'\" class=\"px-3 sm:px-4 py-1.5 rounded text-[13px] sm:text-[14px] transition\">기간 지정</button></nav><!-- 커스텀 기간 폼 (초기: p.Period=='custom' 일 때만 표시) --><form x-show=\"showCustom\" x-cloak x-transition:enter=\"transition ease-out duration-150\" x-transition:enter-start=\"opacity-0 -translate-y-1\" x-transition:enter-end=\"opacity-100 translate-y-0\" method=\"GET\" action=\"/v2/admin/sales\" class=\"flex flex-col sm:flex-row sm:items-center gap-2 mb-8 sm:mb-10\"><input type=\"hidden\" name=\"period\" value=\"custom\"><div class=\"flex items-center gap-2 min-w-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<button type=\"button\" x-on:click=\"showCustom = !showCustom\" x-bind:class=\"showCustom ? 'bg-ink-900 text-sand-50' : 'text-ink-700 hover:bg-sand-200/60'\" class=\"px-3 sm:px-4 py-1.5 rounded text-[13px] sm:text-[14px] transition\">기간 지정</button></nav><!-- 커스텀 기간 폼 (초기: p.Period=='custom' 일 때만 표시) --><form x-show=\"showCustom\" x-cloak x-transition:enter=\"transition ease-out duration-150\" x-transition:enter-start=\"opacity-0 -translate-y-1\" x-transition:enter-end=\"opacity-100 translate-y-0\" method=\"GET\" action=\"/v2/admin/sales\" class=\"flex flex-col sm:flex-row sm:items-center gap-2 mb-8 sm:mb-10\"><input type=\"hidden\" name=\"period\" value=\"custom\"><div class=\"flex items-center gap-2 min-w-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -93,20 +101,20 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<input type=\"date\" name=\"from\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<input type=\"date\" name=\"from\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(p.PeriodFrom)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 51, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 54, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -119,7 +127,7 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <span class=\"text-ink-500 text-[13px] shrink-0\">~</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"> <span class=\"text-ink-500 text-[13px] shrink-0\">~</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -130,20 +138,20 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<input type=\"date\" name=\"to\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<input type=\"date\" name=\"to\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(p.PeriodTo)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 60, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 63, Col: 25}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -156,20 +164,20 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"></div><button type=\"submit\" class=\"px-3 sm:px-4 py-2 sm:py-1.5 rounded text-[13px] sm:text-[14px] transition shrink-0 bg-ink-900 text-sand-50\">적용</button></form><!-- 폼이 닫혔을 때 여백 유지 --><div x-show=\"!showCustom\" class=\"mb-8 sm:mb-10\"></div></div><section aria-labelledby=\"sales-period-heading\" class=\"mb-8 sm:mb-10\"><div class=\"flex items-end justify-between gap-4 mb-4\"><div><p class=\"yh-eyebrow-xs text-ink-500 mb-2\">선택한 기간</p><h2 id=\"sales-period-heading\" class=\"yh-headline-s\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"></div><button type=\"submit\" class=\"px-3 sm:px-4 py-2 sm:py-1.5 rounded text-[13px] sm:text-[14px] transition shrink-0 bg-ink-900 text-sand-50\">적용</button></form><!-- 폼이 닫혔을 때 여백 유지 --><div x-show=\"!showCustom\" class=\"mb-8 sm:mb-10\"></div></div><section aria-labelledby=\"sales-period-heading\" class=\"mb-8 sm:mb-10\"><div class=\"flex items-end justify-between gap-4 mb-4\"><div><p class=\"yh-eyebrow-xs text-ink-500 mb-2\">선택한 기간</p><h2 id=\"sales-period-heading\" class=\"yh-headline-s\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(p.PeriodLabel)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 81, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 84, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</h2></div></div><div class=\"grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</h2></div></div><div class=\"grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -189,59 +197,59 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><div class=\"grid grid-cols-1 lg:grid-cols-3 gap-4\"><div class=\"yh-card p-4 sm:p-6 lg:col-span-2\"><div class=\"flex flex-wrap items-start justify-between gap-3 mb-4\"><div><h3 class=\"yh-eyebrow\">판매와 시술 사용</h3><p class=\"text-[12px] text-ink-500 mt-2\">선택한 기간 전체 · ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><div class=\"grid grid-cols-1 lg:grid-cols-3 gap-4\"><div class=\"yh-card p-4 sm:p-6 lg:col-span-2\"><div class=\"flex flex-wrap items-start justify-between gap-3 mb-4\"><div><h3 class=\"yh-eyebrow\">판매와 시술 사용</h3><p class=\"text-[12px] text-ink-500 mt-2\">선택한 기간 전체 · ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(p.Insights.TrendGranularity)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 96, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 99, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " 합계</p></div><span class=\"text-[11px] text-ink-500\">금액 단위: 만원</span></div><div class=\"relative\" style=\"height:280px\"><canvas id=\"sales-comparison-chart\" data-labels=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " 합계</p></div><span class=\"text-[11px] text-ink-500\">금액 단위: 만원</span></div><div class=\"relative\" style=\"height:280px\"><canvas id=\"sales-comparison-chart\" data-labels=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(p.Insights.TrendLabelsJSON)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 101, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 104, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" data-sales=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" data-sales=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(p.Insights.TrendSalesJSON)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 101, Col: 124}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 104, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" data-usage=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" data-usage=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(p.Insights.TrendUsageJSON)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 101, Col: 165}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 104, Col: 165}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" role=\"img\" aria-label=\"선택 기간의 판매 금액과 시술 사용액 비교. 아래 기간별 수치에서 같은 값을 확인할 수 있습니다.\"></canvas></div><p id=\"sales-chart-status\" class=\"text-[12px] text-ink-500 mt-3\" role=\"status\">그래프를 불러오는 중입니다. 아래 기간별 수치에서도 확인할 수 있습니다.</p><p class=\"text-[12px] text-ink-500 mt-3\">시술 사용액은 고객 잔액에서 차감한 금액이며, 새로 받은 결제 금액이 아닙니다.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" role=\"img\" aria-label=\"선택 기간의 판매 금액과 시술 사용액 비교. 아래 기간별 수치에서 같은 값을 확인할 수 있습니다.\"></canvas></div><p id=\"sales-chart-status\" class=\"text-[12px] text-ink-500 mt-3\" role=\"status\">그래프를 불러오는 중입니다. 아래 기간별 수치에서도 확인할 수 있습니다.</p><p class=\"text-[12px] text-ink-500 mt-3\">시술 사용액은 고객 잔액에서 차감한 금액이며, 새로 받은 결제 금액이 아닙니다.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -249,7 +257,7 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -257,7 +265,7 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div></section><section aria-labelledby=\"sales-current-heading\" class=\"mb-8 sm:mb-10 pt-8 border-t border-sand-300\"><div class=\"mb-4\"><p class=\"yh-eyebrow-xs text-ink-500 mb-2\">현재 기준 · 기간 필터와 무관</p><h2 id=\"sales-current-heading\" class=\"yh-headline-s\">고객 잔액 관리</h2></div><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></section><section aria-labelledby=\"sales-current-heading\" class=\"mb-8 sm:mb-10 pt-8 border-t border-sand-300\"><div class=\"mb-4\"><p class=\"yh-eyebrow-xs text-ink-500 mb-2\">현재 기준 · 기간 필터와 무관</p><h2 id=\"sales-current-heading\" class=\"yh-headline-s\">고객 잔액 관리</h2></div><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -269,20 +277,20 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></section><section aria-labelledby=\"sales-history-heading\"><div class=\"mb-4\"><p class=\"yh-eyebrow-xs text-ink-500 mb-2\">선택한 기간 · ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div></section><section aria-labelledby=\"sales-history-heading\"><div class=\"mb-4\"><p class=\"yh-eyebrow-xs text-ink-500 mb-2\">선택한 기간 · ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(p.PeriodLabel)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 124, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 127, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</p><h2 id=\"sales-history-heading\" class=\"yh-headline-s\">판매 상세</h2></div><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</p><h2 id=\"sales-history-heading\" class=\"yh-headline-s\">판매 상세</h2></div><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -294,12 +302,12 @@ func Sales(p SalesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if salesHasPlanRows(p.TierRows) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<details class=\"yh-card mt-4\"><summary class=\"p-4 sm:p-5 cursor-pointer text-[13px] text-ink-700\">정액권 상품별 판매 보기</summary><div class=\"divide-y divide-sand-200\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<details class=\"yh-card mt-4\"><summary class=\"p-4 sm:p-5 cursor-pointer text-[13px] text-ink-700\">정액권 상품별 판매 보기</summary><div class=\"divide-y divide-sand-200\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -311,12 +319,12 @@ func Sales(p SalesProps) templ.Component {
 						}
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div></details>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></details>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</section><script>\n\t\t\t\t(function () {\n\t\t\t\t\tif (window.__yhSalesChartDispose) window.__yhSalesChartDispose();\n\t\t\t\t\tconst host = document.getElementById('sales-dashboard');\n\t\t\t\t\tconst canvas = document.getElementById('sales-comparison-chart');\n\t\t\t\t\tif (!host || !canvas) return;\n\t\t\t\t\tlet chart = null, timer = null, attempts = 0, disposed = false;\n\t\t\t\t\tconst status = document.getElementById('sales-chart-status');\n\t\t\t\t\tfunction dispose() {\n\t\t\t\t\t\tdisposed = true;\n\t\t\t\t\t\tif (timer) clearTimeout(timer);\n\t\t\t\t\t\tif (chart) { chart.destroy(); chart = null; }\n\t\t\t\t\t\tdocument.removeEventListener('htmx:beforeCleanupElement', onCleanup);\n\t\t\t\t\t\tdocument.removeEventListener('htmx:afterSettle', init);\n\t\t\t\t\t}\n\t\t\t\t\tfunction onCleanup(event) {\n\t\t\t\t\t\tconst element = event.detail && event.detail.elt;\n\t\t\t\t\t\tif (element && (element === host || element.contains(host))) dispose();\n\t\t\t\t\t}\n\t\t\t\t\tfunction init() {\n\t\t\t\t\t\tif (disposed || chart || !host.isConnected) return;\n\t\t\t\t\t\tif (timer) { clearTimeout(timer); timer = null; }\n\t\t\t\t\t\tif (typeof window.Chart === 'undefined') {\n\t\t\t\t\t\t\tif (++attempts <= 60) timer = setTimeout(init, 100);\n\t\t\t\t\t\t\telse if (status) status.textContent = '그래프를 불러오지 못했습니다. 아래 기간별 수치에서 확인해 주세요.';\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst labels = JSON.parse(canvas.dataset.labels || '[]');\n\t\t\t\t\t\t\tconst sales = JSON.parse(canvas.dataset.sales || '[]');\n\t\t\t\t\t\t\tconst usage = JSON.parse(canvas.dataset.usage || '[]');\n\t\t\t\t\t\t\tif (!Array.isArray(labels) || !Array.isArray(sales) || !Array.isArray(usage)) throw new Error('Invalid chart data');\n\t\t\t\t\t\t\tconst existing = window.Chart.getChart ? window.Chart.getChart(canvas) : null;\n\t\t\t\t\t\t\tif (existing) existing.destroy();\n\t\t\t\t\t\t\tchart = new window.Chart(canvas, {\n\t\t\t\t\t\t\t\ttype: 'bar',\n\t\t\t\t\t\t\t\tdata: { labels: labels, datasets: [\n\t\t\t\t\t\t\t\t\t{ label: '판매 금액', data: sales, backgroundColor: '#1A1614', borderRadius: 3, maxBarThickness: 24 },\n\t\t\t\t\t\t\t\t\t{ label: '시술 사용액', data: usage, backgroundColor: '#B89472', borderRadius: 3, maxBarThickness: 24 }\n\t\t\t\t\t\t\t\t] },\n\t\t\t\t\t\t\t\toptions: {\n\t\t\t\t\t\t\t\t\tresponsive: true, maintainAspectRatio: false,\n\t\t\t\t\t\t\t\t\tinteraction: { mode: 'index', intersect: false },\n\t\t\t\t\t\t\t\t\tplugins: {\n\t\t\t\t\t\t\t\t\t\tlegend: { position: 'bottom', labels: { color: '#4A3F38', boxWidth: 12, padding: 16, font: { family: \"'Pretendard Variable','Pretendard',sans-serif\", size: 12 } } },\n\t\t\t\t\t\t\t\t\t\ttooltip: { callbacks: { label: function (item) { return item.dataset.label + ': ₩' + Number(item.parsed.y || 0).toLocaleString('ko-KR'); } } }\n\t\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\t\t\t\ty: { beginAtZero: true, grid: { color: '#E8D5BC' }, ticks: { color: '#4A3F38', callback: function (value) { return (Number(value) / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 1 }); } } },\n\t\t\t\t\t\t\t\t\t\tx: { grid: { display: false }, ticks: { color: '#4A3F38', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\tif (status) status.hidden = true;\n\t\t\t\t\t\t} catch (_) {\n\t\t\t\t\t\t\tif (status) status.textContent = '그래프를 표시하지 못했습니다. 아래 기간별 수치에서 확인해 주세요.';\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\twindow.__yhSalesChartDispose = dispose;\n\t\t\t\t\tdocument.addEventListener('htmx:beforeCleanupElement', onCleanup);\n\t\t\t\t\tdocument.addEventListener('htmx:afterSettle', init);\n\t\t\t\t\tinit();\n\t\t\t\t})();\n\t\t\t</script></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</section><script>\n\t\t\t\t(function () {\n\t\t\t\t\tif (window.__yhSalesChartDispose) window.__yhSalesChartDispose();\n\t\t\t\t\tconst host = document.getElementById('sales-dashboard');\n\t\t\t\t\tconst canvas = document.getElementById('sales-comparison-chart');\n\t\t\t\t\tif (!host || !canvas) return;\n\t\t\t\t\tlet chart = null, timer = null, attempts = 0, disposed = false;\n\t\t\t\t\tconst status = document.getElementById('sales-chart-status');\n\t\t\t\t\tfunction dispose() {\n\t\t\t\t\t\tdisposed = true;\n\t\t\t\t\t\tif (timer) clearTimeout(timer);\n\t\t\t\t\t\tif (chart) { chart.destroy(); chart = null; }\n\t\t\t\t\t\tdocument.removeEventListener('htmx:beforeCleanupElement', onCleanup);\n\t\t\t\t\t\tdocument.removeEventListener('htmx:afterSettle', init);\n\t\t\t\t\t}\n\t\t\t\t\tfunction onCleanup(event) {\n\t\t\t\t\t\tconst element = event.detail && event.detail.elt;\n\t\t\t\t\t\tif (element && (element === host || element.contains(host))) dispose();\n\t\t\t\t\t}\n\t\t\t\t\tfunction init() {\n\t\t\t\t\t\tif (disposed || chart || !host.isConnected) return;\n\t\t\t\t\t\tif (timer) { clearTimeout(timer); timer = null; }\n\t\t\t\t\t\tif (typeof window.Chart === 'undefined') {\n\t\t\t\t\t\t\tif (++attempts <= 60) timer = setTimeout(init, 100);\n\t\t\t\t\t\t\telse if (status) status.textContent = '그래프를 불러오지 못했습니다. 아래 기간별 수치에서 확인해 주세요.';\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst labels = JSON.parse(canvas.dataset.labels || '[]');\n\t\t\t\t\t\t\tconst sales = JSON.parse(canvas.dataset.sales || '[]');\n\t\t\t\t\t\t\tconst usage = JSON.parse(canvas.dataset.usage || '[]');\n\t\t\t\t\t\t\tif (!Array.isArray(labels) || !Array.isArray(sales) || !Array.isArray(usage)) throw new Error('Invalid chart data');\n\t\t\t\t\t\t\tconst existing = window.Chart.getChart ? window.Chart.getChart(canvas) : null;\n\t\t\t\t\t\t\tif (existing) existing.destroy();\n\t\t\t\t\t\t\tchart = new window.Chart(canvas, {\n\t\t\t\t\t\t\t\ttype: 'bar',\n\t\t\t\t\t\t\t\tdata: { labels: labels, datasets: [\n\t\t\t\t\t\t\t\t\t{ label: '판매 금액', data: sales, backgroundColor: '#1A1614', borderRadius: 3, maxBarThickness: 24 },\n\t\t\t\t\t\t\t\t\t{ label: '시술 사용액', data: usage, backgroundColor: '#B89472', borderRadius: 3, maxBarThickness: 24 }\n\t\t\t\t\t\t\t\t] },\n\t\t\t\t\t\t\t\toptions: {\n\t\t\t\t\t\t\t\t\tresponsive: true, maintainAspectRatio: false,\n\t\t\t\t\t\t\t\t\tinteraction: { mode: 'index', intersect: false },\n\t\t\t\t\t\t\t\t\tplugins: {\n\t\t\t\t\t\t\t\t\t\tlegend: { position: 'bottom', labels: { color: '#4A3F38', boxWidth: 12, padding: 16, font: { family: \"'Pretendard Variable','Pretendard',sans-serif\", size: 12 } } },\n\t\t\t\t\t\t\t\t\t\ttooltip: { callbacks: { label: function (item) { return item.dataset.label + ': ₩' + Number(item.parsed.y || 0).toLocaleString('ko-KR'); } } }\n\t\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\t\t\t\ty: { beginAtZero: true, grid: { color: '#E8D5BC' }, ticks: { color: '#4A3F38', callback: function (value) { return (Number(value) / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 1 }); } } },\n\t\t\t\t\t\t\t\t\t\tx: { grid: { display: false }, ticks: { color: '#4A3F38', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\tif (status) status.hidden = true;\n\t\t\t\t\t\t} catch (_) {\n\t\t\t\t\t\t\tif (status) status.textContent = '그래프를 표시하지 못했습니다. 아래 기간별 수치에서 확인해 주세요.';\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\twindow.__yhSalesChartDispose = dispose;\n\t\t\t\t\tdocument.addEventListener('htmx:beforeCleanupElement', onCleanup);\n\t\t\t\t\tdocument.addEventListener('htmx:afterSettle', init);\n\t\t\t\t\tinit();\n\t\t\t\t})();\n\t\t\t</script></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -351,113 +359,113 @@ func salesRechargeCard(p SalesInsightsProps) templ.Component {
 			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"yh-card p-4 sm:p-6\"><h3 class=\"yh-eyebrow\">첫 충전과 재충전</h3><p class=\"text-[12px] text-ink-500 mt-2\">고객 수가 아닌 충전 건수 기준</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div class=\"yh-card p-4 sm:p-6\"><h3 class=\"yh-eyebrow\">첫 충전과 재충전</h3><p class=\"text-[12px] text-ink-500 mt-2\">고객 수가 아닌 충전 건수 기준</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if p.FirstCount+p.RepeatCount > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div class=\"flex h-5 rounded overflow-hidden bg-sand-200 mt-6\" role=\"img\" aria-label=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"flex h-5 rounded overflow-hidden bg-sand-200 mt-6\" role=\"img\" aria-label=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs("첫 충전 " + strconv.Itoa(p.FirstCount) + "건, 재충전 " + strconv.Itoa(p.RepeatCount) + "건")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 218, Col: 190}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 221, Col: 190}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"><div class=\"bg-sand-300 h-full\" style=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\"><div class=\"bg-sand-300 h-full\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("width:" + strconv.Itoa(p.FirstPercent) + "%")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 219, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 222, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\"></div><div class=\"bg-ink-900 h-full\" style=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\"></div><div class=\"bg-ink-900 h-full\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("width:" + strconv.Itoa(p.RechargePercent) + "%")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 220, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 223, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\"></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\"></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<p class=\"text-[13px] text-ink-500 py-6\">이 기간의 충전 기록이 없습니다.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<p class=\"text-[13px] text-ink-500 py-6\">이 기간의 충전 기록이 없습니다.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<dl class=\"mt-5 divide-y divide-sand-200\"><div class=\"py-4\"><dt class=\"text-[13px] text-ink-700 flex items-center gap-2\"><span class=\"w-2.5 h-2.5 rounded-sm bg-sand-300\"></span>첫 충전</dt><dd class=\"mt-2 flex items-baseline justify-between gap-2\"><span class=\"yh-num text-[22px]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<dl class=\"mt-5 divide-y divide-sand-200\"><div class=\"py-4\"><dt class=\"text-[13px] text-ink-700 flex items-center gap-2\"><span class=\"w-2.5 h-2.5 rounded-sm bg-sand-300\"></span>첫 충전</dt><dd class=\"mt-2 flex items-baseline justify-between gap-2\"><span class=\"yh-num text-[22px]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(p.FirstCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 228, Col: 124}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 231, Col: 124}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span class=\"text-[12px] text-ink-500 ml-1\">건</span></span><span class=\"text-[13px] tabular-nums\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"text-[12px] text-ink-500 ml-1\">건</span></span><span class=\"text-[13px] tabular-nums\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(p.FirstAmount)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 228, Col: 241}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 231, Col: 241}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</span></dd></div><div class=\"py-4\"><dt class=\"text-[13px] text-ink-700 flex items-center gap-2\"><span class=\"w-2.5 h-2.5 rounded-sm bg-ink-900\"></span>재충전</dt><dd class=\"mt-2 flex items-baseline justify-between gap-2\"><span class=\"yh-num text-[22px]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</span></dd></div><div class=\"py-4\"><dt class=\"text-[13px] text-ink-700 flex items-center gap-2\"><span class=\"w-2.5 h-2.5 rounded-sm bg-ink-900\"></span>재충전</dt><dd class=\"mt-2 flex items-baseline justify-between gap-2\"><span class=\"yh-num text-[22px]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(p.RepeatCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 232, Col: 125}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 235, Col: 125}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"text-[12px] text-ink-500 ml-1\">건</span></span><span class=\"text-[13px] tabular-nums\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<span class=\"text-[12px] text-ink-500 ml-1\">건</span></span><span class=\"text-[13px] tabular-nums\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(p.RepeatAmount)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 232, Col: 243}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 235, Col: 243}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</span></dd></div></dl><p class=\"text-[11px] text-ink-500 mt-3\">전체 거래 이력에서 첫 충전 이후의 충전을 재충전으로 봅니다. 고객 이탈률을 뜻하지 않습니다.</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</span></dd></div></dl><p class=\"text-[11px] text-ink-500 mt-3\">전체 거래 이력에서 첫 충전 이후의 충전을 재충전으로 봅니다. 고객 이탈률을 뜻하지 않습니다.</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -486,95 +494,95 @@ func salesBalanceCard(p SalesInsightsProps) templ.Component {
 			templ_7745c5c3_Var24 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"yh-card p-4 sm:p-6\"><h3 class=\"yh-eyebrow\">현재 고객 잔액</h3><p class=\"yh-num text-[28px] sm:text-[32px] mt-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div class=\"yh-card p-4 sm:p-6\"><h3 class=\"yh-eyebrow\">현재 고객 잔액</h3><p class=\"yh-num text-[28px] sm:text-[32px] mt-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(p.CurrentBalance)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 242, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 245, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</p><p class=\"text-[12px] text-ink-500 mt-2\">고객 ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</p><p class=\"text-[12px] text-ink-500 mt-2\">고객 ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(p.CurrentMemberCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 243, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 246, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "명 기준 · 기간 내 충전 합계가 아닙니다.</p><div class=\"mt-6 space-y-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "명 기준 · 기간 내 충전 합계가 아닙니다.</p><div class=\"mt-6 space-y-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, bucket := range p.BalanceBuckets {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div><div class=\"flex flex-wrap justify-between gap-2 text-[12px] mb-2\"><span class=\"text-ink-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div><div class=\"flex flex-wrap justify-between gap-2 text-[12px] mb-2\"><span class=\"text-ink-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(bucket.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 248, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 251, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</span> <span class=\"tabular-nums text-ink-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</span> <span class=\"tabular-nums text-ink-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(bucket.Count))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 249, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 252, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "명 · ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "명 · ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(bucket.Amount)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 249, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 252, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</span></div><div class=\"h-2.5 rounded-full bg-sand-100 overflow-hidden\" aria-hidden=\"true\"><div class=\"h-full rounded-full bg-ink-700\" style=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</span></div><div class=\"h-2.5 rounded-full bg-sand-100 overflow-hidden\" aria-hidden=\"true\"><div class=\"h-full rounded-full bg-ink-700\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("width:" + strconv.Itoa(bucket.Percent) + "%")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 251, Col: 181}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 254, Col: 181}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\"></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\"></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</div><p class=\"text-[11px] text-ink-500 mt-5\">막대는 잔액 구간별 고객 수 비중입니다.</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</div><p class=\"text-[11px] text-ink-500 mt-5\">막대는 잔액 구간별 고객 수 비중입니다.</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -603,87 +611,87 @@ func salesLowBalanceCard(p SalesInsightsProps) templ.Component {
 			templ_7745c5c3_Var31 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<div class=\"yh-card overflow-hidden\"><div class=\"p-4 sm:p-6 border-b border-sand-200\"><div class=\"flex flex-wrap items-center justify-between gap-2\"><h3 class=\"yh-eyebrow\">재충전 안내 후보</h3><span class=\"text-[12px] text-ink-500\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div class=\"yh-card overflow-hidden\"><div class=\"p-4 sm:p-6 border-b border-sand-200\"><div class=\"flex flex-wrap items-center justify-between gap-2\"><h3 class=\"yh-eyebrow\">재충전 안내 후보</h3><span class=\"text-[12px] text-ink-500\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(p.LowBalanceCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 264, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 267, Col: 76}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "명</span></div><p class=\"text-[12px] text-ink-500 mt-2\">잔액 5만원 이하 · 최근 60일 안에 시술한 고객</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "명</span></div><p class=\"text-[12px] text-ink-500 mt-2\">잔액 5만원 이하 · 최근 60일 안에 시술한 고객</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(p.LowBalance) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<p class=\"text-[13px] text-ink-500 p-6\">현재 조건에 해당하는 고객이 없습니다.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<p class=\"text-[13px] text-ink-500 p-6\">현재 조건에 해당하는 고객이 없습니다.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<ul class=\"divide-y divide-sand-200\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<ul class=\"divide-y divide-sand-200\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, member := range p.LowBalance {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<li><a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<li><a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var33 templ.SafeURL
 				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/v2/admin/members/" + member.MemberID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 274, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 277, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\" class=\"flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-sand-100 transition\"><div class=\"flex-1 min-w-0\"><p class=\"text-[14px] text-ink-900 truncate\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\" class=\"flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-sand-100 transition\"><div class=\"flex-1 min-w-0\"><p class=\"text-[14px] text-ink-900 truncate\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(member.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 275, Col: 93}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 278, Col: 93}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</p><p class=\"text-[11px] text-ink-500 mt-1\">최근 시술 ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</p><p class=\"text-[11px] text-ink-500 mt-1\">최근 시술 ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var35 string
 				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(member.LastVisit)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 275, Col: 172}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 278, Col: 172}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</p></div><p class=\"yh-num text-[16px] shrink-0\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</p></div><p class=\"yh-num text-[16px] shrink-0\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(member.Balance)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 276, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 279, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</p>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</p>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -691,17 +699,17 @@ func salesLowBalanceCard(p SalesInsightsProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</a></li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</a></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</ul><p class=\"text-[11px] text-ink-500 px-4 sm:px-6 py-4 border-t border-sand-200\">잔액이 적은 순으로 최대 5명 표시 · 고객을 눌러 이력을 확인하세요.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</ul><p class=\"text-[11px] text-ink-500 px-4 sm:px-6 py-4 border-t border-sand-200\">잔액이 적은 순으로 최대 5명 표시 · 고객을 눌러 이력을 확인하세요.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -730,56 +738,56 @@ func salesTrendTable(p SalesInsightsProps) templ.Component {
 			templ_7745c5c3_Var37 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<details class=\"mt-4 border-t border-sand-200 pt-4\"><summary class=\"text-[12px] text-ink-700 cursor-pointer\">기간별 수치 보기</summary><div class=\"overflow-x-auto mt-3\"><table class=\"w-full text-[12px] text-right tabular-nums\"><caption class=\"text-left text-[11px] text-ink-500 mb-2\">그래프와 같은 수치 · 원</caption> <thead><tr class=\"border-b border-sand-200\"><th scope=\"col\" class=\"text-left py-2 font-medium\">기간</th><th scope=\"col\" class=\"py-2 font-medium\">판매 금액</th><th scope=\"col\" class=\"py-2 font-medium\">시술 사용액</th></tr></thead> <tbody>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<details class=\"mt-4 border-t border-sand-200 pt-4\"><summary class=\"text-[12px] text-ink-700 cursor-pointer\">기간별 수치 보기</summary><div class=\"overflow-x-auto mt-3\"><table class=\"w-full text-[12px] text-right tabular-nums\"><caption class=\"text-left text-[11px] text-ink-500 mb-2\">그래프와 같은 수치 · 원</caption> <thead><tr class=\"border-b border-sand-200\"><th scope=\"col\" class=\"text-left py-2 font-medium\">기간</th><th scope=\"col\" class=\"py-2 font-medium\">판매 금액</th><th scope=\"col\" class=\"py-2 font-medium\">시술 사용액</th></tr></thead> <tbody>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, row := range p.TrendRows {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<tr class=\"border-b border-sand-100\"><th scope=\"row\" class=\"text-left py-2 font-normal whitespace-nowrap\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<tr class=\"border-b border-sand-100\"><th scope=\"row\" class=\"text-left py-2 font-normal whitespace-nowrap\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(row.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 296, Col: 123}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 299, Col: 123}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</th><td class=\"py-2 pl-3 whitespace-nowrap\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</th><td class=\"py-2 pl-3 whitespace-nowrap\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var39 string
 			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(row.Sales)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 296, Col: 181}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 299, Col: 181}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</td><td class=\"py-2 pl-3 whitespace-nowrap\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</td><td class=\"py-2 pl-3 whitespace-nowrap\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var40 string
 			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(row.Usage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 296, Col: 239}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 299, Col: 239}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</tbody></table></div></details>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</tbody></table></div></details>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -842,20 +850,20 @@ func salesPeriodTab(current, key, label string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var43 templ.SafeURL
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/v2/admin/sales?period=" + key))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 327, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 330, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -868,20 +876,20 @@ func salesPeriodTab(current, key, label string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var45 string
 		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 331, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 334, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</a>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -917,7 +925,7 @@ func salesSummaryCard(label, value, sub string, primary bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -930,7 +938,7 @@ func salesSummaryCard(label, value, sub string, primary bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -941,7 +949,7 @@ func salesSummaryCard(label, value, sub string, primary bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<p class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<p class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -954,20 +962,20 @@ func salesSummaryCard(label, value, sub string, primary bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var51 string
 		templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 344, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 347, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -978,7 +986,7 @@ func salesSummaryCard(label, value, sub string, primary bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<p class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<p class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -991,20 +999,20 @@ func salesSummaryCard(label, value, sub string, primary bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var54 string
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 349, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 352, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1016,7 +1024,7 @@ func salesSummaryCard(label, value, sub string, primary bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<p class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<p class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1029,25 +1037,25 @@ func salesSummaryCard(label, value, sub string, primary bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var57 string
 			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(sub)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 355, Col: 9}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 358, Col: 9}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1077,22 +1085,22 @@ func salesTopMembersCard(rows []SalesTopMember) templ.Component {
 			templ_7745c5c3_Var58 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<section class=\"yh-card p-5 sm:p-6\"><div class=\"flex items-center justify-between mb-4\"><h2 class=\"yh-eyebrow\">TOP 회원</h2><span class=\"text-[11px] text-ink-500\">이 기간</span></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<section class=\"yh-card p-5 sm:p-6\"><div class=\"flex items-center justify-between mb-4\"><h2 class=\"yh-eyebrow\">TOP 회원</h2><span class=\"text-[11px] text-ink-500\">이 기간</span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(rows) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<p class=\"text-center text-[13px] text-ink-500 py-8\">판매 없음</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<p class=\"text-center text-[13px] text-ink-500 py-8\">판매 없음</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<ul class=\"divide-y divide-sand-200\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<ul class=\"divide-y divide-sand-200\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, m := range rows {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<li class=\"flex items-center gap-3 py-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<li class=\"flex items-center gap-3 py-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1103,7 +1111,7 @@ func salesTopMembersCard(rows []SalesTopMember) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<span class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<span class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1116,82 +1124,82 @@ func salesTopMembersCard(rows []SalesTopMember) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var61 string
 				templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(m.Rank))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 377, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 380, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</span> <a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "</span> <a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var62 templ.SafeURL
 				templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/v2/admin/members/" + m.MemberID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 379, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 382, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\" class=\"flex-1 min-w-0 hover:opacity-80 transition\"><p class=\"text-[14px] font-medium text-ink-900 truncate\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" class=\"flex-1 min-w-0 hover:opacity-80 transition\"><p class=\"text-[14px] font-medium text-ink-900 truncate\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var63 string
 				templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(m.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 382, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 385, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</p><p class=\"text-[11px] text-ink-500\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</p><p class=\"text-[11px] text-ink-500\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var64 string
 				templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(m.Count)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 383, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 386, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</p></a><p class=\"yh-num text-[14px] sm:text-[15px] text-ink-900 shrink-0 tabular-nums\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</p></a><p class=\"yh-num text-[14px] sm:text-[15px] text-ink-900 shrink-0 tabular-nums\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var65 string
 				templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(m.TotalPrice)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 385, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 388, Col: 100}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</p></li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</p></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1221,30 +1229,30 @@ func salesRecentCard(rows []SalesRecentRow) templ.Component {
 			templ_7745c5c3_Var66 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<section class=\"yh-card overflow-hidden\"><div class=\"flex items-center justify-between px-5 sm:px-6 pt-5 sm:pt-6 pb-3\"><h2 class=\"yh-eyebrow\">최근 판매 이력</h2><span class=\"text-[11px] text-ink-500\">최근 ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<section class=\"yh-card overflow-hidden\"><div class=\"flex items-center justify-between px-5 sm:px-6 pt-5 sm:pt-6 pb-3\"><h2 class=\"yh-eyebrow\">최근 판매 이력</h2><span class=\"text-[11px] text-ink-500\">최근 ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var67 string
 		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(len(rows)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 398, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 401, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "건</span></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "건</span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(rows) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<p class=\"text-center text-[13px] text-ink-500 py-8 px-6\">표시할 판매가 없습니다.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<p class=\"text-center text-[13px] text-ink-500 py-8 px-6\">표시할 판매가 없습니다.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<ul class=\"divide-y divide-sand-200\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<ul class=\"divide-y divide-sand-200\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1254,12 +1262,12 @@ func salesRecentCard(rows []SalesRecentRow) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1295,7 +1303,7 @@ func salesTierRow(row SalesTierRow) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1308,110 +1316,110 @@ func salesTierRow(row SalesTierRow) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "\"><div class=\"flex items-center justify-between gap-3\"><div class=\"flex items-center gap-2 flex-wrap min-w-0\"><p class=\"text-[14px] sm:text-[15px] text-ink-900 font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\"><div class=\"flex items-center justify-between gap-3\"><div class=\"flex items-center gap-2 flex-wrap min-w-0\"><p class=\"text-[14px] sm:text-[15px] text-ink-900 font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var71 string
 		templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs(row.TierLabel)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 420, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 423, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var71))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if !row.IsGeneric && row.PayMethod != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700 shrink-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700 shrink-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var72 string
 			templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(payMethodLabel(row.PayMethod))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 422, Col: 171}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 425, Col: 171}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "</div><p class=\"text-[12px] text-ink-500 tabular-nums shrink-0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</div><p class=\"text-[12px] text-ink-500 tabular-nums shrink-0\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var73 string
 		templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.JoinStringErrs(row.CountLabel)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 425, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 428, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var73))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</p></div><div class=\"grid grid-cols-3 gap-2 text-right\"><div><p class=\"text-[10px] tracking-brand uppercase text-ink-500\">판매 금액</p><p class=\"yh-num text-[14px] sm:text-[15px] text-ink-900\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "</p></div><div class=\"grid grid-cols-3 gap-2 text-right\"><div><p class=\"text-[10px] tracking-brand uppercase text-ink-500\">판매 금액</p><p class=\"yh-num text-[14px] sm:text-[15px] text-ink-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var74 string
 		templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(row.TotalPrice)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 430, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 433, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "</p></div><div><p class=\"text-[10px] tracking-brand uppercase text-ink-500\">적립</p><p class=\"yh-num text-[14px] sm:text-[15px] text-ink-900\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</p></div><div><p class=\"text-[10px] tracking-brand uppercase text-ink-500\">적립</p><p class=\"yh-num text-[14px] sm:text-[15px] text-ink-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var75 string
 		templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(row.TotalCredit)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 434, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 437, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</p></div><div><p class=\"text-[10px] tracking-brand uppercase text-ink-500\">보너스</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</p></div><div><p class=\"text-[10px] tracking-brand uppercase text-ink-500\">보너스</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if row.HasBonus {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<p class=\"yh-num text-[14px] sm:text-[15px] text-success\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<p class=\"yh-num text-[14px] sm:text-[15px] text-success\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var76 string
 			templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(row.TotalBonus)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 439, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 442, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "<p class=\"yh-num text-[14px] sm:text-[15px] text-ink-500\">—</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "<p class=\"yh-num text-[14px] sm:text-[15px] text-ink-500\">—</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1441,7 +1449,7 @@ func salesRecentRow(r SalesRecentRow) templ.Component {
 			templ_7745c5c3_Var77 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "<li class=\"flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 hover:bg-sand-50 transition\"><div class=\"w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-sand-50 text-success\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "<li class=\"flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 hover:bg-sand-50 transition\"><div class=\"w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-sand-50 text-success\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1449,157 +1457,157 @@ func salesRecentRow(r SalesRecentRow) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "</div><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "</div><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var78 templ.SafeURL
 		templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/v2/admin/members/" + r.MemberID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 455, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 458, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var78))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "\" class=\"flex-1 min-w-0\"><p class=\"text-[14px] font-medium text-ink-900 truncate\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "\" class=\"flex-1 min-w-0\"><p class=\"text-[14px] font-medium text-ink-900 truncate\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var79 string
 		templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinStringErrs(r.MemberName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 458, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 461, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "</p><p class=\"text-[11px] text-ink-500 mt-0.5 flex items-center gap-1.5 flex-wrap\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "</p><p class=\"text-[11px] text-ink-500 mt-0.5 flex items-center gap-1.5 flex-wrap\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if r.IsGeneric {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "<span>일반 충전 · 결제수단 미상</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "<span>일반 충전 · 결제수단 미상</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded-sm bg-sand-100 text-[10px] tracking-brand uppercase text-ink-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var80 string
 			templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(r.TierLabel)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 464, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 467, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if r.PayMethod != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "<span class=\"ml-1\">· ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "<span class=\"ml-1\">· ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var81 string
 				templ_7745c5c3_Var81, templ_7745c5c3_Err = templ.JoinStringErrs(payMethodLabel(r.PayMethod))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 466, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 469, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var81))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if r.Relative != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "<span class=\"text-ink-500\">· ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "<span class=\"text-ink-500\">· ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var82 string
 			templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(r.Relative)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 471, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 474, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "<span class=\"text-ink-500\">· ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "<span class=\"text-ink-500\">· ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var83 string
 			templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(r.At)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 473, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 476, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "</p></a><div class=\"shrink-0 text-right\"><p class=\"yh-num text-[14px] sm:text-[15px] text-success tabular-nums\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</p></a><div class=\"shrink-0 text-right\"><p class=\"yh-num text-[14px] sm:text-[15px] text-success tabular-nums\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var84 string
 		templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(r.Amount)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 478, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 481, Col: 84}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if r.Credit != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "<p class=\"text-[11px] text-ink-500 mt-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "<p class=\"text-[11px] text-ink-500 mt-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var85 string
 			templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinStringErrs(r.Credit)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 480, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/sales.templ`, Line: 483, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "</div></li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "</div></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

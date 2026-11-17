@@ -15,7 +15,10 @@ templ Sales(p SalesProps) {
 				<p class="yh-eyebrow mb-2 sm:mb-3">MEMBERSHIP</p>
 				<h1 class="yh-headline-l text-[26px] sm:text-[32px]">매출 대시보드</h1>
 				<p class="yh-body-sm mt-2 text-ink-500">판매 흐름과 시술 사용을 비교하고, 잔액을 살펴보세요.</p>
-				<a href="/v2/admin/retention" class="inline-flex items-center gap-2 mt-3 text-[13px] text-ink-700 underline underline-offset-4">고객 재방문·유지율 보기 @component.Icon("chevron-right", 14)</a>
+				<a href="/v2/admin/retention" class="inline-flex items-center gap-2 mt-3 text-[13px] text-ink-700 underline underline-offset-4">
+					<span>고객 재방문·유지율 보기</span>
+					@component.Icon("chevron-right", 14)
+				</a>
 			</header>
 			<!-- 기간 필터 (dashboard 와 동일 스타일 + '기간 지정' 토글) -->
 			<div x-data={ salesFilterAlpine(p.Period) }>

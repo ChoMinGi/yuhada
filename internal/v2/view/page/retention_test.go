@@ -26,6 +26,9 @@ func TestRetentionShowsMeasuredRatesMaturityAndScopedActions(t *testing.T) {
 		t.Fatal(err)
 	}
 	html := rendered.String()
+	if strings.Contains(html, "@component.") {
+		t.Fatal("template component call was rendered as text")
+	}
 	for _, want := range []string{
 		"월별 재방문율", "첫 방문 월별 유지율", "장기 미방문 고객", "평균 재방문 간격",
 		"같은 달에 다시 방문한 고객도 포함", "매달 연속 방문해야 하는 지표는 아닙니다",

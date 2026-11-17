@@ -180,13 +180,19 @@ templ Retention(p RetentionProps) {
 				if p.Pages > 1 {
 					<nav class="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-sand-200 text-[12px]" aria-label="미방문 고객 페이지">
 						if p.PreviousURL != "" {
-							<a href={ templ.SafeURL(p.PreviousURL) } class="inline-flex items-center gap-1 px-2 py-1 hover:bg-sand-100 rounded">@component.Icon("chevron-left", 14) 이전</a>
+							<a href={ templ.SafeURL(p.PreviousURL) } class="inline-flex items-center gap-1 px-2 py-1 hover:bg-sand-100 rounded">
+								@component.Icon("chevron-left", 14)
+								<span>이전</span>
+							</a>
 						} else {
 							<span class="px-2 py-1 text-ink-500">이전</span>
 						}
 						<span class="text-ink-500 tabular-nums">{ strconv.Itoa(p.Page) } / { strconv.Itoa(p.Pages) }</span>
 						if p.NextURL != "" {
-							<a href={ templ.SafeURL(p.NextURL) } class="inline-flex items-center gap-1 px-2 py-1 hover:bg-sand-100 rounded">다음 @component.Icon("chevron-right", 14)</a>
+							<a href={ templ.SafeURL(p.NextURL) } class="inline-flex items-center gap-1 px-2 py-1 hover:bg-sand-100 rounded">
+								<span>다음</span>
+								@component.Icon("chevron-right", 14)
+							</a>
 						} else {
 							<span class="px-2 py-1 text-ink-500">다음</span>
 						}

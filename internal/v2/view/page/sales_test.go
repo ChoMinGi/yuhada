@@ -27,6 +27,9 @@ func TestSalesSeparatesPeriodActivityFromCurrentBalances(t *testing.T) {
 		t.Fatal(err)
 	}
 	html := rendered.String()
+	if strings.Contains(html, "@component.") || strings.Contains(html, "@layout.") {
+		t.Fatal("template component call was rendered as text")
+	}
 	for _, expected := range []string{
 		"시술 사용액", "시술 차감액 · 결제 매출 아님", "25명", "중복 제외 · 차감 27건",
 		"고객 수가 아닌 충전 건수 기준", "고객 이탈률을 뜻하지 않습니다.",
