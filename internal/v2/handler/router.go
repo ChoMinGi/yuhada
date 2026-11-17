@@ -83,6 +83,7 @@ func NewRouter(deps *Deps) http.Handler {
 
 		r.Get("/admin", h.Dashboard)
 		r.Get("/admin/sales", h.SalesDashboard)
+		r.Get("/admin/retention", h.RetentionDashboard)
 		r.Get("/admin/cards", h.CardsList)
 		r.Get("/admin/transactions", h.TransactionsPage)
 

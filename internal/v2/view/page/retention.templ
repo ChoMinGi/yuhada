@@ -1,0 +1,219 @@
+package page
+
+import (
+	"strconv"
+
+	"github.com/mingicho/yuhada/internal/v2/view/component"
+	"github.com/mingicho/yuhada/internal/v2/view/layout"
+)
+
+templ Retention(p RetentionProps) {
+	@layout.Admin("고객 재방문", "retention") {
+		<div id="retention-dashboard" class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
+			<header class="mb-6 sm:mb-8">
+				<h1 class="yh-headline-l text-[26px] sm:text-[32px]">고객 재방문</h1>
+				<p class="yh-body-sm mt-2 text-ink-500">고객이 얼마나 다시 찾아오는지, 다음 방문을 살펴보세요.</p>
+				<p class="text-[11px] text-ink-500 mt-3">{ p.AsOf } 기준 · 한국 시간</p>
+			</header>
+
+			<form method="GET" action="/v2/admin/retention" class="flex flex-wrap items-end gap-3 mb-6">
+				<input type="hidden" name="absent" value={ strconv.Itoa(p.DormantDays) }/>
+				<div>
+					<label for="retention-months" class="block text-[12px] text-ink-700 mb-2">분석 기간</label>
+					<select id="retention-months" name="months" class="bg-sand-100 border border-sand-300 rounded px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-ink-500">
+						for _, months := range []int{6, 12, 24} {
+							<option value={ strconv.Itoa(months) } selected?={ p.Months == months }>최근 { strconv.Itoa(months) }개월</option>
+						}
+					</select>
+				</div>
+				<button type="submit" class="px-4 py-2 rounded bg-ink-900 text-sand-50 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-900">적용</button>
+				<p class="text-[12px] text-ink-500 pb-2">이번 달 포함 · 방문 추이, 평균 간격, 첫 방문 월에 적용</p>
+			</form>
+
+			<div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
+				@retentionMetric("이번 달 재방문율", p.CurrentRate, p.CurrentDetail, true)
+				@retentionMetric("평균 재방문 간격", p.MeanGap, p.GapDetail, false)
+				@retentionMetric("장기 미방문 고객", strconv.Itoa(p.DormantCount) + "명", "현재 기준 · " + strconv.Itoa(p.DormantDays) + "일 이상 미방문", false)
+				@retentionMetric("기록상 첫 방문 고객", p.FirstVisitors, "선택한 " + strconv.Itoa(p.Months) + "개월 · 첫 시술 기록 기준", false)
+			</div>
+
+			<section aria-labelledby="retention-monthly-heading" class="yh-card mb-8 sm:mb-10 overflow-hidden">
+				<div class="p-4 sm:p-6 border-b border-sand-200">
+					<h2 id="retention-monthly-heading" class="yh-headline-s">월별 재방문율</h2>
+					<p class="text-[12px] text-ink-500 mt-2 leading-relaxed">그달 방문 고객 중 이전 방문일이 있는 고객의 비율입니다. 같은 달에 다시 방문한 고객도 포함합니다.</p>
+				</div>
+				if len(p.Rows) == 0 {
+					<p class="text-[13px] text-ink-500 p-6">선택한 기간에 시술 방문 기록이 없습니다.</p>
+				} else {
+					<div class="overflow-x-auto" tabindex="0" role="region" aria-label="월별 재방문율 표, 가로 스크롤 가능">
+						<table class="w-full text-[13px] min-w-[700px]">
+							<caption class="sr-only">월별 방문 고객, 재방문 고객, 재방문율, 방문 횟수와 평균 재방문 간격. 막대의 전체 길이는 100%입니다.</caption>
+							<thead class="bg-sand-50 text-ink-500 text-[11px]">
+								<tr>
+									<th scope="col" class="px-4 sm:px-6 py-3 text-left font-normal">방문 월</th>
+									<th scope="col" class="px-3 py-3 text-right font-normal">방문 고객</th>
+									<th scope="col" class="px-3 py-3 text-right font-normal">재방문 고객</th>
+									<th scope="col" class="px-3 py-3 text-left font-normal w-[30%]">재방문율 <span class="text-[10px]">0–100%</span></th>
+									<th scope="col" class="px-3 py-3 text-right font-normal">방문 횟수</th>
+									<th scope="col" class="px-4 sm:px-6 py-3 text-right font-normal">평균 간격</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-sand-200">
+								for _, row := range p.Rows {
+									<tr>
+										<th scope="row" class="px-4 sm:px-6 py-4 text-left font-normal whitespace-nowrap">
+											{ row.Month }
+											if row.Partial {
+												<span class="block text-[10px] text-ink-500 mt-1">진행 중</span>
+											}
+										</th>
+										<td class="px-3 py-4 text-right tabular-nums">{ row.Visitors }</td>
+										<td class="px-3 py-4 text-right tabular-nums">{ row.Returning }</td>
+										<td class="px-3 py-4">
+											<div class="flex items-center gap-3">
+												<div class="h-2 bg-sand-100 rounded overflow-hidden flex-1" aria-hidden="true"><div class="h-full bg-ink-900 rounded" style={ retentionBarWidth(row.RateWidth) }></div></div>
+												<span class="w-12 text-right tabular-nums shrink-0">{ row.Rate }</span>
+											</div>
+										</td>
+										<td class="px-3 py-4 text-right tabular-nums">{ row.VisitDays }</td>
+										<td class="px-4 sm:px-6 py-4 text-right tabular-nums whitespace-nowrap">{ row.Gap }</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+				<p class="text-[11px] text-ink-500 px-4 sm:px-6 py-4 border-t border-sand-200 leading-relaxed">같은 고객의 같은 날 시술 차감은 한 번의 방문으로 묶습니다. 평균 간격은 이번 방문이 선택 기간에 속하는 연속 방문일 사이의 일수로 계산합니다.</p>
+			</section>
+
+			<section aria-labelledby="retention-cohort-heading" class="yh-card mb-8 sm:mb-10 overflow-hidden">
+				<div class="p-4 sm:p-6 border-b border-sand-200">
+					<h2 id="retention-cohort-heading" class="yh-headline-s">첫 방문 월별 유지율</h2>
+					<p class="text-[12px] text-ink-500 mt-2 leading-relaxed">기록상 첫 방문 월이 같은 고객 중, 각각의 다음 달에 다시 방문한 비율입니다. 매달 연속 방문해야 하는 지표는 아닙니다.</p>
+				</div>
+				if len(p.Cohorts) == 0 {
+					<p class="text-[13px] text-ink-500 p-6">선택한 기간에 기록상 첫 방문 고객이 없습니다.</p>
+				} else {
+					<div class="overflow-x-auto" tabindex="0" role="region" aria-label="첫 방문 월별 유지율 표, 가로 스크롤 가능">
+						<table class="w-full min-w-[720px] text-[12px] border-separate border-spacing-1 p-3 sm:p-5">
+							<caption class="sr-only">첫 방문 월과 고객 수, 첫 방문 후 1개월부터 6개월까지의 해당 월 재방문율. 관찰 중인 월과 미래의 월은 확정 비율을 표시하지 않습니다.</caption>
+							<thead class="text-ink-500 text-[11px]">
+								<tr>
+									<th scope="col" class="p-2 text-left font-normal">첫 방문 월</th>
+									<th scope="col" class="p-2 text-right font-normal">고객 수</th>
+									for _, offset := range []int{1, 2, 3, 4, 5, 6} {
+										<th scope="col" class="p-2 font-normal whitespace-nowrap">{ strconv.Itoa(offset) }개월 후</th>
+									}
+								</tr>
+							</thead>
+							<tbody>
+								for _, row := range p.Cohorts {
+									<tr>
+										<th scope="row" class="p-2 text-left font-normal whitespace-nowrap">
+											{ row.Month }
+											if retentionCohortPartial(p, row) {
+												<span class="block text-[10px] text-ink-500 mt-1">모집 진행 중</span>
+											}
+										</th>
+										<td class="p-2 text-right tabular-nums whitespace-nowrap">{ row.Size }</td>
+										for _, cell := range row.Cells {
+											<td class={ "rounded p-2 text-center tabular-nums", retentionCellClass(cell.Class) }>
+												<span class="block font-medium whitespace-nowrap">{ cell.Label }</span>
+												<span class="block text-[10px] mt-1 whitespace-nowrap opacity-80">{ cell.Detail }</span>
+											</td>
+										}
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+				<p class="text-[11px] text-ink-500 px-4 sm:px-6 py-4 border-t border-sand-200 leading-relaxed">관찰 중: 해당 달이 아직 끝나지 않음 · —: 아직 도래하지 않은 달. 과거 기록에 없는 방문은 알 수 없어, 첫 시술 기록이 실제 첫 방문과 다를 수 있습니다.</p>
+			</section>
+
+			<section aria-labelledby="retention-dormant-heading" class="yh-card overflow-hidden">
+				<div class="p-4 sm:p-6 border-b border-sand-200">
+					<div class="flex flex-wrap items-start justify-between gap-4">
+						<div>
+							<h2 id="retention-dormant-heading" class="yh-headline-s">장기 미방문 고객 <span class="text-[16px] text-ink-500 ml-2">{ strconv.Itoa(p.DormantCount) }명</span></h2>
+							<p class="text-[12px] text-ink-500 mt-2">현재 활성 회원 · 마지막 방문 후 { strconv.Itoa(p.DormantDays) }일 이상 · 분석 기간과 무관</p>
+						</div>
+						<form method="GET" action="/v2/admin/retention" class="flex items-end gap-2">
+							<input type="hidden" name="months" value={ strconv.Itoa(p.Months) }/>
+							<div>
+								<label for="retention-absent" class="block text-[11px] text-ink-500 mb-1">미방문 기준</label>
+								<select id="retention-absent" name="absent" class="bg-sand-50 border border-sand-300 rounded px-3 py-2 text-[12px] focus:outline-none focus:ring-2 focus:ring-ink-500">
+									for _, days := range []int{60, 90, 120} {
+										<option value={ strconv.Itoa(days) } selected?={ p.DormantDays == days }>{ strconv.Itoa(days) }일 이상</option>
+									}
+								</select>
+							</div>
+							<button type="submit" class="px-3 py-2 rounded border border-ink-900 text-[12px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-900">적용</button>
+						</form>
+					</div>
+					if p.NeverVisitedCount > 0 {
+						<p class="text-[11px] text-ink-500 mt-3">시술 방문 기록이 없는 활성 회원 { strconv.Itoa(p.NeverVisitedCount) }명은 미방문 고객에 포함하지 않습니다.</p>
+					}
+				</div>
+				if len(p.DormantRows) == 0 {
+					<p class="text-[13px] text-ink-500 p-6">현재 조건에 해당하는 고객이 없습니다.</p>
+				} else {
+					<div class="overflow-x-auto" tabindex="0" role="region" aria-label="장기 미방문 고객 표, 가로 스크롤 가능">
+						<table class="w-full min-w-[520px] text-[13px]">
+							<caption class="sr-only">장기 미방문 고객 이름, 마지막 방문일, 미방문 일수와 현재 잔액. 이름을 누르면 회원 상세로 이동합니다.</caption>
+							<thead class="bg-sand-50 text-ink-500 text-[11px]">
+								<tr><th scope="col" class="px-4 sm:px-6 py-3 text-left font-normal">고객</th><th scope="col" class="px-3 py-3 text-left font-normal">마지막 방문</th><th scope="col" class="px-3 py-3 text-right font-normal">미방문</th><th scope="col" class="px-4 sm:px-6 py-3 text-right font-normal">현재 잔액</th></tr>
+							</thead>
+							<tbody class="divide-y divide-sand-200">
+								for _, row := range p.DormantRows {
+									<tr>
+										<th scope="row" class="px-4 sm:px-6 py-4 text-left font-normal"><a href={ templ.SafeURL(row.Href) } class="underline underline-offset-4 decoration-sand-300 hover:decoration-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-900">{ row.Name }</a></th>
+										<td class="px-3 py-4 text-ink-700 whitespace-nowrap">{ row.LastVisit }</td>
+										<td class="px-3 py-4 text-right tabular-nums whitespace-nowrap">{ row.DaysAbsent }</td>
+										<td class="px-4 sm:px-6 py-4 text-right tabular-nums whitespace-nowrap">{ row.Balance }</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+				if p.Pages > 1 {
+					<nav class="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-sand-200 text-[12px]" aria-label="미방문 고객 페이지">
+						if p.PreviousURL != "" {
+							<a href={ templ.SafeURL(p.PreviousURL) } class="inline-flex items-center gap-1 px-2 py-1 hover:bg-sand-100 rounded">@component.Icon("chevron-left", 14) 이전</a>
+						} else {
+							<span class="px-2 py-1 text-ink-500">이전</span>
+						}
+						<span class="text-ink-500 tabular-nums">{ strconv.Itoa(p.Page) } / { strconv.Itoa(p.Pages) }</span>
+						if p.NextURL != "" {
+							<a href={ templ.SafeURL(p.NextURL) } class="inline-flex items-center gap-1 px-2 py-1 hover:bg-sand-100 rounded">다음 @component.Icon("chevron-right", 14)</a>
+						} else {
+							<span class="px-2 py-1 text-ink-500">다음</span>
+						}
+					</nav>
+				}
+			</section>
+
+			<details class="mt-6 text-[12px] text-ink-500">
+				<summary class="cursor-pointer py-2">집계 기준과 기록 범위</summary>
+				<div class="leading-relaxed pt-2 pb-4 space-y-2">
+					<p>방문은 금액이 있는 시술 차감 기록으로 집계합니다. 충전·환불은 제외하며, 같은 고객의 같은 한국 날짜는 한 번으로 묶습니다.</p>
+					<p>월별 재방문율과 첫 방문 월별 유지율에는 비활성 회원의 과거 방문도 포함합니다. 월별 재방문율은 지난달 방문 고객의 다음 달 유지율과 다릅니다.</p>
+					if p.HistoryStart != "" {
+						<p>확인 가능한 시술 기록: { p.HistoryStart } ~ { p.LatestVisit }. 그 이전 방문과 시스템에 기록하지 않은 시술은 반영되지 않습니다.</p>
+					} else {
+						<p>아직 집계할 수 있는 시술 방문 기록이 없습니다.</p>
+					}
+				</div>
+			</details>
+		</div>
+	}
+}
+
+templ retentionMetric(label, value, detail string, primary bool) {
+	<div class={ "yh-card p-4 sm:p-6 min-w-0", templ.KV("bg-ink-900 text-sand-50", primary) }>
+		<p class={ "text-[12px] mb-3", templ.KV("text-sand-200", primary), templ.KV("text-ink-500", !primary) }>{ label }</p>
+		<p class="yh-num text-[26px] sm:text-[34px] leading-tight break-words">{ value }</p>
+		<p class={ "text-[11px] leading-relaxed mt-3", templ.KV("text-sand-200", primary), templ.KV("text-ink-500", !primary) }>{ detail }</p>
+	</div>
+}

@@ -346,8 +346,7 @@ func memberBalanceCard(p MemberDetailProps) templ.Component {
 	})
 }
 
-// memberMembershipsSection — 정액권 판매 이력 카드 리스트.
-// pricing-model §6 표시 규칙 준수: tier_label · pay_method · purchased_at · +credit_amount · perk_label.
+// memberMembershipsSection includes previous/initial charges as well as plan sales.
 func memberMembershipsSection(p MemberDetailProps) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -369,25 +368,25 @@ func memberMembershipsSection(p MemberDetailProps) templ.Component {
 			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<section><div class=\"flex items-end justify-between mb-4\"><h2 class=\"yh-headline-s\">정액권 이력</h2><p class=\"yh-eyebrow-xs\">정액권 이력 ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<section><div class=\"flex items-end justify-between mb-4\"><h2 class=\"yh-headline-s\">정액권·충전 이력</h2><p class=\"yh-eyebrow-xs\">표시 ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(membershipCountStr(p))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/member_detail.templ`, Line: 109, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/member_detail.templ`, Line: 108, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p></div><p class=\"yh-body-sm text-ink-500 mb-4\">최초 충전과 기존 충전을 포함한 최근 50건입니다.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(p.Memberships) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"yh-card p-8 text-center\"><p class=\"yh-body-sm text-ink-500\">아직 정액권 판매 이력이 없습니다.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"yh-card p-8 text-center\"><p class=\"yh-body-sm text-ink-500\">아직 충전 이력이 없습니다.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

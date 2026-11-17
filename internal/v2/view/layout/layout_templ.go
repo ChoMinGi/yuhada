@@ -28,6 +28,7 @@ type NavItem struct {
 var AdminNavTop = []NavItem{
 	{"dashboard", "대시보드", "layout-dashboard", "/v2/admin"},
 	{"sales", "매출", "trending-up", "/v2/admin/sales"},
+	{"retention", "고객 재방문", "rotate-ccw", "/v2/admin/retention"},
 	{"members", "회원 관리", "users", "/v2/admin/members"},
 	{"cards", "카드 관리", "credit-card", "/v2/admin/cards"},
 	{"transactions", "거래 내역", "receipt", "/v2/admin/transactions"},
@@ -69,7 +70,7 @@ func Admin(title string, activeKey string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 38, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 39, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -156,7 +157,7 @@ func Bare(title string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 170, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 171, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -234,7 +235,7 @@ func adminSidebar(activeKey string) templ.Component {
 			var templ_7745c5c3_Var7 templ.SafeURL
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(it.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 215, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 216, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -268,7 +269,7 @@ func adminSidebar(activeKey string) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(it.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 221, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 222, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -298,7 +299,7 @@ func adminSidebar(activeKey string) templ.Component {
 			var templ_7745c5c3_Var11 templ.SafeURL
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(it.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 227, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 228, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -332,7 +333,7 @@ func adminSidebar(activeKey string) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(it.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 233, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/layout/layout.templ`, Line: 234, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {

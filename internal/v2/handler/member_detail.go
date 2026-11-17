@@ -32,9 +32,9 @@ func (h *PageHandlers) MemberDetailGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	memberships, err := h.Deps.Services.Membership.ListByMember(r.Context(), id)
+	charges, err := h.Deps.Services.Membership.ListChargeHistoryWithPlan(r.Context(), id)
 	if err != nil {
-		slog.Error("v2 list memberships", "err", err)
+		slog.Error("v2 list charge history", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -48,8 +48,31 @@ func (h *PageHandlers) MemberDetailGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "거래 합계를 불러오지 못했습니다", http.StatusInternalServerError)
 		return
 	}
-	pm := buildMemberDetail(m, memberships, history, totals.TotalIn, totals.TotalOut)
+	pm := buildMemberDetail(m, history, totals.TotalIn, totals.TotalOut)
+	pm.Memberships = buildMemberChargeHistory(charges)
 	render(w, r, http.StatusOK, page.MemberDetail(pm))
+}
+
+// Previous charges are shown alongside plan purchases without guessing a plan,
+// payment method or bonus from the credited amount.
+func buildMemberChargeHistory(charges []dbgen.ListChargeHistoryWithPlanRow) []page.MemberMembership {
+	rows := make([]page.MemberMembership, 0, len(charges))
+	for _, charge := range charges {
+		snap := decodeSnapshot(charge.PlanSnapshot.String)
+		label := snap.TierLabel
+		if label == "" {
+			label = "충전"
+			if charge.TxMemo.Valid && strings.TrimSpace(charge.TxMemo.String) != "" {
+				label = charge.TxMemo.String
+			}
+		}
+		rows = append(rows, page.MemberMembership{
+			ID: charge.TxID, TierLabel: label, PayMethod: snap.PaymentMethod,
+			PurchasedAt: formatKST(charge.TxCreatedAt), CreditAmount: util.FormatKRW(charge.TxAmount),
+			PerkLabel: snap.PerkLabel, Status: charge.MembershipStatus.String,
+		})
+	}
+	return rows
 }
 
 // MemoView — GET /v2/admin/members/{id}/memo.
@@ -106,14 +129,13 @@ func (h *PageHandlers) loadMemberDetail(w http.ResponseWriter, r *http.Request) 
 		}
 		return page.MemberDetailProps{}, false
 	}
-	return buildMemberDetail(m, nil, nil, 0, 0), true
+	return buildMemberDetail(m, nil, 0, 0), true
 }
 
 // buildMemberDetail — dbgen 결과를 view prop 으로 매핑.
 // 정액권 뱃지는 저장된 구매 시점 스냅샷을 사용한다.
 func buildMemberDetail(
 	m dbgen.V2Member,
-	memberships []dbgen.V2Membership,
 	history []dbgen.ListMemberHistoryWithPlanRow,
 	totalIn, totalOut int64,
 ) page.MemberDetailProps {
@@ -124,21 +146,6 @@ func buildMemberDetail(
 	card := ""
 	if m.CardUuid.Valid {
 		card = m.CardUuid.String
-	}
-
-	// MEMBERSHIPS 섹션.
-	mships := make([]page.MemberMembership, 0, len(memberships))
-	for _, ms := range memberships {
-		snap := decodeSnapshot(ms.PlanSnapshot)
-		mships = append(mships, page.MemberMembership{
-			ID:           ms.ID,
-			TierLabel:    snap.TierLabel,
-			PayMethod:    snap.PaymentMethod,
-			PurchasedAt:  formatKST(ms.PurchasedAt),
-			CreditAmount: util.FormatKRW(snap.CreditAmount),
-			PerkLabel:    snap.PerkLabel,
-			Status:       ms.Status,
-		})
 	}
 
 	txs := make([]page.MemberTx, 0, len(history))
@@ -155,19 +162,18 @@ func buildMemberDetail(
 	}
 
 	return page.MemberDetailProps{
-		ID:          m.ID,
-		JoinedAt:    joinedDate(m.CreatedAt),
-		Name:        m.Name,
-		Phone:       util.FormatPhone(m.Phone),
-		Card:        card,
-		Memo:        memo,
-		Active:      m.IsActive,
-		Balance:     util.FormatKRW(m.Balance),
-		BalanceInt:  m.Balance,
-		TotalIn:     util.FormatKRW(totalIn),
-		TotalOut:    util.FormatKRW(totalOut),
-		Memberships: mships,
-		RecentTxs:   txs,
+		ID:         m.ID,
+		JoinedAt:   joinedDate(m.CreatedAt),
+		Name:       m.Name,
+		Phone:      util.FormatPhone(m.Phone),
+		Card:       card,
+		Memo:       memo,
+		Active:     m.IsActive,
+		Balance:    util.FormatKRW(m.Balance),
+		BalanceInt: m.Balance,
+		TotalIn:    util.FormatKRW(totalIn),
+		TotalOut:   util.FormatKRW(totalOut),
+		RecentTxs:  txs,
 	}
 }
 

@@ -100,17 +100,17 @@ templ memberBalanceCard(p MemberDetailProps) {
 	</div>
 }
 
-// memberMembershipsSection — 정액권 판매 이력 카드 리스트.
-// pricing-model §6 표시 규칙 준수: tier_label · pay_method · purchased_at · +credit_amount · perk_label.
+// memberMembershipsSection includes previous/initial charges as well as plan sales.
 templ memberMembershipsSection(p MemberDetailProps) {
 	<section>
 		<div class="flex items-end justify-between mb-4">
-			<h2 class="yh-headline-s">정액권 이력</h2>
-			<p class="yh-eyebrow-xs">정액권 이력 { membershipCountStr(p) }</p>
+			<h2 class="yh-headline-s">정액권·충전 이력</h2>
+			<p class="yh-eyebrow-xs">표시 { membershipCountStr(p) }</p>
 		</div>
+		<p class="yh-body-sm text-ink-500 mb-4">최초 충전과 기존 충전을 포함한 최근 50건입니다.</p>
 		if len(p.Memberships) == 0 {
 			<div class="yh-card p-8 text-center">
-				<p class="yh-body-sm text-ink-500">아직 정액권 판매 이력이 없습니다.</p>
+				<p class="yh-body-sm text-ink-500">아직 충전 이력이 없습니다.</p>
 			</div>
 		} else {
 			<ul class="list-none m-0 p-0 flex flex-col gap-3">
