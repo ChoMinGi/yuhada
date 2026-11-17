@@ -166,7 +166,7 @@ func (q *Queries) GetMemberByPhone(ctx context.Context, phone string) (V2Member,
 }
 
 const listAllMembers = `-- name: ListAllMembers :many
-SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members ORDER BY created_at DESC LIMIT 500
+SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members ORDER BY created_at DESC, id DESC
 `
 
 func (q *Queries) ListAllMembers(ctx context.Context) ([]V2Member, error) {
@@ -215,8 +215,7 @@ func (q *Queries) ReactivateMember(ctx context.Context, id string) error {
 const searchMembers = `-- name: SearchMembers :many
 SELECT id, name, phone, card_uuid, balance, memo, is_active, created_at, updated_at, kakao_user_id FROM members
 WHERE (name LIKE ?1 OR phone LIKE ?1)
-ORDER BY created_at DESC
-LIMIT 500
+ORDER BY created_at DESC, id DESC
 `
 
 func (q *Queries) SearchMembers(ctx context.Context, name string) ([]V2Member, error) {

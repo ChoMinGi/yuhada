@@ -103,6 +103,7 @@ templ NewMember(p NewMemberProps) {
 						x-on:input="const n = parseInt((amountStr || '').replace(/[^0-9]/g, ''), 10) || 0; amountStr = n > 0 ? n.toLocaleString('ko-KR') : ''"
 					/>
 					<p class="text-[12px] text-ink-500 mt-2">등록과 함께 잔액을 충전합니다. 비워두면 회원만 등록됩니다.</p>
+					<p class="text-[12px] text-ink-500 mt-1">정액권 상품은 회원 등록 후 충전에서 선택해 주세요.</p>
 					<div class="grid grid-cols-4 gap-2 mt-3">
 						for _,amount:=range []int64{100000,300000,500000,1000000} {
 							<button type="button" class="yh-btn yh-btn-secondary text-[11px] px-1" x-on:click={fmt.Sprintf("amountStr = (%d).toLocaleString('ko-KR')",amount)}>{fmt.Sprintf("%d만원",amount/10000)}</button>

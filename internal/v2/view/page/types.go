@@ -4,6 +4,8 @@
 // backend 산출물의 참조 지점이므로 임의 변경 금지.
 package page
 
+import "github.com/mingicho/yuhada/internal/v2/view/component"
+
 // LoginProps — /v2/login 페이지.
 type LoginProps struct {
 	ErrorMsg     string
@@ -44,8 +46,9 @@ type MemberRow struct {
 
 // MembersProps — 회원 목록 페이지.
 type MembersProps struct {
-	Rows  []MemberRow
-	Query string
+	Rows                []MemberRow
+	Query, Status, Sort string
+	Paging              component.ListPagingProps
 }
 
 // NewMemberProps — 신규 회원 등록 폼.
@@ -82,6 +85,7 @@ type MemberMembership struct {
 
 // MemberDetailProps — 회원 상세 페이지.
 type MemberDetailProps struct {
+	HistoryURL  string
 	ID          string
 	Name        string
 	Phone       string
@@ -109,6 +113,7 @@ type PlanRow struct {
 	PerkLabel     string
 	DisplayOrder  int64
 	IsActive      bool
+	QuoteVersion  string // immutable quote fingerprint used by charge confirmation
 }
 
 // PlansProps — 가격표 관리 페이지.

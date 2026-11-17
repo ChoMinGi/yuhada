@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -162,6 +163,7 @@ func buildMemberDetail(
 	}
 
 	return page.MemberDetailProps{
+		HistoryURL: "/v2/admin/transactions?" + url.Values{"period": {"all"}, "q": {util.NormalizePhone(m.Phone)}}.Encode(),
 		ID:         m.ID,
 		JoinedAt:   joinedDate(m.CreatedAt),
 		Name:       m.Name,

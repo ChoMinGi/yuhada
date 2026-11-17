@@ -608,12 +608,12 @@ func TestPeriodRange(t *testing.T) {
 	now := time.Date(2026, 5, 26, 14, 30, 0, 0, time.UTC)
 
 	start, _ := PeriodToday.Range(now)
-	if start != "2026-05-26T00:00:00.000Z" {
+	if start != "2026-05-25T15:00:00.000Z" {
 		t.Errorf("today start = %q", start)
 	}
 
 	start, _ = PeriodMonth.Range(now)
-	if start != "2026-05-01T00:00:00.000Z" {
+	if start != "2026-04-30T15:00:00.000Z" {
 		t.Errorf("month start = %q", start)
 	}
 
@@ -624,8 +624,8 @@ func TestPeriodRange(t *testing.T) {
 
 	// 월요일 시작 확인 (5/26 = 화요일)
 	start, _ = PeriodWeek.Range(now)
-	if start != "2026-05-25T00:00:00.000Z" {
-		t.Errorf("week start = %q, want Monday 5/25", start)
+	if start != "2026-05-24T15:00:00.000Z" {
+		t.Errorf("week start = %q, want Monday 5/25 KST", start)
 	}
 }
 

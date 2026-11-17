@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -33,6 +34,25 @@ type ChargeResult struct {
 	NewBalance   int64
 }
 
+// PlanQuote is the exact offer displayed in the charge confirmation. Version
+// covers all recorded offer terms, including labels/payment/perks, rather than
+// an updated_at timestamp that may repeat during edits within one millisecond.
+type PlanQuote struct {
+	Price        int64
+	CreditAmount int64
+	Version      string
+}
+
+var ErrPlanQuoteChanged = errors.New("plan offer changed since confirmation")
+
+func PlanQuoteFor(plan dbgen.V2MembershipPlan) PlanQuote {
+	// A snapshot contains only strings, integers and null, so JSON serialization
+	// is deterministic and cannot fail for this data shape.
+	snapshot, _ := marshalPlanSnapshot(plan)
+	version := fmt.Sprintf("%x", sha256.Sum256([]byte(plan.ID+"\n"+snapshot)))
+	return PlanQuote{Price: plan.Price, CreditAmount: plan.CreditAmount, Version: version}
+}
+
 // Charge — plan 기반 or 일반 충전.
 //   - planID != nil: plan SELECT → is_active 검증 → transactions INSERT
 //     → memberships INSERT (plan_snapshot 박제) → balance += plan.credit_amount
@@ -46,6 +66,13 @@ func (s *ChargeService) Charge(ctx context.Context, memberID string, planID *str
 // ChargeWithMemo preserves the original charge memo. Plan sale, wallet change
 // and transaction row are committed atomically in the same canonical database.
 func (s *ChargeService) ChargeWithMemo(ctx context.Context, memberID string, planID *string, amount int64, memo, createdBy string) (ChargeResult, error) {
+	return s.ChargeWithExpectedPlan(ctx, memberID, planID, amount, memo, createdBy, nil)
+}
+
+// ChargeWithExpectedPlan validates the customer's displayed plan quote inside
+// the same transaction that records the sale, before any wallet write. HTTP
+// callers must supply a quote; the older internal APIs remain compatible.
+func (s *ChargeService) ChargeWithExpectedPlan(ctx context.Context, memberID string, planID *string, amount int64, memo, createdBy string, expected *PlanQuote) (ChargeResult, error) {
 	if planID == nil {
 		if amount <= 0 {
 			return ChargeResult{}, fmt.Errorf("%w: amount must be > 0", ErrInvalidInput)
@@ -89,6 +116,9 @@ func (s *ChargeService) ChargeWithMemo(ctx context.Context, memberID string, pla
 	if planID != nil {
 		plan, gerr := q.GetPlan(ctx, *planID)
 		if errors.Is(gerr, sql.ErrNoRows) {
+			if expected != nil {
+				return ChargeResult{}, ErrPlanQuoteChanged
+			}
 			return ChargeResult{}, ErrNotFound
 		}
 		if gerr != nil {
@@ -96,6 +126,9 @@ func (s *ChargeService) ChargeWithMemo(ctx context.Context, memberID string, pla
 		}
 		if !plan.IsActive {
 			return ChargeResult{}, ErrPlanInactive
+		}
+		if expected != nil && *expected != PlanQuoteFor(plan) {
+			return ChargeResult{}, ErrPlanQuoteChanged
 		}
 		credit = plan.CreditAmount
 		// The original customer and transaction screens also consume this ledger.

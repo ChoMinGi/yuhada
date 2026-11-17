@@ -134,7 +134,7 @@ func SettingsServiceMemos(p SettingsServiceMemosProps) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- 드래그 앤 드롭 순서 저장 --><script>\n\t\t\t\t(function initSmpSort() {\n\t\t\t\t\tif (typeof Sortable === 'undefined') { setTimeout(initSmpSort, 50); return; }\n\t\t\t\t\tconst el = document.getElementById('smp-sortable');\n\t\t\t\t\tif (!el) return;\n\t\t\t\t\tSortable.create(el, {\n\t\t\t\t\t\thandle: '.smp-handle',\n\t\t\t\t\t\tanimation: 160,\n\t\t\t\t\t\tghostClass: 'opacity-40',\n\t\t\t\t\t\tonEnd: function () {\n\t\t\t\t\t\t\tconst ids = Array.from(el.children)\n\t\t\t\t\t\t\t\t.map(function (c) { return c.getAttribute('data-id'); })\n\t\t\t\t\t\t\t\t.filter(Boolean);\n\t\t\t\t\t\t\tfetch('/v2/admin/settings/service-memos/reorder', {\n\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\theaders: { 'Content-Type': 'application/json' },\n\t\t\t\t\t\t\t\tbody: JSON.stringify({ order: ids })\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t})();\n\t\t\t</script></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- 드래그 앤 드롭 순서 저장 --><script>\n\t\t\t\t(function initSmpSort() {\n\t\t\t\t\tif (typeof Sortable === 'undefined') { setTimeout(initSmpSort, 50); return; }\n\t\t\t\t\tconst el = document.getElementById('smp-sortable');\n\t\t\t\t\tif (!el) return;\n\t\t\t\t\tSortable.create(el, {\n\t\t\t\t\t\thandle: '.smp-handle',\n\t\t\t\t\t\tanimation: 160,\n\t\t\t\t\t\tghostClass: 'opacity-40',\n\t\t\t\t\t\tonEnd: function () {\n\t\t\t\t\t\t\tconst ids = Array.from(el.children)\n\t\t\t\t\t\t\t\t.map(function (c) { return c.getAttribute('data-id'); })\n\t\t\t\t\t\t\t\t.filter(Boolean);\n\t\t\t\t\t\t\twindow.yhSavePresetOrder('/v2/admin/settings/service-memos/reorder', ids);\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t})();\n\t\t\t</script></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -183,7 +183,7 @@ func serviceMemoRow(row ServiceMemoRow) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(row.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 90, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 86, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -209,7 +209,7 @@ func serviceMemoRow(row ServiceMemoRow) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(row.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 107, Col: 80}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 103, Col: 80}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -250,7 +250,7 @@ func serviceMemoRow(row ServiceMemoRow) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs("/v2/admin/settings/service-memos/" + row.ID + "/deactivate")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 121, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 117, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -268,7 +268,7 @@ func serviceMemoRow(row ServiceMemoRow) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("/v2/admin/settings/service-memos/" + row.ID + "/reactivate")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 125, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 121, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -286,7 +286,7 @@ func serviceMemoRow(row ServiceMemoRow) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs("/v2/admin/settings/service-memos/" + row.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 130, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 126, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -299,7 +299,7 @@ func serviceMemoRow(row ServiceMemoRow) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs("이 메모(" + row.Label + ")를 완전히 삭제할까요? 되돌릴 수 없습니다.")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 132, Col: 107}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 128, Col: 107}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -312,7 +312,7 @@ func serviceMemoRow(row ServiceMemoRow) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("/v2/admin/settings/service-memos/" + row.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 142, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 138, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -363,7 +363,7 @@ func serviceMemoFormFields(row ServiceMemoRow) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(row.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 159, Col: 92}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 155, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -376,7 +376,7 @@ func serviceMemoFormFields(row ServiceMemoRow) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(int64ToStr(row.DisplayOrder))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 161, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_service_memos.templ`, Line: 157, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -18,24 +19,48 @@ import (
 
 // MembersList — GET /v2/admin/members.
 func (h *PageHandlers) MembersList(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query().Get("q")
-	members, err := h.Deps.Services.Member.Search(r.Context(), q, v2service.SortDefault)
+	w.Header().Set("Cache-Control", "private, no-store")
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	status := r.URL.Query().Get("status")
+	if status != "active" && status != "inactive" {
+		status = "all"
+	}
+	sortKey := v2service.SortKey(r.URL.Query().Get("sort"))
+	if sortKey != v2service.SortBalanceAsc && sortKey != v2service.SortBalanceDesc {
+		sortKey = v2service.SortDefault
+	}
+	searchQuery := q
+	if phone := phoneListQuery(q); phone != "" {
+		searchQuery = phone
+	}
+	members, err := h.Deps.Services.Member.Search(r.Context(), searchQuery, sortKey)
 	if err != nil {
 		slog.Error("v2 members search", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	rows := make([]page.MemberRow, len(members))
-	for i, m := range members {
-		rows[i] = memberRowFromDB(m)
+	filtered := members[:0]
+	for _, m := range members {
+		if status == "active" && !m.IsActive || status == "inactive" && m.IsActive {
+			continue
+		}
+		filtered = append(filtered, m)
 	}
-
-	// HTMX 검색 디바운스 partial.
-	if isHTMX(r) && r.Header.Get("HX-Trigger-Name") == "q" {
-		render(w, r, http.StatusOK, page.MembersTable(rows))
+	start, end, paging := listPaging(r, len(filtered), "/v2/admin/members", "members-list", "members-paging", url.Values{"q": {q}, "status": {status}, "sort": {string(sortKey)}})
+	rows := make([]page.MemberRow, 0, end-start)
+	for _, m := range filtered[start:end] {
+		rows = append(rows, memberRowFromDB(m))
+	}
+	data := page.MembersProps{Rows: rows, Query: q, Status: status, Sort: string(sortKey), Paging: paging}
+	if isHTMX(r) && r.URL.Query().Get("more") == "1" {
+		render(w, r, http.StatusOK, page.MembersAppend(data))
 		return
 	}
-	render(w, r, http.StatusOK, page.Members(page.MembersProps{Rows: rows, Query: q}))
+	if isHTMX(r) && r.URL.Query().Get("filter") == "1" {
+		render(w, r, http.StatusOK, page.MembersResults(data))
+		return
+	}
+	render(w, r, http.StatusOK, page.Members(data))
 }
 
 // NewMemberGet — GET /v2/admin/members/new.

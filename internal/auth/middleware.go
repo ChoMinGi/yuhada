@@ -37,6 +37,21 @@ func SafeAdminNext(value, fallback string) string {
 	if u.Path != "/admin" && !strings.HasPrefix(u.Path, "/admin/") && u.Path != "/v2/admin" && !strings.HasPrefix(u.Path, "/v2/admin/") {
 		return fallback
 	}
+	// Sign-in returns by full-page navigation. An interrupted modal/memo GET
+	// must return to its member page rather than a standalone HTML fragment.
+	for _, prefix := range []string{"/admin/members/", "/v2/admin/members/"} {
+		if !strings.HasPrefix(u.Path, prefix) {
+			continue
+		}
+		parts := strings.SplitN(strings.TrimPrefix(u.Path, prefix), "/", 2)
+		if len(parts) != 2 || parts[0] == "" {
+			continue
+		}
+		switch parts[1] {
+		case "charge/modal", "deduct/modal", "lost/modal", "reactivate/modal", "delete/modal", "memo", "memo/edit":
+			return prefix + parts[0]
+		}
+	}
 	return u.RequestURI()
 }
 

@@ -21,11 +21,10 @@ LIMIT 1;
 -- name: SearchMembers :many
 SELECT * FROM members
 WHERE (name LIKE ?1 OR phone LIKE ?1)
-ORDER BY created_at DESC
-LIMIT 500;
+ORDER BY created_at DESC, id DESC;
 
 -- name: ListAllMembers :many
-SELECT * FROM members ORDER BY created_at DESC LIMIT 500;
+SELECT * FROM members ORDER BY created_at DESC, id DESC;
 
 -- name: UpdateMemberMemo :exec
 UPDATE members SET memo = ? WHERE id = ?;

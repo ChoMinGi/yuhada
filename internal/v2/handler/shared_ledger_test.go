@@ -114,7 +114,9 @@ func TestWalletJSONCanonicalSMSAndFailure(t *testing.T) {
 		t.Fatalf("deduct %d %s", w.Code, w.Body.String())
 	}
 	expectSMS(t, sender, member.Phone, sms.DeductMessage(member.Name, "커트", 23000, 127000))
-	w = ledgerPost(t, router, "/members/"+member.ID+"/charge", url.Values{"plan_id": {"plan-20-cash"}, "memo": {"현금 회원권"}})
+	planForm := ledgerPlanForm(t, h, "plan-20-cash")
+	planForm.Set("memo", "현금 회원권")
+	w = ledgerPost(t, router, "/members/"+member.ID+"/charge", planForm)
 	if w.Code != 200 {
 		t.Fatalf("plan charge %d %s", w.Code, w.Body.String())
 	}

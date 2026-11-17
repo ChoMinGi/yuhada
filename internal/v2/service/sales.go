@@ -196,7 +196,10 @@ func (s *SalesService) TopMembers(ctx context.Context, since, until string, limi
 		if out[i].Count != out[j].Count {
 			return out[i].Count > out[j].Count
 		}
-		return out[i].Name < out[j].Name
+		if out[i].Name != out[j].Name {
+			return out[i].Name < out[j].Name
+		}
+		return out[i].MemberID < out[j].MemberID
 	})
 	if limit > 0 && len(out) > limit {
 		out = out[:limit]

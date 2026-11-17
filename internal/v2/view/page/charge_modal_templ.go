@@ -171,7 +171,7 @@ func ChargeModal(p ChargeModalProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><div class=\"mt-5 pt-4 border-t border-sand-200 text-[13px]\"><p class=\"flex justify-between\"><span>현재 잔액</span><span x-text=\"'₩' + balance.toLocaleString('ko-KR')\"></span></p><p class=\"flex justify-between mt-2\"><span>충전 후 잔액</span><span class=\"yh-num\" x-text=\"'₩' + (balance + other).toLocaleString('ko-KR')\"></span></p></div><p x-show=\"error\" x-cloak x-text=\"error\" role=\"alert\" class=\"text-[13px] text-danger mt-4\"></p><button type=\"button\" x-on:click=\"pendOther()\" x-bind:disabled=\"other <= 0 || submitting\" class=\"yh-btn yh-btn-primary w-full mt-5\"><span x-show=\"!submitting\">충전하기</span><span x-show=\"submitting\" x-cloak>처리 중...</span></button></div></section></div><!-- STEP 2: 확인 화면 --><div x-show=\"step === 'confirm'\" x-cloak x-transition:enter=\"transition ease-out duration-300\" x-transition:enter-start=\"opacity-0 translate-x-8\" x-transition:enter-end=\"opacity-100 translate-x-0\" x-transition:leave=\"transition ease-in duration-200\" x-transition:leave-start=\"opacity-100 translate-x-0\" x-transition:leave-end=\"opacity-0 translate-x-8\" class=\"pb-2\"><div class=\"yh-card p-6 sm:p-8 flex flex-col items-center text-center gap-3\"><p class=\"yh-eyebrow-xs text-ink-500\">CONFIRM</p><p class=\"text-[15px] sm:text-[16px] text-ink-900\"><span class=\"font-semibold\" x-text=\"memberName\"></span>님에게</p><div><p x-show=\"pending && pending.type === 'plan'\" class=\"mb-1\"><span class=\"inline-flex items-center px-2 py-0.5 rounded-sm bg-sand-100 text-[11px] tracking-brand uppercase text-ink-700\" x-text=\"pending && pending.label\"></span></p><p class=\"yh-num text-[32px] sm:text-[38px] text-success whitespace-nowrap\" x-text=\"pending && pending.amountStr\"></p><p x-show=\"pending && pending.type === 'plan'\" class=\"text-[12px] text-ink-500 mt-1\">받는 돈 <span x-text=\"pending && pending.priceStr\"></span></p></div><p x-show=\"pending && pending.type === 'other' && memo\" x-text=\"memo\" class=\"text-[13px] text-ink-700\"></p><p class=\"text-[13px] text-ink-500 mt-1\">위 금액을 충전하시겠습니까?</p><div class=\"w-full border-t border-sand-200 pt-4 mt-2 text-[13px]\"><p class=\"flex justify-between\"><span>현재 잔액</span><span x-text=\"'₩' + balance.toLocaleString('ko-KR')\"></span></p><p class=\"flex justify-between mt-2\"><span>충전 후 잔액</span><span class=\"yh-num\" x-text=\"'₩' + (balance + (pending ? pending.amount : 0)).toLocaleString('ko-KR')\"></span></p></div></div><p x-show=\"error\" x-cloak x-text=\"error\" role=\"alert\" class=\"text-[13px] text-danger mt-4\"></p><div class=\"flex gap-3 mt-6\"><button type=\"button\" x-on:click=\"cancel()\" class=\"yh-btn yh-btn-ghost flex-1\" x-bind:disabled=\"submitting\">취소</button> <button type=\"button\" x-on:click=\"submit()\" class=\"yh-btn yh-btn-primary flex-1\" x-bind:disabled=\"submitting\"><span x-show=\"!submitting\">충전 확정</span> <span x-show=\"submitting\" x-cloak>처리 중...</span></button></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><div class=\"mt-5 pt-4 border-t border-sand-200 text-[13px]\"><p class=\"flex justify-between\"><span>현재 잔액</span><span x-text=\"'₩' + balance.toLocaleString('ko-KR')\"></span></p><p class=\"flex justify-between mt-2\"><span>충전 후 잔액</span><span class=\"yh-num\" x-text=\"'₩' + (balance + other).toLocaleString('ko-KR')\"></span></p></div><p x-show=\"error\" x-cloak x-text=\"error\" role=\"alert\" class=\"text-[13px] text-danger mt-4\"></p><button type=\"button\" x-on:click=\"pendOther()\" x-bind:disabled=\"other <= 0 || submitting\" class=\"yh-btn yh-btn-primary w-full mt-5\"><span x-show=\"!submitting\">충전하기</span><span x-show=\"submitting\" x-cloak>처리 중...</span></button></div></section></div><!-- STEP 2: 확인 화면 --><div x-show=\"step === 'confirm'\" x-cloak x-transition:enter=\"transition ease-out duration-300\" x-transition:enter-start=\"opacity-0 translate-x-8\" x-transition:enter-end=\"opacity-100 translate-x-0\" x-transition:leave=\"transition ease-in duration-200\" x-transition:leave-start=\"opacity-100 translate-x-0\" x-transition:leave-end=\"opacity-0 translate-x-8\" class=\"pb-2\"><div class=\"yh-card p-6 sm:p-8 flex flex-col items-center text-center gap-3\"><p class=\"yh-eyebrow-xs text-ink-500\">CONFIRM</p><p class=\"text-[15px] sm:text-[16px] text-ink-900\"><span class=\"font-semibold\" x-text=\"memberName\"></span>님에게</p><div><p x-show=\"pending && pending.type === 'plan'\" class=\"mb-1\"><span class=\"inline-flex items-center px-2 py-0.5 rounded-sm bg-sand-100 text-[11px] tracking-brand uppercase text-ink-700\" x-text=\"pending && pending.label\"></span></p><p class=\"yh-num text-[32px] sm:text-[38px] text-success whitespace-nowrap\" x-text=\"pending && pending.amountStr\"></p><p x-show=\"pending && pending.type === 'plan'\" class=\"text-[12px] text-ink-500 mt-1\">받는 돈 <span x-text=\"pending && pending.priceStr\"></span></p><p x-show=\"pending && pending.perk\" x-text=\"pending && pending.perk\" class=\"text-[12px] text-ink-700 mt-2\"></p></div><p x-show=\"pending && pending.type === 'other' && memo\" x-text=\"memo\" class=\"text-[13px] text-ink-700\"></p><p class=\"text-[13px] text-ink-500 mt-1\">위 금액을 충전하시겠습니까?</p><div class=\"w-full border-t border-sand-200 pt-4 mt-2 text-[13px]\"><p class=\"flex justify-between\"><span>현재 잔액</span><span x-text=\"'₩' + balance.toLocaleString('ko-KR')\"></span></p><p class=\"flex justify-between mt-2\"><span>충전 후 잔액</span><span class=\"yh-num\" x-text=\"'₩' + (balance + (pending ? pending.amount : 0)).toLocaleString('ko-KR')\"></span></p></div></div><p x-show=\"error\" x-cloak x-text=\"error\" role=\"alert\" class=\"text-[13px] text-danger mt-4\"></p><div class=\"flex gap-3 mt-6\"><button type=\"button\" x-on:click=\"cancel()\" class=\"yh-btn yh-btn-ghost flex-1\" x-bind:disabled=\"submitting\">취소</button> <button type=\"button\" x-on:click=\"submit()\" class=\"yh-btn yh-btn-primary flex-1\" x-bind:disabled=\"submitting\"><span x-show=\"!submitting\">충전 확정</span> <span x-show=\"submitting\" x-cloak>처리 중...</span></button></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -214,7 +214,7 @@ func chargePlanCard(plan PlanRow) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(plan.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 178, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 179, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -227,7 +227,7 @@ func chargePlanCard(plan PlanRow) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(plan.TierLabel + " · " + payMethodLabel(plan.PaymentMethod))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 179, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 180, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -240,7 +240,7 @@ func chargePlanCard(plan PlanRow) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(util.FormatKRW(plan.CreditAmount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 180, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 181, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -253,7 +253,7 @@ func chargePlanCard(plan PlanRow) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.FormatInt(plan.CreditAmount, 10))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 181, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 182, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -266,65 +266,127 @@ func chargePlanCard(plan PlanRow) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(util.FormatKRW(plan.Price))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 182, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 183, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" x-on:click=\"pendPlan($el)\" x-bind:disabled=\"submitting\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" data-price-amount=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var8).String())
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.FormatInt(plan.Price, 10))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 184, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><p class=\"yh-eyebrow-xs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" data-quote-version=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(plan.TierLabel)
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(plan.QuoteVersion)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 188, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 185, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</p><p class=\"yh-num text-[20px] sm:text-[22px] text-success mt-1 whitespace-nowrap\">+")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" data-perk=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(util.FormatKRW(plan.CreditAmount))
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(plan.PerkLabel)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 189, Col: 119}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 186, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</p><p class=\"text-[11px] text-ink-500\">받는 돈 ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" x-on:click=\"pendPlan($el)\" x-bind:disabled=\"submitting\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(util.FormatKRW(plan.Price))
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var8).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 190, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</p></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"><p class=\"yh-eyebrow-xs\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(plan.TierLabel)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 192, Col: 43}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p><p class=\"yh-num text-[20px] sm:text-[22px] text-success mt-1 whitespace-nowrap\">+")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var19 string
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(util.FormatKRW(plan.CreditAmount))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 193, Col: 119}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</p><p class=\"text-[11px] text-ink-500\">받는 돈 ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var20 string
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(util.FormatKRW(plan.Price))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 194, Col: 77}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if plan.PerkLabel != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<p class=\"text-[11px] text-ink-700 mt-1\">증정 · ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var21 string
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(plan.PerkLabel)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/charge_modal.templ`, Line: 196, Col: 70}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -356,6 +418,9 @@ func chargeModalAlpine(p ChargeModalProps) string {
 				label:  el.dataset.label,
 				amountStr: '+' + el.dataset.credit,
 				priceStr:  el.dataset.price,
+				price: Number(el.dataset.priceAmount),
+				version: el.dataset.quoteVersion,
+				perk: el.dataset.perk || '',
 			};
 			this.step = 'confirm';
 		},
@@ -372,7 +437,12 @@ func chargeModalAlpine(p ChargeModalProps) string {
 			window.__v2ChargeInFlight = true;
 			this.submitting = true;
 			const body = new URLSearchParams();
-			if (this.pending.type === 'plan') body.append('plan_id', this.pending.planId);
+			if (this.pending.type === 'plan') {
+				body.append('plan_id', this.pending.planId);
+				body.append('expected_price', String(this.pending.price));
+				body.append('expected_credit', String(this.pending.amount));
+				body.append('expected_plan_version', this.pending.version);
+			}
 			else { body.append('amount', String(this.pending.amount)); body.append('memo', this.memo || ''); }
 			this.error = '';
 			try {

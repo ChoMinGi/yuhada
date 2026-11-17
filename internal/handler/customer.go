@@ -28,6 +28,7 @@ const lowBalanceThreshold int64 = 30000
 //  4. balance ≤ 임계값           → LowBalance (경고)
 //  5. 기본                       → Tagged (정상 잔액)
 func (h *PageHandlers) CustomerCard(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "private, no-store")
 	uuid := chi.URLParam(r, "card_uuid")
 
 	// is_active=1만 매칭하는 service 메서드 → Active 회원 우선 조회.
@@ -51,7 +52,12 @@ func (h *PageHandlers) CustomerCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	txs, _ := h.Services.Tx.ListByMember(r.Context(), m.ID)
+	activity, err := h.Services.Tx.LatestCustomerActivity(r.Context(), m.ID)
+	if err != nil {
+		slog.Error("customer activity", "err", err)
+		http.Error(w, "이용 내역을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.", http.StatusInternalServerError)
+		return
+	}
 
 	view := page.CustomerView{
 		Name:       m.Name,
@@ -61,21 +67,19 @@ func (h *PageHandlers) CustomerCard(w http.ResponseWriter, r *http.Request) {
 		LastCharge: "—",
 		LastVisit:  "—",
 	}
-	for _, t := range txs {
-		if view.LastCharge == "—" && t.Type == "charge" {
-			view.LastCharge = formatTimeShort(t.CreatedAt) + " · " + util.FormatKRW(t.Amount)
+	if t := activity.LastCharge; t != nil {
+		view.LastCharge = formatTimeShort(t.CreatedAt) + " · " + util.FormatKRW(t.Amount)
+	}
+	if t := activity.LastVisit; t != nil {
+		memo := "이용"
+		if t.Memo.Valid && t.Memo.String != "" {
+			memo = t.Memo.String
 		}
-		if view.LastVisit == "—" && t.Type == "deduct" {
-			memo := "이용"
-			if t.Memo.Valid && t.Memo.String != "" {
-				memo = t.Memo.String
-			}
-			view.LastVisit = formatTimeShort(t.CreatedAt) + " · " + memo
-		}
+		view.LastVisit = formatTimeShort(t.CreatedAt) + " · " + memo
 	}
 
 	switch {
-	case m.Balance == 0 && len(txs) == 0:
+	case m.Balance == 0 && !activity.HasTransactions:
 		renderC(w, r, page.Onboarding(view))
 	case m.Balance <= lowBalanceThreshold:
 		renderC(w, r, page.LowBalance(view))

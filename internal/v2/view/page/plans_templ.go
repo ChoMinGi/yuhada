@@ -67,7 +67,7 @@ func Plans(p PlansProps) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<button type=\"button\" x-data=\"{ open: false }\" x-on:click=\"open = !open; if (open) $nextTick(() => document.getElementById('plan-new-form').scrollIntoView({behavior:'smooth'}))\" class=\"yh-btn yh-btn-primary\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<button type=\"button\" x-data=\"{}\" x-on:click=\"const section = document.getElementById('plan-new-form'); section.querySelector('details').open = true; section.scrollIntoView({behavior:'smooth'}); $nextTick(() => section.querySelector('input').focus({preventScroll:true}))\" class=\"yh-btn yh-btn-primary\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

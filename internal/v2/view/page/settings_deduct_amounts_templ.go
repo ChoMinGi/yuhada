@@ -135,7 +135,7 @@ func SettingsDeductAmounts(p SettingsDeductAmountsProps) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- 드래그 앤 드롭 순서 저장 --><script>\n\t\t\t\t(function initDapSort() {\n\t\t\t\t\tif (typeof Sortable === 'undefined') { setTimeout(initDapSort, 50); return; }\n\t\t\t\t\tconst el = document.getElementById('dap-sortable');\n\t\t\t\t\tif (!el) return;\n\t\t\t\t\tSortable.create(el, {\n\t\t\t\t\t\thandle: '.dap-handle',\n\t\t\t\t\t\tanimation: 160,\n\t\t\t\t\t\tghostClass: 'opacity-40',\n\t\t\t\t\t\tonEnd: function () {\n\t\t\t\t\t\t\tconst ids = Array.from(el.children)\n\t\t\t\t\t\t\t\t.map(function (c) { return c.getAttribute('data-id'); })\n\t\t\t\t\t\t\t\t.filter(Boolean);\n\t\t\t\t\t\t\tfetch('/v2/admin/settings/deduct-amounts/reorder', {\n\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\theaders: { 'Content-Type': 'application/json' },\n\t\t\t\t\t\t\t\tbody: JSON.stringify({ order: ids })\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t})();\n\t\t\t</script></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- 드래그 앤 드롭 순서 저장 --><script>\n\t\t\t\t(function initDapSort() {\n\t\t\t\t\tif (typeof Sortable === 'undefined') { setTimeout(initDapSort, 50); return; }\n\t\t\t\t\tconst el = document.getElementById('dap-sortable');\n\t\t\t\t\tif (!el) return;\n\t\t\t\t\tSortable.create(el, {\n\t\t\t\t\t\thandle: '.dap-handle',\n\t\t\t\t\t\tanimation: 160,\n\t\t\t\t\t\tghostClass: 'opacity-40',\n\t\t\t\t\t\tonEnd: function () {\n\t\t\t\t\t\t\tconst ids = Array.from(el.children)\n\t\t\t\t\t\t\t\t.map(function (c) { return c.getAttribute('data-id'); })\n\t\t\t\t\t\t\t\t.filter(Boolean);\n\t\t\t\t\t\t\twindow.yhSavePresetOrder('/v2/admin/settings/deduct-amounts/reorder', ids);\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\t\t\t\t})();\n\t\t\t</script></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -184,7 +184,7 @@ func deductAmountRow(row DeductAmountRow) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(row.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 91, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 87, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -210,7 +210,7 @@ func deductAmountRow(row DeductAmountRow) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(util.FormatKRW(row.Amount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 109, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 105, Col: 104}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -251,7 +251,7 @@ func deductAmountRow(row DeductAmountRow) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs("/v2/admin/settings/deduct-amounts/" + row.ID + "/deactivate")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 123, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 119, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -269,7 +269,7 @@ func deductAmountRow(row DeductAmountRow) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("/v2/admin/settings/deduct-amounts/" + row.ID + "/reactivate")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 127, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 123, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -287,7 +287,7 @@ func deductAmountRow(row DeductAmountRow) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs("/v2/admin/settings/deduct-amounts/" + row.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 132, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 128, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -300,7 +300,7 @@ func deductAmountRow(row DeductAmountRow) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs("이 금액(" + util.FormatKRW(row.Amount) + ")을 완전히 삭제할까요? 되돌릴 수 없습니다.")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 134, Col: 124}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 130, Col: 124}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -313,7 +313,7 @@ func deductAmountRow(row DeductAmountRow) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("/v2/admin/settings/deduct-amounts/" + row.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 145, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 141, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -357,14 +357,14 @@ func deductAmountFormFields(row DeductAmountRow) templ.Component {
 			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<label class=\"block\"><span class=\"yh-label\">금액 (원)</span> <input name=\"amount\" type=\"number\" min=\"1\" step=\"1000\" class=\"yh-input tabular-nums\" required value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<label class=\"block\"><span class=\"yh-label\">금액 (원)</span> <input name=\"amount\" type=\"number\" min=\"1\" step=\"1\" class=\"yh-input tabular-nums\" required value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(int64ToStr(row.Amount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 162, Col: 126}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 158, Col: 123}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -377,7 +377,7 @@ func deductAmountFormFields(row DeductAmountRow) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(int64ToStr(row.DisplayOrder))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 164, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/settings_deduct_amounts.templ`, Line: 160, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {

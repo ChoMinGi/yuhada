@@ -39,6 +39,7 @@ templ Admin(title string, activeKey string) {
 			<title>{ title } · YUHADA HAIR</title>
 			@ui.PWAHead()
 			<link rel="stylesheet" href="/static/css/app.css"/>
+			<script src="/static/admin/feedback.js" defer></script>
 			<script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
 			<script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
 			<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
@@ -276,5 +277,7 @@ templ modalRoot() {
 }
 
 templ toastRoot() {
-	<div id="toast-root" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40"></div>
+	<div id="toast-root" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-60 w-[min(90vw,440px)] pointer-events-none" aria-live="assertive" aria-atomic="true">
+		<p id="toast-message" hidden role="alert" class="bg-ink-900 text-sand-50 px-4 py-3 rounded shadow-modal text-[13px] leading-relaxed"></p>
+	</div>
 }

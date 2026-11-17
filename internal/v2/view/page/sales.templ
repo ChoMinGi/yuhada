@@ -118,7 +118,10 @@ templ Sales(p SalesProps) {
 				</div>
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 					@salesBalanceCard(p.Insights)
-					@salesLowBalanceCard(p.Insights)
+					<div>
+						@salesLowBalanceCard(p.Insights)
+						<a href={templ.SafeURL(salesListLink(p, "recharge"))} class="block text-center text-[12px] underline p-3">재충전 후보 검색·더 보기</a>
+					</div>
 				</div>
 			</section>
 
@@ -128,8 +131,14 @@ templ Sales(p SalesProps) {
 					<h2 id="sales-history-heading" class="yh-headline-s">판매 상세</h2>
 				</div>
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-					@salesTopMembersCard(p.TopMembers)
-					@salesRecentCard(p.RecentSales)
+					<div>
+						@salesTopMembersCard(p.TopMembers)
+						<a href={templ.SafeURL(salesListLink(p, "top"))} class="block text-center text-[12px] underline p-3">고객별 판매 검색·더 보기</a>
+					</div>
+					<div>
+						@salesRecentCard(p.RecentSales)
+						<a href={templ.SafeURL(salesListLink(p, "recent"))} class="block text-center text-[12px] underline p-3">판매 이력 검색·더 보기</a>
+					</div>
 				</div>
 				if salesHasPlanRows(p.TierRows) {
 					<details class="yh-card mt-4">

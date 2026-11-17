@@ -66,6 +66,9 @@ templ MemberDetailContent(p MemberDetailProps) {
 			<h2 class="yh-display-s mt-10 mb-4">최근 거래</h2>
 			<div class="yh-card overflow-hidden">
 				@memberTransactions(p.RecentTxs)
+				if p.HistoryURL != "" {
+					<a href={templ.SafeURL(p.HistoryURL)} class="block px-5 py-4 text-[12px] text-center underline border-t border-sand-200">최근 50건 표시 · 전체 거래 검색·더 보기</a>
+				}
 			</div>
 
 			<!-- Danger zone: 가장 마지막 액션. 실수 방지 위해 하단 격리 + 명확한 디바이더 -->
@@ -156,7 +159,7 @@ templ MemberCardRow(p MemberDetailProps) {
 		if p.Card != "" {
 			<button
 				x-data="{ copied:false }"
-				x-on:click={ "navigator.clipboard.writeText(" + templJSString(p.Card) + "); copied=true; setTimeout(()=>copied=false, 1500)" }
+				x-on:click={ "copied=false; if (await window.yhCopyText(" + templJSString(p.Card) + ")) { copied=true; setTimeout(()=>copied=false, 1500); }" }
 				class="yh-eyebrow-xs inline-flex items-center gap-1.5"
 			>
 				<span x-show="!copied">복사</span>

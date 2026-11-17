@@ -72,11 +72,7 @@ templ SettingsDeductAmounts(p SettingsDeductAmountsProps) {
 							const ids = Array.from(el.children)
 								.map(function (c) { return c.getAttribute('data-id'); })
 								.filter(Boolean);
-							fetch('/v2/admin/settings/deduct-amounts/reorder', {
-								method: 'POST',
-								headers: { 'Content-Type': 'application/json' },
-								body: JSON.stringify({ order: ids })
-							});
+							window.yhSavePresetOrder('/v2/admin/settings/deduct-amounts/reorder', ids);
 						}
 					});
 				})();
@@ -159,7 +155,7 @@ templ deductAmountRow(row DeductAmountRow) {
 templ deductAmountFormFields(row DeductAmountRow) {
 	<label class="block">
 		<span class="yh-label">금액 (원)</span>
-		<input name="amount" type="number" min="1" step="1000" class="yh-input tabular-nums" required value={ int64ToStr(row.Amount) } placeholder="20000"/>
+		<input name="amount" type="number" min="1" step="1" class="yh-input tabular-nums" required value={ int64ToStr(row.Amount) } placeholder="20000"/>
 	</label>
 	<input name="display_order" type="hidden" value={ int64ToStr(row.DisplayOrder) }/>
 }

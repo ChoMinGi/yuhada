@@ -1,0 +1,45 @@
+package component
+
+import "strconv"
+
+// ListPagingProps describes a real page and the range currently displayed.
+// MoreURL appends the next page without changing the browser's history URL.
+type ListPagingProps struct {
+	ID, TargetID, Unit string
+	Total, From, To, Page, Pages int
+	PreviousURL, NextURL, MoreURL string
+}
+
+templ ListPaging(p ListPagingProps) {
+	<div id={ p.ID } class="border-t border-sand-200 px-4 sm:px-6 py-4 space-y-3">
+		<div class="flex flex-wrap items-center justify-between gap-3 text-[12px] text-ink-500">
+			<p role="status">총 { strconv.Itoa(p.Total) }{ listPagingUnit(p) } · { strconv.Itoa(p.From) }–{ strconv.Itoa(p.To) }{ listPagingUnit(p) } 표시</p>
+			if p.Pages > 1 {
+				<nav aria-label="목록 페이지" class="flex items-center gap-3">
+					if p.PreviousURL != "" {
+						<a href={ templ.SafeURL(p.PreviousURL) } class="px-2 py-1 rounded hover:bg-sand-100" hx-boost="false">이전</a>
+					}
+					<span class="tabular-nums">{ strconv.Itoa(p.Page) } / { strconv.Itoa(p.Pages) }</span>
+					if p.NextURL != "" {
+						<a href={ templ.SafeURL(p.NextURL) } class="px-2 py-1 rounded hover:bg-sand-100" hx-boost="false">다음</a>
+					}
+				</nav>
+			}
+		</div>
+		if p.MoreURL != "" {
+			<a href={ templ.SafeURL(p.NextURL) }
+				hx-get={ p.MoreURL } hx-target={ "#" + p.ID } hx-swap="outerHTML"
+				hx-sync={ "#" + p.TargetID + ":drop" } hx-push-url="false" hx-boost="false"
+				class="yh-btn yh-btn-secondary w-full text-center text-[13px]">
+				더 보기
+			</a>
+		}
+	</div>
+}
+
+func listPagingUnit(p ListPagingProps) string {
+	if p.Unit == "" {
+		return "명"
+	}
+	return p.Unit
+}

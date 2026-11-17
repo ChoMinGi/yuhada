@@ -156,7 +156,7 @@ func NewMember(p NewMemberProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" x-model=\"amountStr\" x-on:input=\"const n = parseInt((amountStr || '').replace(/[^0-9]/g, ''), 10) || 0; amountStr = n > 0 ? n.toLocaleString('ko-KR') : ''\"><p class=\"text-[12px] text-ink-500 mt-2\">등록과 함께 잔액을 충전합니다. 비워두면 회원만 등록됩니다.</p><div class=\"grid grid-cols-4 gap-2 mt-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" x-model=\"amountStr\" x-on:input=\"const n = parseInt((amountStr || '').replace(/[^0-9]/g, ''), 10) || 0; amountStr = n > 0 ? n.toLocaleString('ko-KR') : ''\"><p class=\"text-[12px] text-ink-500 mt-2\">등록과 함께 잔액을 충전합니다. 비워두면 회원만 등록됩니다.</p><p class=\"text-[12px] text-ink-500 mt-1\">정액권 상품은 회원 등록 후 충전에서 선택해 주세요.</p><div class=\"grid grid-cols-4 gap-2 mt-3\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -168,7 +168,7 @@ func NewMember(p NewMemberProps) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("amountStr = (%d).toLocaleString('ko-KR')", amount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/new_member.templ`, Line: 108, Col: 152}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/new_member.templ`, Line: 109, Col: 152}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func NewMember(p NewMemberProps) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d만원", amount/10000))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/new_member.templ`, Line: 108, Col: 191}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/new_member.templ`, Line: 109, Col: 191}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -199,7 +199,7 @@ func NewMember(p NewMemberProps) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(p.Memo)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/new_member.templ`, Line: 118, Col: 127}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/new_member.templ`, Line: 119, Col: 127}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -217,7 +217,7 @@ func NewMember(p NewMemberProps) templ.Component {
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(p.ErrorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/new_member.templ`, Line: 122, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/v2/view/page/new_member.templ`, Line: 123, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {

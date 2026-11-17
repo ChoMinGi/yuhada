@@ -16,8 +16,8 @@ templ Plans(p PlansProps) {
 			@component.PageHeader("설정", "충전 보너스", "정액권 상품(등급 · 결제수단)을 관리합니다.") {
 				<button
 					type="button"
-					x-data="{ open: false }"
-					x-on:click="open = !open; if (open) $nextTick(() => document.getElementById('plan-new-form').scrollIntoView({behavior:'smooth'}))"
+					x-data="{}"
+					x-on:click="const section = document.getElementById('plan-new-form'); section.querySelector('details').open = true; section.scrollIntoView({behavior:'smooth'}); $nextTick(() => section.querySelector('input').focus({preventScroll:true}))"
 					class="yh-btn yh-btn-primary"
 				>
 					@component.Icon("plus", 14)

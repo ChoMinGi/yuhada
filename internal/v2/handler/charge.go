@@ -61,9 +61,18 @@ func (h *PageHandlers) ChargeSubmit(w http.ResponseWriter, r *http.Request) {
 	var (
 		planIDPtr *string
 		amount    int64
+		quote     *v2service.PlanQuote
 	)
 	if planID != "" {
 		planIDPtr = &planID
+		price, priceErr := strconv.ParseInt(r.FormValue("expected_price"), 10, 64)
+		credit, creditErr := strconv.ParseInt(r.FormValue("expected_credit"), 10, 64)
+		version := strings.TrimSpace(r.FormValue("expected_plan_version"))
+		if priceErr != nil || creditErr != nil || price <= 0 || credit <= 0 || len(version) != 64 {
+			walletFailure(w, r, http.StatusConflict, "상품 정보를 다시 확인해야 합니다. 충전 창을 닫고 다시 열어 주세요.")
+			return
+		}
+		quote = &v2service.PlanQuote{Price: price, CreditAmount: credit, Version: version}
 	} else {
 		v, err := strconv.ParseInt(amtStr, 10, 64)
 		if err != nil || v <= 0 {
@@ -76,9 +85,11 @@ func (h *PageHandlers) ChargeSubmit(w http.ResponseWriter, r *http.Request) {
 	createdBy := h.adminID(r)
 	memo := strings.TrimSpace(r.FormValue("memo"))
 
-	result, err := h.Deps.Services.Charge.ChargeWithMemo(r.Context(), id, planIDPtr, amount, memo, createdBy)
+	result, err := h.Deps.Services.Charge.ChargeWithExpectedPlan(r.Context(), id, planIDPtr, amount, memo, createdBy, quote)
 	if err != nil {
 		switch {
+		case errors.Is(err, v2service.ErrPlanQuoteChanged):
+			walletFailure(w, r, http.StatusConflict, "상품 가격이나 혜택이 변경되었습니다. 충전 창을 닫고 다시 열어 확인해 주세요.")
 		case errors.Is(err, v2service.ErrNotFound):
 			walletFailure(w, r, http.StatusNotFound, "회원을 찾을 수 없습니다")
 		case errors.Is(err, v2service.ErrInactive):
@@ -149,5 +160,6 @@ func planRowFromDB(p dbgen.V2MembershipPlan) page.PlanRow {
 		PerkLabel:     perk,
 		DisplayOrder:  p.DisplayOrder,
 		IsActive:      p.IsActive,
+		QuoteVersion:  v2service.PlanQuoteFor(p).Version,
 	}
 }

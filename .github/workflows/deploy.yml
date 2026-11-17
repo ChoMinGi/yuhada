@@ -34,6 +34,7 @@ jobs:
           go test ./...
           go vet ./...
           node scripts/test-pwa-worker.cjs
+          node scripts/test-admin-feedback.cjs
 
       - name: Build binary
         run: |

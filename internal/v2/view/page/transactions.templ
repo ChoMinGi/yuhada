@@ -20,10 +20,12 @@ type TransactionsData struct {
 	DeductTotal string // "₩215,000" pre-formatted
 	ChargeTotal string // "₩100,000"
 	Rows        []TxRow
+	Paging      component.ListPagingProps
 }
 
 // TxRow — 거래 한 줄.
 type TxRow struct {
+	ID         string
 	Type       string // "charge" | "deduct"
 	MemberID   string
 	MemberName string
@@ -70,9 +72,8 @@ templ Transactions(d TransactionsData) {
 	@layout.Admin("거래 내역", "transactions") {
 		<div class="px-4 py-5 sm:px-8 sm:py-10 max-w-admin-content mx-auto">
 			@component.PageHeader("TRANSACTIONS", "거래 내역", "")
-			<section class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-10">
-				@component.Stat(d.DeductLabel, d.DeductTotal, "")
-				@component.Stat(d.ChargeLabel, d.ChargeTotal, "")
+			<section id="tx-summary" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-10">
+				@transactionsSummaryCards(d)
 			</section>
 			<!-- ── 필터 영역 ── -->
 			<div class="mb-6 space-y-4">
@@ -82,7 +83,9 @@ templ Transactions(d TransactionsData) {
 						@component.Icon("search", 14)
 					</span>
 					<input
+						id="tx-search"
 						class="yh-input pl-6"
+						aria-label="회원 이름 또는 전화번호로 거래 검색"
 						name="q"
 						value={ d.Q }
 						placeholder="회원 이름 또는 전화번호"
@@ -92,27 +95,58 @@ templ Transactions(d TransactionsData) {
 						hx-swap="innerHTML"
 						hx-include="this"
 						hx-push-url="true"
+						hx-sync="#tx-list:replace"
 					/>
 				</div>
 				<!-- 타입 + 기간 토글 — 한 줄, 좁으면 wrap -->
-				<div class="flex flex-wrap gap-3 items-center">
-					<div class="-mx-1 overflow-x-auto">
-						<div class="px-1 inline-flex">
-							@txTypeTabs(d.Period, d.Type, d.Q)
-						</div>
-					</div>
-					<div class="-mx-1 overflow-x-auto">
-						<div class="px-1 inline-flex">
-							@txPeriodTabs(d.Period, d.Type, d.Q)
-						</div>
-					</div>
+				<div id="tx-filter-tabs" class="flex flex-wrap gap-3 items-center">
+					@transactionsFilterTabs(d)
 				</div>
 			</div>
 			<div id="tx-list" class="yh-card overflow-hidden">
 				@TransactionsList(d.Rows)
+				@component.ListPaging(d.Paging)
 			</div>
 		</div>
 	}
+}
+
+// Search keeps the input mounted (focus/caret stay intact), and updates every
+// query-dependent value and link in the same response as the result rows.
+templ TransactionsSearchResults(d TransactionsData) {
+	@TransactionsList(d.Rows)
+	@component.ListPaging(d.Paging)
+	<section id="tx-summary" hx-swap-oob="outerHTML" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-10">
+		@transactionsSummaryCards(d)
+	</section>
+	<div id="tx-filter-tabs" hx-swap-oob="outerHTML" class="flex flex-wrap gap-3 items-center">
+		@transactionsFilterTabs(d)
+	</div>
+}
+
+templ TransactionsAppend(d TransactionsData) {
+	<ul id="transaction-rows" hx-swap-oob="beforeend">
+		@transactionRows(d.Rows)
+	</ul>
+	@component.ListPaging(d.Paging)
+}
+
+templ transactionsSummaryCards(d TransactionsData) {
+	@component.Stat(d.DeductLabel, d.DeductTotal, "")
+	@component.Stat(d.ChargeLabel, d.ChargeTotal, "")
+}
+
+templ transactionsFilterTabs(d TransactionsData) {
+	<div class="-mx-1 overflow-x-auto">
+		<div class="px-1 inline-flex">
+			@txTypeTabs(d.Period, d.Type, d.Q)
+		</div>
+	</div>
+	<div class="-mx-1 overflow-x-auto">
+		<div class="px-1 inline-flex">
+			@txPeriodTabs(d.Period, d.Type, d.Q)
+		</div>
+	</div>
 }
 
 // txTypeTabs — 거래 타입 토글 (전체/충전/차감).
@@ -148,15 +182,20 @@ templ txTab(href, label string, active bool) {
 
 // TransactionsList — 거래 행 ul. HTMX 검색 시 #tx-list 의 innerHTML 로 swap.
 templ TransactionsList(rows []TxRow) {
-	<ul class="list-none m-0 p-0 yh-stagger">
+	<ul id="transaction-rows" class="list-none m-0 p-0 yh-stagger">
 		if len(rows) == 0 {
 			<li class="text-center py-16 px-6">
 				<p class="yh-headline-xs">거래 내역이 없습니다</p>
 				<p class="text-[13px] text-ink-500 mt-2">선택한 필터에 해당하는 기록이 없습니다.</p>
 			</li>
 		}
-		for _, t := range rows {
-			<li class="flex items-center gap-4 sm:gap-5 px-5 py-4 sm:px-8 sm:py-7 border-b border-sand-200 last:border-0 hover:bg-sand-50">
+		@transactionRows(rows)
+	</ul>
+}
+
+templ transactionRows(rows []TxRow) {
+	for _, t := range rows {
+			<li data-tx-id={t.ID} class="flex items-center gap-4 sm:gap-5 px-5 py-4 sm:px-8 sm:py-7 border-b border-sand-200 last:border-0 hover:bg-sand-50">
 				<div
 					class={ "w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0",
 						templ.KV("bg-sand-100 text-ink-900", t.Type == "deduct"),
@@ -182,6 +221,5 @@ templ TransactionsList(rows []TxRow) {
 				</div>
 				<p class="yh-num text-[16px] sm:text-[20px] shrink-0">{ t.Amount }</p>
 			</li>
-		}
-	</ul>
+	}
 }

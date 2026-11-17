@@ -139,6 +139,7 @@ templ ChargeModal(p ChargeModalProps) {
 						<p x-show="pending && pending.type === 'plan'" class="text-[12px] text-ink-500 mt-1">
 							받는 돈 <span x-text="pending && pending.priceStr"></span>
 						</p>
+						<p x-show="pending && pending.perk" x-text="pending && pending.perk" class="text-[12px] text-ink-700 mt-2"></p>
 					</div>
 					<p x-show="pending && pending.type === 'other' && memo" x-text="memo" class="text-[13px] text-ink-700"></p>
 					<p class="text-[13px] text-ink-500 mt-1">위 금액을 충전하시겠습니까?</p>
@@ -180,6 +181,9 @@ templ chargePlanCard(plan PlanRow) {
 		data-credit={ util.FormatKRW(plan.CreditAmount) }
 		data-amount={ strconv.FormatInt(plan.CreditAmount, 10) }
 		data-price={ util.FormatKRW(plan.Price) }
+		data-price-amount={ strconv.FormatInt(plan.Price, 10) }
+		data-quote-version={ plan.QuoteVersion }
+		data-perk={ plan.PerkLabel }
 		x-on:click="pendPlan($el)"
 		x-bind:disabled="submitting"
 		class={ "yh-card p-3 sm:p-4 text-left flex flex-col gap-1 sm:gap-1.5 border-2 border-transparent hover:border-ink-900 transition",
@@ -188,6 +192,9 @@ templ chargePlanCard(plan PlanRow) {
 		<p class="yh-eyebrow-xs">{ plan.TierLabel }</p>
 		<p class="yh-num text-[20px] sm:text-[22px] text-success mt-1 whitespace-nowrap">+{ util.FormatKRW(plan.CreditAmount) }</p>
 		<p class="text-[11px] text-ink-500">받는 돈 { util.FormatKRW(plan.Price) }</p>
+		if plan.PerkLabel != "" {
+			<p class="text-[11px] text-ink-700 mt-1">증정 · { plan.PerkLabel }</p>
+		}
 	</button>
 }
 
@@ -215,6 +222,9 @@ func chargeModalAlpine(p ChargeModalProps) string {
 				label:  el.dataset.label,
 				amountStr: '+' + el.dataset.credit,
 				priceStr:  el.dataset.price,
+				price: Number(el.dataset.priceAmount),
+				version: el.dataset.quoteVersion,
+				perk: el.dataset.perk || '',
 			};
 			this.step = 'confirm';
 		},
@@ -231,7 +241,12 @@ func chargeModalAlpine(p ChargeModalProps) string {
 			window.__v2ChargeInFlight = true;
 			this.submitting = true;
 			const body = new URLSearchParams();
-			if (this.pending.type === 'plan') body.append('plan_id', this.pending.planId);
+			if (this.pending.type === 'plan') {
+				body.append('plan_id', this.pending.planId);
+				body.append('expected_price', String(this.pending.price));
+				body.append('expected_credit', String(this.pending.amount));
+				body.append('expected_plan_version', this.pending.version);
+			}
 			else { body.append('amount', String(this.pending.amount)); body.append('memo', this.memo || ''); }
 			this.error = '';
 			try {

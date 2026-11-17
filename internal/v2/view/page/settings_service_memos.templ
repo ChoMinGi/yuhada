@@ -71,11 +71,7 @@ templ SettingsServiceMemos(p SettingsServiceMemosProps) {
 							const ids = Array.from(el.children)
 								.map(function (c) { return c.getAttribute('data-id'); })
 								.filter(Boolean);
-							fetch('/v2/admin/settings/service-memos/reorder', {
-								method: 'POST',
-								headers: { 'Content-Type': 'application/json' },
-								body: JSON.stringify({ order: ids })
-							});
+							window.yhSavePresetOrder('/v2/admin/settings/service-memos/reorder', ids);
 						}
 					});
 				})();
