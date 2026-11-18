@@ -18,7 +18,7 @@ func (h *PageHandlers) legacyServices() *service.Services {
 	if h.Deps.Legacy != nil {
 		return h.Deps.Legacy
 	}
-	return service.New(h.Deps.Services.DB, h.Deps.Services.Enc)
+	return service.New(h.Deps.Services.DB, h.Deps.Services.Enc, h.Deps.Services.AnalyticsExcludedMemberIDs...)
 }
 
 func (h *PageHandlers) CardsList(w http.ResponseWriter, r *http.Request) {

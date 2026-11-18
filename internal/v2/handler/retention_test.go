@@ -33,10 +33,12 @@ func TestRetentionOptionsAndPaginationScope(t *testing.T) {
 		query              string
 		months, days, page int
 	}{
-		{"", 12, 60, 1},
+		{"", 3, 60, 1},
+		{"?months=3&absent=90", 3, 90, 1},
+		{"?months=12", 12, 60, 1},
 		{"?months=24&absent=120&page=3", 24, 120, 3},
 		{"?months=6&absent=90&page=-2", 6, 90, 1},
-		{"?months=999&absent=1&page=overflow", 12, 60, 1},
+		{"?months=999&absent=1&page=overflow", 3, 60, 1},
 	} {
 		got := retentionOptions(httptest.NewRequest("GET", "/v2/admin/retention"+test.query, nil), now)
 		if got.Months != test.months || got.DormantDays != test.days || got.Page != test.page || got.Now != now {

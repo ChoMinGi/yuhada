@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/mingicho/yuhada/internal/analytics"
 	"github.com/mingicho/yuhada/internal/crypto"
 	"github.com/mingicho/yuhada/internal/v2/db/dbgen"
 )
@@ -16,9 +17,10 @@ import (
 //
 // Every canonical charge is a sale; recorded plan prices exclude bonus credit.
 type SalesService struct {
-	db  *sql.DB
-	q   *dbgen.Queries
-	enc *crypto.Enc
+	db    *sql.DB
+	q     *dbgen.Queries
+	enc   *crypto.Enc
+	scope analytics.Scope
 }
 
 // ─────────────────────────────────────────────
@@ -280,27 +282,35 @@ type ExpiringMembership struct {
 // ExpiringMemberships — since ≤ (purchased_at + 1년) < until 인 active memberships.
 // 이번 달 시작/끝 UTC 를 인자로 받아 SQL에서 datetime(purchased_at, '+1 year') 비교.
 func (s *SalesService) ExpiringMemberships(ctx context.Context, sinceUTC, untilUTC string) ([]ExpiringMembership, error) {
-	rows, err := s.q.ListExpiringMemberships(ctx, dbgen.ListExpiringMembershipsParams{
-		PurchasedAt:  sinceUTC,
-		PurchasedAt2: untilUTC,
-	})
+	clause, excluded := s.scope.Clause("m.member_id")
+	args := append([]any{sinceUTC, untilUTC}, excluded...)
+	rows, err := s.db.QueryContext(ctx, `SELECT m.id,m.member_id,m.plan_snapshot,m.purchased_at,mb.name
+		FROM memberships m JOIN members mb ON mb.id=m.member_id
+		WHERE m.status='active' AND datetime(m.purchased_at,'+1 year')>=datetime(?)
+		AND datetime(m.purchased_at,'+1 year')<datetime(?)`+clause+`
+		ORDER BY datetime(m.purchased_at,'+1 year') ASC,m.id ASC`, args...)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]ExpiringMembership, 0, len(rows))
-	for _, r := range rows {
-		snap := parseSnapshot(r.PlanSnapshot)
-		name := r.MemberName
+	defer rows.Close()
+	out := []ExpiringMembership{}
+	for rows.Next() {
+		var item ExpiringMembership
+		var snapshot, purchasedAt, name string
+		if err := rows.Scan(&item.MembershipID, &item.MemberID, &snapshot, &purchasedAt, &name); err != nil {
+			return nil, err
+		}
+		snap := parseSnapshot(snapshot)
 		if s.enc != nil && name != "" {
 			name = s.enc.Decrypt(name)
 		}
 		exp := ""
-		if t, perr := time.Parse("2006-01-02T15:04:05.000Z", r.PurchasedAt); perr == nil {
+		if t, perr := time.Parse("2006-01-02T15:04:05.000Z", purchasedAt); perr == nil {
 			exp = t.AddDate(1, 0, 0).Format("2006-01-02T15:04:05.000Z")
 		}
 		out = append(out, ExpiringMembership{
-			MembershipID: r.MembershipID,
-			MemberID:     r.MemberID,
+			MembershipID: item.MembershipID,
+			MemberID:     item.MemberID,
 			MemberName:   name,
 			TierLabel:    snap.TierLabel,
 			PayMethod:    snap.PaymentMethod,
@@ -308,7 +318,7 @@ func (s *SalesService) ExpiringMemberships(ctx context.Context, sinceUTC, untilU
 			ExpiresAt:    exp,
 		})
 	}
-	return out, nil
+	return out, rows.Err()
 }
 
 // DormantMember — 60일 이상 미사용 회원 한 명.
@@ -321,30 +331,36 @@ type DormantMember struct {
 
 // DormantMembers — 마지막 tx 가 cutoffUTC 이전인 회원 (balance > 0, is_active).
 func (s *SalesService) DormantMembers(ctx context.Context, cutoffUTC string) ([]DormantMember, error) {
-	rows, err := s.q.ListDormantMembers(ctx, cutoffUTC)
+	clause, excluded := s.scope.Clause("m.id")
+	args := append(append([]any{}, excluded...), cutoffUTC)
+	rows, err := s.db.QueryContext(ctx, `SELECT m.id,m.name,m.balance,MAX(t.created_at)
+		FROM members m LEFT JOIN transactions t ON t.member_id=m.id
+		WHERE m.is_active=1 AND m.balance>0`+clause+` GROUP BY m.id
+		HAVING MAX(t.created_at) IS NULL OR MAX(t.created_at)<?
+		ORDER BY CASE WHEN MAX(t.created_at) IS NULL THEN 0 ELSE 1 END,MAX(t.created_at) ASC,m.id ASC LIMIT 20`, args...)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]DormantMember, 0, len(rows))
-	for _, r := range rows {
-		name := r.Name
+	defer rows.Close()
+	out := []DormantMember{}
+	for rows.Next() {
+		var item DormantMember
+		var name string
+		var last sql.NullString
+		if err := rows.Scan(&item.MemberID, &name, &item.Balance, &last); err != nil {
+			return nil, err
+		}
 		if s.enc != nil && name != "" {
 			name = s.enc.Decrypt(name)
 		}
-		last := ""
-		if r.LastTxAt != nil {
-			if str, ok := r.LastTxAt.(string); ok {
-				last = str
-			}
-		}
 		out = append(out, DormantMember{
-			MemberID: r.ID,
+			MemberID: item.MemberID,
 			Name:     name,
-			Balance:  r.Balance,
-			LastTxAt: last,
+			Balance:  item.Balance,
+			LastTxAt: last.String,
 		})
 	}
-	return out, nil
+	return out, rows.Err()
 }
 
 // SalesByPayMethod includes every sale; generic charges have unknown payment method.
@@ -476,24 +492,31 @@ func (s *SalesService) DailyRevenue(ctx context.Context, since, until string) ([
 	return out, nil
 }
 
-// fetchRange — since ≤ created_at < until (until 이 빈 문자열이면 상한 없음).
-// SQL 은 항상 since 만 인자로 받고 until 은 Go 에서 필터.
-// 트랜잭션 수가 소규모(하루~한 달 몇십 ~ 몇백건)라 in-memory 필터로 충분.
+// fetchRange scopes the canonical sales population before any aggregation,
+// ordering limit or page. An excluded member's records remain operational data.
 func (s *SalesService) fetchRange(ctx context.Context, since, until string) ([]dbgen.ListSalesInPeriodRow, error) {
-	rows, err := s.q.ListSalesInPeriod(ctx, since)
+	if until == "" {
+		until = "9999-12-31T23:59:59.999Z"
+	}
+	clause, excluded := s.scope.Clause("t.member_id")
+	args := append([]any{since, until}, excluded...)
+	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.amount,t.created_at,t.member_id,mb.name,m.plan_snapshot
+		FROM transactions t LEFT JOIN memberships m ON m.charge_tx_id=t.id
+		LEFT JOIN members mb ON mb.id=t.member_id
+		WHERE t.type='charge' AND t.created_at>=? AND t.created_at<?`+clause+` ORDER BY t.created_at DESC,t.id DESC`, args...)
 	if err != nil {
 		return nil, err
 	}
-	if until == "" {
-		return rows, nil
-	}
-	filtered := rows[:0]
-	for _, r := range rows {
-		if r.TxCreatedAt < until {
-			filtered = append(filtered, r)
+	defer rows.Close()
+	out := []dbgen.ListSalesInPeriodRow{}
+	for rows.Next() {
+		var row dbgen.ListSalesInPeriodRow
+		if err := rows.Scan(&row.TxID, &row.TxAmount, &row.TxCreatedAt, &row.MemberID, &row.MemberName, &row.PlanSnapshot); err != nil {
+			return nil, err
 		}
+		out = append(out, row)
 	}
-	return filtered, nil
+	return out, rows.Err()
 }
 
 // planSnapshot — pricing-model.md §4 스키마 그대로.
@@ -557,6 +580,8 @@ func (s *SalesService) LedgerTotals(ctx context.Context, since, until string) (L
 	if until == "" {
 		until = "9999-12-31T23:59:59.999Z"
 	}
-	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN type='charge' THEN amount ELSE 0 END),0), COALESCE(SUM(CASE WHEN type IN ('deduct','refund') THEN amount ELSE 0 END),0) FROM transactions WHERE created_at >= ? AND created_at < ?`, since, until).Scan(&out.Charge, &out.Deduct)
+	clause, excluded := s.scope.Clause("member_id")
+	args := append([]any{since, until}, excluded...)
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN type='charge' THEN amount ELSE 0 END),0), COALESCE(SUM(CASE WHEN type IN ('deduct','refund') THEN amount ELSE 0 END),0) FROM transactions WHERE created_at >= ? AND created_at < ?`+clause, args...).Scan(&out.Charge, &out.Deduct)
 	return out, err
 }

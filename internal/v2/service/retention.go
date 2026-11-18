@@ -82,8 +82,8 @@ func (s *SalesService) Retention(ctx context.Context, opts RetentionOptions) (Re
 	if opts.Now.IsZero() {
 		opts.Now = time.Now()
 	}
-	if opts.Months != 6 && opts.Months != 12 && opts.Months != 24 {
-		opts.Months = 12
+	if opts.Months != 3 && opts.Months != 6 && opts.Months != 12 && opts.Months != 24 {
+		opts.Months = 3
 	}
 	if opts.DormantDays != 60 && opts.DormantDays != 90 && opts.DormantDays != 120 {
 		opts.DormantDays = 60
@@ -108,9 +108,11 @@ func (s *SalesService) Retention(ctx context.Context, opts RetentionOptions) (Re
 		return out, fmt.Errorf("retention begin: %w", err)
 	}
 	defer tx.Rollback()
+	clause, excluded := s.scope.Clause("member_id")
+	args := append([]any{opts.Now.UTC().Format("2006-01-02T15:04:05.000Z")}, excluded...)
 	rows, err := tx.QueryContext(ctx, `SELECT member_id,strftime('%Y-%m-%d',created_at,'+9 hours') AS visit_day
 		FROM transactions WHERE type='deduct' AND amount>0 AND created_at<=?
-		GROUP BY member_id,visit_day ORDER BY member_id,visit_day`, opts.Now.UTC().Format("2006-01-02T15:04:05.000Z"))
+		`+clause+` GROUP BY member_id,visit_day ORDER BY member_id,visit_day`, args...)
 	if err != nil {
 		return out, fmt.Errorf("retention visits: %w", err)
 	}
@@ -139,7 +141,8 @@ func (s *SalesService) Retention(ctx context.Context, opts RetentionOptions) (Re
 		return out, fmt.Errorf("retention visits rows: %w", err)
 	}
 	rows.Close()
-	rows, err = tx.QueryContext(ctx, `SELECT id,name,balance,is_active FROM members`)
+	clause, excluded = s.scope.Clause("id")
+	rows, err = tx.QueryContext(ctx, `SELECT id,name,balance,is_active FROM members WHERE 1=1`+clause, excluded...)
 	if err != nil {
 		return out, fmt.Errorf("retention members: %w", err)
 	}

@@ -29,8 +29,8 @@ func (h *PageHandlers) RetentionDashboard(w http.ResponseWriter, r *http.Request
 
 func retentionOptions(r *http.Request, now time.Time) v2service.RetentionOptions {
 	months, _ := strconv.Atoi(r.URL.Query().Get("months"))
-	if months != 6 && months != 12 && months != 24 {
-		months = 12
+	if months != 3 && months != 6 && months != 12 && months != 24 {
+		months = 3
 	}
 	days, _ := strconv.Atoi(r.URL.Query().Get("absent"))
 	if days != 60 && days != 90 && days != 120 {
