@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -35,6 +36,8 @@ type Config struct {
 	AdminKakaoIDV2  string
 	// V2 이메일 화이트리스트 (쉼표 구분). 설정 시 ID 화이트리스트보다 우선한다.
 	AdminKakaoEmailsV2 string
+	// Stable member IDs omitted from analytics, while their ledger stays intact.
+	AnalyticsExcludedMemberIDs []string
 }
 
 // IsProd — 프로덕션 환경 여부.
@@ -62,6 +65,11 @@ func Load() (Config, error) {
 	cfg.KakaoRedirectV2 = env("KAKAO_REDIRECT_V2", "")
 	cfg.AdminKakaoIDV2 = env("ADMIN_KAKAO_ID_V2", "")
 	cfg.AdminKakaoEmailsV2 = env("ADMIN_KAKAO_EMAILS_V2", "")
+	for _, id := range strings.Split(env("ANALYTICS_EXCLUDED_MEMBER_IDS", ""), ",") {
+		if id = strings.TrimSpace(id); id != "" {
+			cfg.AnalyticsExcludedMemberIDs = append(cfg.AnalyticsExcludedMemberIDs, id)
+		}
+	}
 
 	cfg.CookieSecure, _ = strconv.ParseBool(env("COOKIE_SECURE", "false"))
 

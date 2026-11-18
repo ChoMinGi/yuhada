@@ -6,34 +6,38 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/mingicho/yuhada/internal/analytics"
 	"github.com/mingicho/yuhada/internal/crypto"
 	"github.com/mingicho/yuhada/internal/db/dbgen"
 )
 
 // Services — 의존성 컨테이너. main에서 1회 생성 후 핸들러에 주입.
 type Services struct {
-	DB      *sql.DB
-	Queries *dbgen.Queries
-	Enc     *crypto.Enc // nil = 암호화 비활성
-	Member  *MemberService
-	Wallet  *WalletService
-	Tx      *TransactionService
-	Stats   *StatsService
-	Admin   *AdminService
+	DB                         *sql.DB
+	Queries                    *dbgen.Queries
+	Enc                        *crypto.Enc // nil = 암호화 비활성
+	Member                     *MemberService
+	Wallet                     *WalletService
+	Tx                         *TransactionService
+	Stats                      *StatsService
+	Admin                      *AdminService
+	AnalyticsExcludedMemberIDs []string
 }
 
 // New — 모든 서비스 초기화.
-func New(database *sql.DB, enc *crypto.Enc) *Services {
+func New(database *sql.DB, enc *crypto.Enc, excludedMemberIDs ...string) *Services {
 	q := dbgen.New(database)
+	scope := analytics.New(excludedMemberIDs...)
 	s := &Services{
-		DB:      database,
-		Queries: q,
-		Enc:     enc,
+		DB:                         database,
+		Queries:                    q,
+		Enc:                        enc,
+		AnalyticsExcludedMemberIDs: scope.ExcludedMemberIDs(),
 	}
 	s.Member = &MemberService{db: database, q: q, enc: enc}
 	s.Wallet = &WalletService{db: database, enc: enc}
 	s.Tx = &TransactionService{db: database, q: q, enc: enc}
-	s.Stats = &StatsService{db: database, q: q}
+	s.Stats = &StatsService{db: database, scope: scope}
 	s.Admin = &AdminService{db: database, q: q}
 	return s
 }

@@ -3,6 +3,7 @@ package page
 import (
 	"bytes"
 	"context"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -46,6 +47,45 @@ func TestRetentionShowsMeasuredRatesMaturityAndScopedActions(t *testing.T) {
 	}
 	if strings.Contains(html, "<고객>") {
 		t.Fatal("member name was not escaped")
+	}
+}
+
+func TestRetentionMetricSetsNumericContrastOnTheValueItself(t *testing.T) {
+	// yh-num declares its own ink color, so inheriting white from a dark card
+	// does not work. Verify the actual numeric child, not only its parent.
+	for _, primary := range []bool{true, false} {
+		var rendered bytes.Buffer
+		if err := retentionMetric("비율", "88.8%", "검증", primary).Render(context.Background(), &rendered); err != nil {
+			t.Fatal(err)
+		}
+		value := regexp.MustCompile(`<p class="([^"]*)">88\.8%</p>`).FindStringSubmatch(rendered.String())
+		if len(value) != 2 || !strings.Contains(value[1], "yh-num") {
+			t.Fatalf("numeric value element missing: %s", rendered.String())
+		}
+		want, excluded := "text-ink-900", "text-sand-50"
+		if primary {
+			want, excluded = excluded, want
+			if !strings.Contains(rendered.String(), "bg-ink-900") {
+				t.Fatal("primary card must keep its dark background")
+			}
+		}
+		if !strings.Contains(value[1], want) || strings.Contains(value[1], excluded) {
+			t.Fatalf("primary=%t numeric contrast classes %q, want %s without %s", primary, value[1], want, excluded)
+		}
+	}
+}
+
+func TestRetentionIncludesSelectedThreeMonthOption(t *testing.T) {
+	var rendered bytes.Buffer
+	if err := Retention(RetentionProps{Months: 3, DormantDays: 60, CurrentRate: "—", MeanGap: "—", FirstVisitors: "0명"}).Render(context.Background(), &rendered); err != nil {
+		t.Fatal(err)
+	}
+	options := regexp.MustCompile(`<option value="(3|6|12|24)"[^>]*>`).FindAllStringSubmatch(rendered.String(), -1)
+	if len(options) != 4 || options[0][1] != "3" || !strings.Contains(options[0][0], "selected") {
+		t.Fatalf("three-month option must lead and be selected: %v", options)
+	}
+	if !strings.Contains(rendered.String(), `name="months" value="3"`) {
+		t.Fatal("current absence filter must preserve three-month lookback")
 	}
 }
 

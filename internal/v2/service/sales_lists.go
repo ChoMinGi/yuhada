@@ -35,7 +35,9 @@ func (s *SalesService) ListDetails(ctx context.Context, kind, since, until, quer
 	case "recharge":
 		cutoff := now.UTC().AddDate(0, 0, -60).Format("2006-01-02T15:04:05.000Z")
 		current := now.UTC().Format("2006-01-02T15:04:05.000Z")
-		rows, err := s.db.QueryContext(ctx, `SELECT m.id,m.name,m.balance,MAX(t.created_at) FROM members m JOIN transactions t ON t.member_id=m.id AND t.type='deduct' AND t.created_at>=? AND t.created_at<=? WHERE m.is_active=1 AND m.balance<=50000 GROUP BY m.id,m.name,m.balance ORDER BY m.balance ASC,MAX(t.created_at) DESC,m.id ASC`, cutoff, current)
+		clause, excluded := s.scope.Clause("m.id")
+		args := append([]any{cutoff, current}, excluded...)
+		rows, err := s.db.QueryContext(ctx, `SELECT m.id,m.name,m.balance,MAX(t.created_at) FROM members m JOIN transactions t ON t.member_id=m.id AND t.type='deduct' AND t.created_at>=? AND t.created_at<=? WHERE m.is_active=1 AND m.balance<=50000`+clause+` GROUP BY m.id,m.name,m.balance ORDER BY m.balance ASC,MAX(t.created_at) DESC,m.id ASC`, args...)
 		if err != nil {
 			return SalesListPage{}, err
 		}

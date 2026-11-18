@@ -73,7 +73,7 @@ func main() {
 	}
 
 	// 서비스 레이어
-	services := service.New(database, enc)
+	services := service.New(database, enc, cfg.AnalyticsExcludedMemberIDs...)
 
 	// 기존 평문 레코드 암호화 마이그레이션 (1회성)
 	migrCtx, migrCancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -116,7 +116,7 @@ func main() {
 	root.Mount("/", router)
 
 	if v2Session != nil {
-		v2Services := v2service.New(database, enc)
+		v2Services := v2service.New(database, enc, cfg.AnalyticsExcludedMemberIDs...)
 		v2Router := v2handler.NewRouter(&v2handler.Deps{
 			Session:       v2Session,
 			Services:      v2Services,

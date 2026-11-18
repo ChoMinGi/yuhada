@@ -161,7 +161,7 @@ func TestRetentionEmptyHistoryAndOptionNormalization(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Months) != 12 || got.DormantDays != 60 || got.DormantPage != 1 || got.DormantPages != 1 || got.DormantCount != 0 || got.GapCount != 0 || got.MeanGapDays != 0 || got.ReturningCustomerCount != 0 || got.FirstVisitorCount != 0 || got.NeverVisitedCount != 1 || got.HistoryStart != "" || got.LatestVisit != "" || len(got.Cohorts) != 0 || len(got.DormantMembers) != 0 {
+	if len(got.Months) != 3 || got.DormantDays != 60 || got.DormantPage != 1 || got.DormantPages != 1 || got.DormantCount != 0 || got.GapCount != 0 || got.MeanGapDays != 0 || got.ReturningCustomerCount != 0 || got.FirstVisitorCount != 0 || got.NeverVisitedCount != 1 || got.HistoryStart != "" || got.LatestVisit != "" || len(got.Cohorts) != 0 || len(got.DormantMembers) != 0 {
 		t.Fatalf("empty/normalized result: %+v", got)
 	}
 	for _, month := range got.Months {

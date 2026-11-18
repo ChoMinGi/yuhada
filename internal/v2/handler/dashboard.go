@@ -37,7 +37,7 @@ func (h *PageHandlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	chargeTotal, deductTotal := snapshot.ChargeTotal, snapshot.DeductTotal
-	txs, err := h.Deps.Services.Queries.ListRecentTransactions(ctx)
+	txs, err := h.Deps.Services.Sales.RecentActivity(ctx, 8)
 	if err != nil {
 		http.Error(w, "최근 활동을 불러오지 못했습니다", 500)
 		return

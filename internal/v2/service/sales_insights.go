@@ -54,21 +54,25 @@ func (s *SalesService) Insights(ctx context.Context, since, until string, now ti
 		return out, fmt.Errorf("insights begin: %w", err)
 	}
 	defer tx.Rollback()
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(amount),0),COUNT(DISTINCT member_id),COUNT(*) FROM transactions WHERE type='deduct' AND created_at>=? AND created_at<?`, since, until).Scan(&out.UsageTotal, &out.VisitorCount, &out.VisitCount); err != nil {
+	clause, excluded := s.scope.Clause("member_id")
+	args := append([]any{since, until}, excluded...)
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(amount),0),COUNT(DISTINCT member_id),COUNT(*) FROM transactions WHERE type='deduct' AND created_at>=? AND created_at<?`+clause, args...).Scan(&out.UsageTotal, &out.VisitorCount, &out.VisitCount); err != nil {
 		return out, fmt.Errorf("insights usage: %w", err)
 	}
-	if err = insightsDaily(ctx, tx, since, until, &out); err != nil {
+	if err = s.insightsDaily(ctx, tx, since, until, &out); err != nil {
 		return out, err
 	}
-	if err = insightsSales(ctx, tx, since, until, &out); err != nil {
+	if err = s.insightsSales(ctx, tx, since, until, &out); err != nil {
 		return out, err
 	}
-	if err = insightsBalances(ctx, tx, &out); err != nil {
+	if err = s.insightsBalances(ctx, tx, &out); err != nil {
 		return out, err
 	}
 	cutoff := now.UTC().AddDate(0, 0, -60).Format("2006-01-02T15:04:05.000Z")
 	current := now.UTC().Format("2006-01-02T15:04:05.000Z")
-	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM members m WHERE m.is_active=1 AND m.balance<=50000 AND EXISTS (SELECT 1 FROM transactions t WHERE t.member_id=m.id AND t.type='deduct' AND t.created_at>=? AND t.created_at<=?)`, cutoff, current).Scan(&out.LowBalanceCount); err != nil {
+	clause, excluded = s.scope.Clause("m.id")
+	args = append([]any{cutoff, current}, excluded...)
+	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM members m WHERE m.is_active=1 AND m.balance<=50000 AND EXISTS (SELECT 1 FROM transactions t WHERE t.member_id=m.id AND t.type='deduct' AND t.created_at>=? AND t.created_at<=?)`+clause, args...).Scan(&out.LowBalanceCount); err != nil {
 		return out, fmt.Errorf("insights candidate count: %w", err)
 	}
 	if err = s.insightsCandidates(ctx, tx, cutoff, current, &out); err != nil {
@@ -80,8 +84,10 @@ func (s *SalesService) Insights(ctx context.Context, since, until string, now ti
 	return out, nil
 }
 
-func insightsDaily(ctx context.Context, tx *sql.Tx, since, until string, out *SalesInsights) error {
-	rows, err := tx.QueryContext(ctx, `SELECT strftime('%Y-%m-%d',created_at,'+9 hours'),SUM(amount) FROM transactions WHERE type='deduct' AND created_at>=? AND created_at<? GROUP BY strftime('%Y-%m-%d',created_at,'+9 hours') ORDER BY 1`, since, until)
+func (s *SalesService) insightsDaily(ctx context.Context, tx *sql.Tx, since, until string, out *SalesInsights) error {
+	clause, excluded := s.scope.Clause("member_id")
+	args := append([]any{since, until}, excluded...)
+	rows, err := tx.QueryContext(ctx, `SELECT strftime('%Y-%m-%d',created_at,'+9 hours'),SUM(amount) FROM transactions WHERE type='deduct' AND created_at>=? AND created_at<?`+clause+` GROUP BY strftime('%Y-%m-%d',created_at,'+9 hours') ORDER BY 1`, args...)
 	if err != nil {
 		return fmt.Errorf("insights daily usage: %w", err)
 	}
@@ -96,10 +102,12 @@ func insightsDaily(ctx context.Context, tx *sql.Tx, since, until string, out *Sa
 	return rows.Err()
 }
 
-func insightsSales(ctx context.Context, tx *sql.Tx, since, until string, out *SalesInsights) error {
+func (s *SalesService) insightsSales(ctx context.Context, tx *sql.Tx, since, until string, out *SalesInsights) error {
 	// The first sale is determined from all canonical charges, including charges
 	// before this period. ID breaks equal timestamp ties without memo heuristics.
-	rows, err := tx.QueryContext(ctx, `SELECT t.amount,ms.plan_snapshot,NOT EXISTS (SELECT 1 FROM transactions older WHERE older.member_id=t.member_id AND older.type='charge' AND (older.created_at<t.created_at OR (older.created_at=t.created_at AND older.id<t.id))) FROM transactions t LEFT JOIN memberships ms ON ms.charge_tx_id=t.id WHERE t.type='charge' AND t.created_at>=? AND t.created_at<?`, since, until)
+	clause, excluded := s.scope.Clause("t.member_id")
+	args := append([]any{since, until}, excluded...)
+	rows, err := tx.QueryContext(ctx, `SELECT t.amount,ms.plan_snapshot,NOT EXISTS (SELECT 1 FROM transactions older WHERE older.member_id=t.member_id AND older.type='charge' AND (older.created_at<t.created_at OR (older.created_at=t.created_at AND older.id<t.id))) FROM transactions t LEFT JOIN memberships ms ON ms.charge_tx_id=t.id WHERE t.type='charge' AND t.created_at>=? AND t.created_at<?`+clause, args...)
 	if err != nil {
 		return fmt.Errorf("insights first sales: %w", err)
 	}
@@ -125,8 +133,9 @@ func insightsSales(ctx context.Context, tx *sql.Tx, since, until string, out *Sa
 	return rows.Err()
 }
 
-func insightsBalances(ctx context.Context, tx *sql.Tx, out *SalesInsights) error {
-	rows, err := tx.QueryContext(ctx, `SELECT CASE WHEN balance=0 THEN 0 WHEN balance<=50000 THEN 1 WHEN balance<=100000 THEN 2 WHEN balance<=300000 THEN 3 ELSE 4 END,COUNT(*),SUM(balance) FROM members GROUP BY 1 ORDER BY 1`)
+func (s *SalesService) insightsBalances(ctx context.Context, tx *sql.Tx, out *SalesInsights) error {
+	clause, excluded := s.scope.Clause("id")
+	rows, err := tx.QueryContext(ctx, `SELECT CASE WHEN balance=0 THEN 0 WHEN balance<=50000 THEN 1 WHEN balance<=100000 THEN 2 WHEN balance<=300000 THEN 3 ELSE 4 END,COUNT(*),SUM(balance) FROM members WHERE 1=1`+clause+` GROUP BY 1 ORDER BY 1`, excluded...)
 	if err != nil {
 		return fmt.Errorf("insights balances: %w", err)
 	}
@@ -146,7 +155,9 @@ func insightsBalances(ctx context.Context, tx *sql.Tx, out *SalesInsights) error
 }
 
 func (s *SalesService) insightsCandidates(ctx context.Context, tx *sql.Tx, cutoff, current string, out *SalesInsights) error {
-	rows, err := tx.QueryContext(ctx, `SELECT m.id,m.name,m.balance,MAX(t.created_at) FROM members m JOIN transactions t ON t.member_id=m.id AND t.type='deduct' AND t.created_at>=? AND t.created_at<=? WHERE m.is_active=1 AND m.balance<=50000 GROUP BY m.id,m.name,m.balance ORDER BY m.balance ASC,MAX(t.created_at) DESC,m.id ASC LIMIT 5`, cutoff, current)
+	clause, excluded := s.scope.Clause("m.id")
+	args := append([]any{cutoff, current}, excluded...)
+	rows, err := tx.QueryContext(ctx, `SELECT m.id,m.name,m.balance,MAX(t.created_at) FROM members m JOIN transactions t ON t.member_id=m.id AND t.type='deduct' AND t.created_at>=? AND t.created_at<=? WHERE m.is_active=1 AND m.balance<=50000`+clause+` GROUP BY m.id,m.name,m.balance ORDER BY m.balance ASC,MAX(t.created_at) DESC,m.id ASC LIMIT 5`, args...)
 	if err != nil {
 		return fmt.Errorf("insights candidates: %w", err)
 	}

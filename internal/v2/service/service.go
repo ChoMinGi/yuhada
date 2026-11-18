@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/mingicho/yuhada/internal/analytics"
 	"github.com/mingicho/yuhada/internal/crypto"
 	legacy "github.com/mingicho/yuhada/internal/service"
 	"github.com/mingicho/yuhada/internal/v2/db/dbgen"
@@ -20,21 +21,24 @@ type Services struct {
 	Queries *dbgen.Queries
 	Enc     *crypto.Enc
 
-	Member     *MemberService
-	Plan       *PlanService
-	Charge     *ChargeService
-	Membership *MembershipService
-	Preset     *PresetService
-	Sales      *SalesService
+	Member                     *MemberService
+	Plan                       *PlanService
+	Charge                     *ChargeService
+	Membership                 *MembershipService
+	Preset                     *PresetService
+	Sales                      *SalesService
+	AnalyticsExcludedMemberIDs []string
 }
 
 // New — 모든 v2 서비스 초기화.
-func New(database *sql.DB, enc *crypto.Enc) *Services {
+func New(database *sql.DB, enc *crypto.Enc, excludedMemberIDs ...string) *Services {
 	q := dbgen.New(database)
+	scope := analytics.New(excludedMemberIDs...)
 	s := &Services{
-		DB:      database,
-		Queries: q,
-		Enc:     enc,
+		DB:                         database,
+		Queries:                    q,
+		Enc:                        enc,
+		AnalyticsExcludedMemberIDs: scope.ExcludedMemberIDs(),
 	}
 	s.Member = &MemberService{db: database, q: q, enc: enc}
 	s.Plan = &PlanService{db: database, q: q}
@@ -42,7 +46,7 @@ func New(database *sql.DB, enc *crypto.Enc) *Services {
 	s.Charge.wallet = legacy.New(database, enc).Wallet
 	s.Membership = &MembershipService{db: database, q: q}
 	s.Preset = &PresetService{db: database, q: q}
-	s.Sales = &SalesService{db: database, q: q, enc: enc}
+	s.Sales = &SalesService{db: database, q: q, enc: enc, scope: scope}
 	return s
 }
 

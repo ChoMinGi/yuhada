@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mingicho/yuhada/internal/db/dbgen"
+	"github.com/mingicho/yuhada/internal/analytics"
 )
 
 type StatsService struct {
-	db *sql.DB
-	q  *dbgen.Queries
+	db    *sql.DB
+	scope analytics.Scope
 }
 
 // DashboardSnapshot — 대시보드 KPI 한 세트.
@@ -32,46 +32,30 @@ func (s *StatsService) Dashboard(ctx context.Context, p Period) (DashboardSnapsh
 	snap := DashboardSnapshot{}
 	start, end := p.Range(time.Now())
 
-	var err error
-	if snap.DeductTotal, err = sumAmount(ctx, s.db, "deduct", start, end); err != nil {
-		return snap, fmt.Errorf("step=deduct: %w", err)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return snap, fmt.Errorf("dashboard begin: %w", err)
 	}
-	if snap.ChargeTotal, err = sumAmount(ctx, s.db, "charge", start, end); err != nil {
-		return snap, fmt.Errorf("step=charge: %w", err)
+	defer tx.Rollback()
+	clause, excluded := s.scope.Clause("member_id")
+	args := append([]any{start, end}, excluded...)
+	if err = tx.QueryRowContext(ctx, `SELECT
+		COALESCE(SUM(CASE WHEN type='deduct' THEN amount ELSE 0 END),0),
+		COALESCE(SUM(CASE WHEN type='charge' THEN amount ELSE 0 END),0)
+		FROM transactions WHERE created_at>=? AND created_at<?`+clause, args...).Scan(&snap.DeductTotal, &snap.ChargeTotal); err != nil {
+		return snap, fmt.Errorf("dashboard activity: %w", err)
 	}
-	if snap.TotalLiability, err = sumActiveBalance(ctx, s.db); err != nil {
-		return snap, fmt.Errorf("step=total_liability: %w", err)
+	clause, excluded = s.scope.Clause("id")
+	if err = tx.QueryRowContext(ctx, `SELECT
+		COALESCE(SUM(CASE WHEN is_active=1 THEN balance ELSE 0 END),0),
+		COUNT(CASE WHEN is_active=1 THEN 1 END),
+		COUNT(CASE WHEN card_uuid IS NOT NULL THEN 1 END),
+		COUNT(CASE WHEN card_uuid IS NOT NULL AND is_active=0 THEN 1 END)
+		FROM members WHERE 1=1`+clause, excluded...).Scan(&snap.TotalLiability, &snap.MemberCount, &snap.CardsIssued, &snap.CardsLost); err != nil {
+		return snap, fmt.Errorf("dashboard members: %w", err)
 	}
-	if snap.MemberCount, err = s.q.CountActiveMembers(ctx); err != nil {
-		return snap, fmt.Errorf("step=member_count: %w", err)
-	}
-	if snap.CardsIssued, err = s.q.CountCardsIssued(ctx); err != nil {
-		return snap, fmt.Errorf("step=cards_issued: %w", err)
-	}
-	if snap.CardsLost, err = s.q.CountCardsLost(ctx); err != nil {
-		return snap, fmt.Errorf("step=cards_lost: %w", err)
+	if err = tx.Commit(); err != nil {
+		return snap, fmt.Errorf("dashboard finish: %w", err)
 	}
 	return snap, nil
-}
-
-// ─────────────────────────────────────────────
-// sqlc가 CAST 처리 못해서 direct SQL로 구현.
-// ─────────────────────────────────────────────
-
-func sumActiveBalance(ctx context.Context, db *sql.DB) (int64, error) {
-	const q = "SELECT COALESCE(SUM(balance), 0) FROM members WHERE is_active = 1"
-	var total sql.NullInt64
-	if err := db.QueryRowContext(ctx, q).Scan(&total); err != nil {
-		return 0, fmt.Errorf("sumActiveBalance: %w (sql=%q)", err, q)
-	}
-	return total.Int64, nil
-}
-
-func sumAmount(ctx context.Context, db *sql.DB, txType, start, end string) (int64, error) {
-	const q = "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = ? AND created_at >= ? AND created_at < ?"
-	var total sql.NullInt64
-	if err := db.QueryRowContext(ctx, q, txType, start, end).Scan(&total); err != nil {
-		return 0, fmt.Errorf("sumAmount(%s): %w (sql=%q)", txType, err, q)
-	}
-	return total.Int64, nil
 }
