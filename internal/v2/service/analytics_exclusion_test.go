@@ -182,7 +182,7 @@ func TestAnalyticsExclusionPrecedesRetentionHistoryCohortsAndQueues(t *testing.T
 	if got.NeverVisitedCount != 1 || got.DormantCount != 1 || len(got.DormantMembers) != 1 || got.DormantMembers[0].MemberID != dormant {
 		t.Fatalf("filtered visits left owner in never-visited/current queue %+v", got)
 	}
-	if len(got.Cohorts) != 1 || got.Cohorts[0].Month != "2026-01" || got.Cohorts[0].Size != 1 || got.Cohorts[0].Cells[0] != (RetentionCell{Offset: 1, Returning: 0, Status: "complete"}) || got.Cohorts[0].Cells[1] != (RetentionCell{Offset: 2, Returning: 1, Status: "observing"}) {
+	if got.CohortMonths != 6 || len(got.Cohorts) != 2 || got.Cohorts[0].Month != "2025-12" || got.Cohorts[0].Size != 2 || got.Cohorts[0].Cells[0] != (RetentionCell{Offset: 1, Returning: 1, Status: "complete"}) || got.Cohorts[0].Cells[2] != (RetentionCell{Offset: 3, Returning: 1, Status: "observing"}) || got.Cohorts[1].Month != "2026-01" || got.Cohorts[1].Size != 1 || got.Cohorts[1].Cells[0] != (RetentionCell{Offset: 1, Returning: 0, Status: "complete"}) || got.Cohorts[1].Cells[1] != (RetentionCell{Offset: 2, Returning: 1, Status: "observing"}) {
 		t.Fatalf("cohort denominator/maturity changed %+v", got.Cohorts)
 	}
 	legacyDormant, err := scoped.Sales.DormantMembers(context.Background(), "2026-03-15T23:59:59.999Z")

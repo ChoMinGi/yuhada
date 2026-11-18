@@ -77,15 +77,40 @@ func TestRetentionMetricSetsNumericContrastOnTheValueItself(t *testing.T) {
 
 func TestRetentionIncludesSelectedThreeMonthOption(t *testing.T) {
 	var rendered bytes.Buffer
-	if err := Retention(RetentionProps{Months: 3, DormantDays: 60, CurrentRate: "—", MeanGap: "—", FirstVisitors: "0명"}).Render(context.Background(), &rendered); err != nil {
+	if err := Retention(RetentionProps{Months: 3, CohortMonths: 6, DormantDays: 60, CurrentRate: "—", MeanGap: "—", FirstVisitors: "0명"}).Render(context.Background(), &rendered); err != nil {
 		t.Fatal(err)
 	}
-	options := regexp.MustCompile(`<option value="(3|6|12|24)"[^>]*>`).FindAllStringSubmatch(rendered.String(), -1)
+	selectHTML := regexp.MustCompile(`(?s)<select id="retention-months"[^>]*>.*?</select>`).FindString(rendered.String())
+	options := regexp.MustCompile(`<option value="(3|6|12|24)"[^>]*>`).FindAllStringSubmatch(selectHTML, -1)
 	if len(options) != 4 || options[0][1] != "3" || !strings.Contains(options[0][0], "selected") {
 		t.Fatalf("three-month option must lead and be selected: %v", options)
 	}
 	if !strings.Contains(rendered.String(), `name="months" value="3"`) {
 		t.Fatal("current absence filter must preserve three-month lookback")
+	}
+}
+
+func TestRetentionCohortSixMonthsFilterPreservesOtherScopes(t *testing.T) {
+	var output bytes.Buffer
+	if err := Retention(RetentionProps{Months: 3, CohortMonths: 6, DormantDays: 90, Page: 2}).Render(context.Background(), &output); err != nil {
+		t.Fatal(err)
+	}
+	html := output.String()
+	cohorts := regexp.MustCompile(`(?s)<select id="retention-cohorts"[^>]*>.*?</select>`).FindString(html)
+	if !strings.Contains(cohorts, `value="6" selected`) || !strings.Contains(html, "최근 6개월의 첫 방문 월") {
+		t.Fatal("cohort lookback must independently select six months")
+	}
+	forms := regexp.MustCompile(`(?s)<form\b[^>]*action="/v2/admin/retention"[^>]*>.*?</form>`).FindAllString(html, -1)
+	if len(forms) != 3 {
+		t.Fatalf("want scoped controls for activity, cohorts and absence: %d", len(forms))
+	}
+	for i, form := range forms {
+		if !strings.Contains(form, `name="cohorts"`) || !strings.Contains(form, `name="months"`) || !strings.Contains(form, `name="absent"`) {
+			t.Errorf("form%d drops another scope", i)
+		}
+	}
+	if !strings.Contains(forms[1], `name="page" value="2"`) {
+		t.Fatal("cohort control lost the current action-list page")
 	}
 }
 

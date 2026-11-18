@@ -9,6 +9,7 @@ import (
 // RetentionProps separates historical measurements from the current action list.
 // All strings are display values; Class is a semantic heatmap tone, not CSS.
 type RetentionProps struct {
+	CohortMonths                                   int
 	Months, DormantDays                            int
 	AsOf, HistoryStart, LatestVisit                string
 	Rows                                           []RetentionMonthRow

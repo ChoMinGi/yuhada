@@ -18,6 +18,7 @@ templ Retention(p RetentionProps) {
 
 			<form method="GET" action="/v2/admin/retention" class="flex flex-wrap items-end gap-3 mb-6">
 				<input type="hidden" name="absent" value={ strconv.Itoa(p.DormantDays) }/>
+				<input type="hidden" name="cohorts" value={ strconv.Itoa(p.CohortMonths) }/>
 				<div>
 					<label for="retention-months" class="block text-[12px] text-ink-700 mb-2">분석 기간</label>
 					<select id="retention-months" name="months" class="bg-sand-100 border border-sand-300 rounded px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-ink-500">
@@ -27,7 +28,7 @@ templ Retention(p RetentionProps) {
 					</select>
 				</div>
 				<button type="submit" class="px-4 py-2 rounded bg-ink-900 text-sand-50 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-900">적용</button>
-				<p class="text-[12px] text-ink-500 pb-2">이번 달 포함 · 방문 추이, 평균 간격, 첫 방문 월에 적용</p>
+				<p class="text-[12px] text-ink-500 pb-2">이번 달 포함 · 방문 추이, 평균 간격, 첫 방문 고객 수에 적용</p>
 			</form>
 
 			<div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
@@ -88,7 +89,26 @@ templ Retention(p RetentionProps) {
 
 			<section aria-labelledby="retention-cohort-heading" class="yh-card mb-8 sm:mb-10 overflow-hidden">
 				<div class="p-4 sm:p-6 border-b border-sand-200">
-					<h2 id="retention-cohort-heading" class="yh-headline-s">첫 방문 월별 유지율</h2>
+					<div class="flex flex-wrap items-end justify-between gap-4">
+						<div>
+							<h2 id="retention-cohort-heading" class="yh-headline-s">첫 방문 월별 유지율</h2>
+							<p class="text-[12px] text-ink-500 mt-2">최근 { strconv.Itoa(p.CohortMonths) }개월의 첫 방문 월 · 이번 달 포함</p>
+						</div>
+						<form method="GET" action="/v2/admin/retention" class="flex items-end gap-2">
+							<input type="hidden" name="months" value={ strconv.Itoa(p.Months) }/>
+							<input type="hidden" name="absent" value={ strconv.Itoa(p.DormantDays) }/>
+							<input type="hidden" name="page" value={ strconv.Itoa(p.Page) }/>
+							<div>
+								<label for="retention-cohorts" class="block text-[11px] text-ink-500 mb-1">첫 방문 월 기간</label>
+								<select id="retention-cohorts" name="cohorts" class="bg-sand-50 border border-sand-300 rounded px-3 py-2 text-[12px] focus:outline-none focus:ring-2 focus:ring-ink-500">
+									for _, months := range []int{3, 6, 12, 24} {
+										<option value={ strconv.Itoa(months) } selected?={ p.CohortMonths == months }>최근 { strconv.Itoa(months) }개월</option>
+										}
+								</select>
+								</div>
+								<button type="submit" class="px-3 py-2 rounded border border-ink-900 text-[12px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-900">적용</button>
+						</form>
+					</div>
 					<p class="text-[12px] text-ink-500 mt-2 leading-relaxed">기록상 첫 방문 월이 같은 고객 중, 각각의 다음 달에 다시 방문한 비율입니다. 매달 연속 방문해야 하는 지표는 아닙니다.</p>
 				</div>
 				if len(p.Cohorts) == 0 {
@@ -140,6 +160,7 @@ templ Retention(p RetentionProps) {
 						</div>
 						<form method="GET" action="/v2/admin/retention" class="flex items-end gap-2">
 							<input type="hidden" name="months" value={ strconv.Itoa(p.Months) }/>
+							<input type="hidden" name="cohorts" value={ strconv.Itoa(p.CohortMonths) }/>
 							<div>
 								<label for="retention-absent" class="block text-[11px] text-ink-500 mb-1">미방문 기준</label>
 								<select id="retention-absent" name="absent" class="bg-sand-50 border border-sand-300 rounded px-3 py-2 text-[12px] focus:outline-none focus:ring-2 focus:ring-ink-500">

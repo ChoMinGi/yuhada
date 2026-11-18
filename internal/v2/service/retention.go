@@ -14,10 +14,11 @@ const retentionPageSize = 20
 // RetentionOptions controls displayed history and the current dormant queue.
 // A visit is a positive deduction on a distinct member/KST calendar day.
 type RetentionOptions struct {
-	Now         time.Time
-	Months      int
-	DormantDays int
-	Page        int
+	Now          time.Time
+	Months       int // Monthly activity and summary window; defaults to three.
+	CohortMonths int // First-visit cohort lookback; independently defaults to six.
+	DormantDays  int
+	Page         int
 }
 
 type RetentionDashboard struct {
@@ -25,6 +26,7 @@ type RetentionDashboard struct {
 	HistoryStart           string
 	LatestVisit            string
 	Months                 []RetentionMonth
+	CohortMonths           int
 	MeanGapDays            float64
 	GapCount               int
 	ReturningCustomerCount int
@@ -85,6 +87,9 @@ func (s *SalesService) Retention(ctx context.Context, opts RetentionOptions) (Re
 	if opts.Months != 3 && opts.Months != 6 && opts.Months != 12 && opts.Months != 24 {
 		opts.Months = 3
 	}
+	if opts.CohortMonths != 3 && opts.CohortMonths != 6 && opts.CohortMonths != 12 && opts.CohortMonths != 24 {
+		opts.CohortMonths = 6
+	}
 	if opts.DormantDays != 60 && opts.DormantDays != 90 && opts.DormantDays != 120 {
 		opts.DormantDays = 60
 	}
@@ -94,8 +99,10 @@ func (s *SalesService) Retention(ctx context.Context, opts RetentionOptions) (Re
 	now := opts.Now.In(retentionKST)
 	currentMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, retentionKST)
 	since := currentMonth.AddDate(0, 1-opts.Months, 0)
+	cohortSince := currentMonth.AddDate(0, 1-opts.CohortMonths, 0)
 	out := RetentionDashboard{
 		AsOf: now, DormantDays: opts.DormantDays,
+		CohortMonths:   opts.CohortMonths,
 		Months:         make([]RetentionMonth, opts.Months),
 		DormantMembers: []RetentionMember{}, Cohorts: []RetentionCohort{},
 	}
@@ -181,6 +188,8 @@ func (s *SalesService) Retention(ctx context.Context, opts RetentionOptions) (Re
 		firstMonth := first.Format("2006-01")
 		if !first.Before(since) {
 			out.FirstVisitorCount++
+		}
+		if !first.Before(cohortSince) {
 			cohortSizes[firstMonth]++
 		}
 		seenMonths := map[int]bool{}
@@ -197,7 +206,7 @@ func (s *SalesService) Retention(ctx context.Context, opts RetentionOptions) (Re
 					out.GapCount++
 				}
 			}
-			if !first.Before(since) {
+			if !first.Before(cohortSince) {
 				offset := (day.Year()-first.Year())*12 + int(day.Month()-first.Month())
 				if offset >= 1 && offset <= 6 && !seenMonths[offset] {
 					if cohortReturns[firstMonth] == nil {
@@ -219,10 +228,13 @@ func (s *SalesService) Retention(ctx context.Context, opts RetentionOptions) (Re
 		if out.Months[i].GapCount > 0 {
 			out.Months[i].MeanGapDays = float64(monthGapSum[i]) / float64(out.Months[i].GapCount)
 		}
-		if size := cohortSizes[out.Months[i].Month]; size > 0 {
-			cohort := RetentionCohort{Month: out.Months[i].Month, Size: size, Cells: make([]RetentionCell, 6)}
+	}
+	for i := 0; i < opts.CohortMonths; i++ {
+		month := cohortSince.AddDate(0, i, 0).Format("2006-01")
+		if size := cohortSizes[month]; size > 0 {
+			cohort := RetentionCohort{Month: month, Size: size, Cells: make([]RetentionCell, 6)}
 			for j := range cohort.Cells {
-				target := since.AddDate(0, i+j+1, 0)
+				target := cohortSince.AddDate(0, i+j+1, 0)
 				status := "complete"
 				if target.Equal(currentMonth) {
 					status = "observing"

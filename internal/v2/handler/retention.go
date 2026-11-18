@@ -32,6 +32,10 @@ func retentionOptions(r *http.Request, now time.Time) v2service.RetentionOptions
 	if months != 3 && months != 6 && months != 12 && months != 24 {
 		months = 3
 	}
+	cohorts, _ := strconv.Atoi(r.URL.Query().Get("cohorts"))
+	if cohorts != 3 && cohorts != 6 && cohorts != 12 && cohorts != 24 {
+		cohorts = 6
+	}
 	days, _ := strconv.Atoi(r.URL.Query().Get("absent"))
 	if days != 60 && days != 90 && days != 120 {
 		days = 60
@@ -40,12 +44,17 @@ func retentionOptions(r *http.Request, now time.Time) v2service.RetentionOptions
 	if pageNumber < 1 {
 		pageNumber = 1
 	}
-	return v2service.RetentionOptions{Now: now, Months: months, DormantDays: days, Page: pageNumber}
+	return v2service.RetentionOptions{Now: now, Months: months, CohortMonths: cohorts, DormantDays: days, Page: pageNumber}
 }
 
-func retentionURL(months, days, number int) string {
+func retentionURL(months, days, number int, cohortMonths ...int) string {
+	cohorts := 6
+	if len(cohortMonths) > 0 {
+		cohorts = cohortMonths[0]
+	}
 	return "/v2/admin/retention?" + url.Values{
 		"months": {strconv.Itoa(months)}, "absent": {strconv.Itoa(days)}, "page": {strconv.Itoa(number)},
+		"cohorts": {strconv.Itoa(cohorts)},
 	}.Encode()
 }
 
@@ -65,7 +74,8 @@ func retentionGap(days float64, count int) string {
 
 func buildRetentionProps(data v2service.RetentionDashboard) page.RetentionProps {
 	p := page.RetentionProps{
-		Months: len(data.Months), DormantDays: data.DormantDays,
+		CohortMonths: data.CohortMonths,
+		Months:       len(data.Months), DormantDays: data.DormantDays,
 		AsOf:         data.AsOf.In(kstLoc).Format("2006.01.02 15:04"),
 		HistoryStart: data.HistoryStart, LatestVisit: data.LatestVisit,
 		MeanGap:       retentionGap(data.MeanGapDays, data.GapCount),
@@ -74,6 +84,9 @@ func buildRetentionProps(data v2service.RetentionDashboard) page.RetentionProps 
 		DormantCount:  data.DormantCount, NeverVisitedCount: data.NeverVisitedCount,
 		Page: data.DormantPage, Pages: data.DormantPages,
 		CurrentRate: "—", CurrentDetail: "이번 달 방문 기록 없음",
+	}
+	if p.CohortMonths == 0 {
+		p.CohortMonths = 6
 	}
 	for _, row := range data.Months {
 		width := "0"
@@ -115,10 +128,10 @@ func buildRetentionProps(data v2service.RetentionDashboard) page.RetentionProps 
 		p.Cohorts = append(p.Cohorts, row)
 	}
 	if p.Page > 1 {
-		p.PreviousURL = retentionURL(p.Months, p.DormantDays, p.Page-1)
+		p.PreviousURL = retentionURL(p.Months, p.DormantDays, p.Page-1, p.CohortMonths)
 	}
 	if p.Page < p.Pages {
-		p.NextURL = retentionURL(p.Months, p.DormantDays, p.Page+1)
+		p.NextURL = retentionURL(p.Months, p.DormantDays, p.Page+1, p.CohortMonths)
 	}
 	return p
 }
